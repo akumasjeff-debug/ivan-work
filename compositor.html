@@ -42,6 +42,13 @@
   .slot .crop-wrap{position:absolute;inset:0;overflow:hidden;}
   .slot.cropping{outline:2px dashed var(--accent);outline-offset:2px;cursor:move;}
   .slot.cropping .crop-wrap{outline:1px solid rgba(255,255,255,.25);}
+  /* 吸管模式：游標變十字準心（蓋過 slot 的 grab） */
+  .stage-shell.eyedrop-mode,.stage-shell.eyedrop-mode .slot,.stage-shell.eyedrop-mode .slot *{cursor:crosshair !important;}
+  /* 放大鏡 loupe */
+  #loupe{position:fixed;z-index:100000;pointer-events:none;display:none;background:#0b0b0b;border:2px solid var(--accent2);border-radius:10px;padding:5px;box-shadow:0 8px 24px rgba(0,0,0,.55);}
+  #loupe canvas{display:block;width:128px;height:128px;image-rendering:pixelated;border-radius:6px;}
+  #loupe .lp-hex{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--ink);text-align:center;margin-top:4px;letter-spacing:1.5px;}
+  #loupe .lp-sw{display:inline-block;width:11px;height:11px;border-radius:3px;border:1px solid var(--line);vertical-align:-1px;margin-right:5px;}
   .slot.sel{outline:2px solid var(--accent2);outline-offset:2px;}
   .slot.frame.sel{outline-color:var(--violet);}
   .slot.text.sel{outline-color:var(--rose);}
@@ -942,21 +949,46 @@ async function runLocalCut(p,a,opts,label){
 function handleLocalCut(p,a){return runLocalCut(p,a,null,'本機');}   // 四角自動偵測單色背景
 
 /* ---------- 吸管去背：點畫布上的背景顏色，從該點往外擴散去除 ---------- */
+// 把「滑鼠在某圖層 slot 上的位置」換算成該圖層來源影像的取樣分數(0..1)，含裁切與翻轉
+function eyedropSrcFrac(clientX,clientY,slotRect,p){
+  let fx=Math.min(1,Math.max(0,(clientX-slotRect.left)/slotRect.width));
+  let fy=Math.min(1,Math.max(0,(clientY-slotRect.top)/slotRect.height));
+  const cw1=p.cropW||1,ch1=p.cropH||1,cx1=p.cropX||0,cy1=p.cropY||0;
+  let sfx=cx1+fx*cw1, sfy=cy1+fy*ch1;
+  if(p.flipX)sfx=1-sfx;
+  return {fx:Math.min(1,Math.max(0,sfx)),fy:Math.min(1,Math.max(0,sfy))};
+}
+let _loupe=null,_loupeMove=null;
+function ensureLoupe(){if(_loupe)return _loupe;const d=document.createElement('div');d.id='loupe';d.innerHTML='<canvas width="128" height="128"></canvas><div class="lp-hex"><span class="lp-sw"></span><span class="lp-val">#------</span></div>';document.body.appendChild(d);_loupe=d;return d;}
+function hideLoupe(){if(_loupe)_loupe.style.display='none';if(_loupeMove){window.removeEventListener('pointermove',_loupeMove);_loupeMove=null;}stage.classList.remove('eyedrop-mode');}
 function startEyedrop(p,a){
   if(!a||!a._img){setStatus('沒有可去背的原圖','warn');return;}
   if(p.locked){setStatus('圖層已鎖定，請先解鎖','warn');return;}
-  eyedropPid=p.pid;selectOne(p.pid);stage.style.cursor='crosshair';renderAll();
-  setStatus('吸管模式：點畫布上「這個圖層」要去除的背景顏色（Esc 取消）','warn');
+  eyedropPid=p.pid;selectOne(p.pid);renderAll();
+  stage.classList.add('eyedrop-mode');
+  setStatus('吸管模式：移動看放大鏡，點一下選背景色去除（Esc 取消）','warn');
+  const lp=ensureLoupe();const cvs=lp.querySelector('canvas'),lctx=cvs.getContext('2d',{willReadFrequently:true});
+  const img=a._cutImg||a._img;const nW=img.naturalWidth||img.width,nH=img.naturalHeight||img.height;
+  const SPAN=13; // 放大鏡涵蓋的來源像素寬度（越小放越大）
+  _loupeMove=ev=>{
+    const slot=[...stage.querySelectorAll('.slot')].find(x=>x.__pid===p.pid);if(!slot){lp.style.display='none';return;}
+    const r=slot.getBoundingClientRect();
+    if(ev.clientX<r.left-4||ev.clientX>r.right+4||ev.clientY<r.top-4||ev.clientY>r.bottom+4){lp.style.display='none';return;}
+    lp.style.display='block';lp.style.left=(ev.clientX+20)+'px';lp.style.top=(ev.clientY+20)+'px';
+    const f=eyedropSrcFrac(ev.clientX,ev.clientY,r,p);const sx=f.fx*nW,sy=f.fy*nH;
+    lctx.imageSmoothingEnabled=false;lctx.clearRect(0,0,128,128);
+    lctx.drawImage(img,sx-SPAN/2,sy-SPAN/2,SPAN,SPAN,0,0,128,128);
+    lctx.strokeStyle='rgba(255,255,255,.9)';lctx.lineWidth=1;const cs=128/SPAN;lctx.strokeRect(64-cs/2,64-cs/2,cs,cs);
+    try{const px=lctx.getImageData(64,64,1,1).data;const hex='#'+[px[0],px[1],px[2]].map(v=>v.toString(16).padStart(2,'0')).join('');lp.querySelector('.lp-val').textContent=hex.toUpperCase();lp.querySelector('.lp-sw').style.background=hex;}catch(e){}
+  };
+  window.addEventListener('pointermove',_loupeMove);
 }
-function cancelEyedrop(){if(eyedropPid!=null){eyedropPid=null;stage.style.cursor='';setStatus('已取消吸管','');}}
+function cancelEyedrop(){if(eyedropPid!=null){eyedropPid=null;hideLoupe();setStatus('已取消吸管','');}}
 function doEyedropSample(e,el,p,a){
-  eyedropPid=null;stage.style.cursor='';
+  eyedropPid=null;hideLoupe();
   if(!a||!a._img){setStatus('沒有可去背的原圖','warn');return;}
-  const r=el.getBoundingClientRect();
-  let fx=(e.clientX-r.left)/r.width,fy=(e.clientY-r.top)/r.height;
-  fx=Math.min(1,Math.max(0,fx));fy=Math.min(1,Math.max(0,fy));
-  if(p.flipX)fx=1-fx;
-  runLocalCut(p,a,{seedFrac:{fx,fy}},'吸管');
+  const f=eyedropSrcFrac(e.clientX,e.clientY,el.getBoundingClientRect(),p);
+  runLocalCut(p,a,{seedFrac:{fx:f.fx,fy:f.fy}},'吸管');
 }
 
 /* ---------- FRAME ---------- */
