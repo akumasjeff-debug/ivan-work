@@ -1,0 +1,10 @@
+# Claude Code 個人設定（不上傳）
+.claude/
+
+# 影像合成台「真實資料夾備份」輸出（測試產物，不上傳）
+合成台/
+
+# 其他
+*.log
+Thumbs.db
+.DS_Store
