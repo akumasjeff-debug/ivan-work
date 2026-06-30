@@ -228,6 +228,9 @@
   .icon.lock.on,.icon.hide.on,.icon.flip.on{background:var(--violet);color:#15101f;border-color:var(--violet);}
   .tools-row{display:flex;gap:8px;flex-wrap:wrap;}
   .tools-row .btn{flex:1;min-width:110px;}
+  .cloud-box{display:flex;flex-direction:column;gap:7px;}
+  .cloud-in{background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--ink);font:inherit;font-size:12px;padding:7px 9px;width:100%;}
+  .cloud-in:focus{outline:1px solid var(--accent2);}
 
   /* --- 3-column layout: left = 01/02, center = canvas + export, right = 03/05/04 --- */
   .side-col{width:360px;border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0;}
@@ -268,6 +271,17 @@
         <div class="fld" style="margin-top:10px;">
           <label style="font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,monospace;">吸管 / 本機去背 吸色強度 <span id="tolVal">36</span>（小=只去很接近的色）</label>
           <input type="range" id="eyedropTol" min="8" max="120" value="36" style="width:100%;accent-color:var(--accent2);">
+        </div>
+      </div>
+
+      <div>
+        <div class="zone-head"><p class="sec-label">雲端共享圖庫 · Google Drive</p></div>
+        <div class="cloud-box">
+          <input id="gdClient" class="cloud-in" placeholder="OAuth Client ID（…apps.googleusercontent.com）">
+          <input id="gdFolder" class="cloud-in" placeholder="共享資料夾 ID（Drive 網址 /folders/ 後那串）">
+          <label class="chip" style="font-size:12px;"><input type="checkbox" id="gdAuto" checked> 上傳的新圖自動存到雲端</label>
+          <div class="row-2btn"><button class="btn sm" id="gdConnectBtn" style="flex:1;">連結 Google</button><button class="btn sm" id="gdSyncBtn" style="flex:1;">🔄 同步雲端</button></div>
+          <div class="status" id="gdStatus" style="font-size:11px;">未連結</div>
         </div>
       </div>
 
@@ -495,7 +509,7 @@ function save(){
     localStorage.setItem(META_KEY,JSON.stringify({
       version:6,canvasW,canvasH,sizePresets,folders,templates,
       fonts:fonts.map(f=>({id:f.id,name:f.name,family:f.family})),
-      assets:assets.map(a=>({id:a.id,name:a.name,folderId:a.folderId||'_root',hasCut:!!a.cutSrc})),
+      assets:assets.map(a=>({id:a.id,name:a.name,folderId:a.folderId||'_root',hasCut:!!a.cutSrc,driveId:a.driveId||null})),
       placements:placements.map(p=>({...p})),
       frameAsset:frameAsset?{id:frameAsset.id,name:frameAsset.name,hasCut:!!frameAsset.cutSrc}:null,
       texts:Object.fromEntries(Object.entries(texts).map(([k,v])=>[k,{...v,_canvas:undefined}]))
@@ -529,7 +543,7 @@ async function load(){
   const tick=()=>{if(--pending<=0){renderAll();rebuildAllTexts();}};
   if(pending===0){renderAll();rebuildAllTexts();return;}
   for(const a of metaAssets){
-    const o={id:a.id,name:a.name,folderId:a.folderId||'_root',src:null,cutSrc:null,cutDone:!!a.hasCut,_img:null,_cutImg:null};
+    const o={id:a.id,name:a.name,folderId:a.folderId||'_root',src:null,cutSrc:null,cutDone:!!a.hasCut,_img:null,_cutImg:null,driveId:a.driveId||null};
     assets.push(o);
     o.src=await getBlobURL('img:'+a.id);
     if(a.hasCut)o.cutSrc=await getBlobURL('cut:'+a.id);
@@ -582,6 +596,7 @@ function addFiles(files,folderId='_root'){
       const done=()=>{assets.push(o);renderDb();save();};
       const img=new Image();img.onload=()=>{o._img=img;done();};img.onerror=done;img.src=o.src;
       backupBlob(name,f);
+      gdUpload(o,f);   // 若已連結雲端且開啟自動上傳，新圖同步到 Drive 共享資料夾
     }).catch(e=>{console.error('上傳失敗',name,e);setStatus(`「${name}」儲存失敗`,'warn');});
   });
 }
@@ -872,6 +887,63 @@ async function importAll(file){
 /* ---------- export prefs (remember last export settings) ---------- */
 function saveExportPrefs(){try{localStorage.setItem(EXP_KEY,JSON.stringify({fmt:currentFormat(),q:qSlider.value,maxKb:$('maxKb').value,reduce:$('pngReduce').checked,levels:$('pngLevels').value}));}catch(e){}}
 function loadExportPrefs(){try{const d=JSON.parse(localStorage.getItem(EXP_KEY)||'null');if(!d)return;const fr=document.querySelector(`input[name="fmt"][value="${d.fmt}"]`);if(fr)fr.checked=true;if(d.q){qSlider.value=d.q;qVal.textContent=d.q;}if(d.maxKb)$('maxKb').value=d.maxKb;$('pngReduce').checked=!!d.reduce;if(d.levels)$('pngLevels').value=d.levels;syncFmtUI();}catch(e){}}
+
+/* ---------- Google Drive 共享圖庫（OAuth 直連） ----------
+   多人指向同一個 Drive 共享資料夾：可從雲端載入圖片、上傳新圖、手動同步。
+   需在 Google Cloud 建 OAuth Client ID，並把執行網址加入「授權的 JavaScript 來源」。 */
+const GD_KEY='compositor.gdrive.v1';
+let gdCfg={clientId:'',folderId:'',autoUpload:true};
+let gdToken=null,gdExpiry=0,gdTokenClient=null,_gisPromise=null;
+function gdLoadCfg(){try{const d=JSON.parse(localStorage.getItem(GD_KEY)||'null');if(d)gdCfg={clientId:d.clientId||'',folderId:d.folderId||'',autoUpload:d.autoUpload!==false};}catch(e){}}
+function gdSaveCfg(){try{localStorage.setItem(GD_KEY,JSON.stringify(gdCfg));}catch(e){}}
+function gdStat(t){const el=$('gdStatus');if(el)el.textContent=t;}
+function renderCloud(){gdStat(gdToken?('已連結'+(gdCfg.folderId?' · 資料夾已設定':' · 尚未設定資料夾ID')):'未連結');const b=$('gdConnectBtn');if(b)b.textContent=gdToken?'重新連結':'連結 Google';}
+function loadGIS(){if(_gisPromise)return _gisPromise;_gisPromise=new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.defer=true;s.onload=()=>res(window.google);s.onerror=()=>{_gisPromise=null;rej(new Error('無法載入 Google 登入元件（需連網）'));};document.head.appendChild(s);});return _gisPromise;}
+async function gdConnect(){
+  if(!gdCfg.clientId){gdStat('請先填入 OAuth Client ID');return;}
+  try{await loadGIS();}catch(e){gdStat(e.message);return;}
+  if(!gdTokenClient){
+    gdTokenClient=window.google.accounts.oauth2.initTokenClient({
+      client_id:gdCfg.clientId, scope:'https://www.googleapis.com/auth/drive',
+      callback:(resp)=>{if(resp&&resp.error){gdStat('授權失敗：'+resp.error);return;}gdToken=resp.access_token;gdExpiry=Date.now()+((resp.expires_in||3500)*1000);renderCloud();gdStat('已連結，開始同步…');if(gdCfg.folderId)gdSync();}
+    });
+  }
+  gdTokenClient.requestAccessToken({prompt: gdToken?'':'consent'});
+}
+async function gdFetch(url,opts){opts=opts||{};opts.headers=Object.assign({Authorization:'Bearer '+gdToken},opts.headers||{});const r=await fetch(url,opts);if(r.status===401){gdToken=null;renderCloud();throw new Error('連線過期，請按「重新連結」');}return r;}
+async function gdSync(){
+  if(!gdToken){gdStat('請先按「連結 Google」');return;}
+  if(!gdCfg.folderId){gdStat('請先填入共享資料夾 ID');return;}
+  gdStat('從雲端載入中…');
+  try{
+    const q=encodeURIComponent("'"+gdCfg.folderId+"' in parents and mimeType contains 'image/' and trashed=false");
+    const r=await gdFetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true');
+    if(!r.ok)throw new Error('清單 '+r.status);
+    const files=(await r.json()).files||[];
+    const have=new Set(assets.map(a=>a.driveId).filter(Boolean));
+    let added=0;
+    for(const f of files){
+      if(have.has(f.id))continue;
+      const dr=await gdFetch('https://www.googleapis.com/drive/v3/files/'+f.id+'?alt=media&supportsAllDrives=true');
+      if(!dr.ok)continue;const blob=await dr.blob();
+      const id=uid();await putBlob('img:'+id,blob);
+      const o={id,name:f.name||autoName(),folderId:'_root',src:await getBlobURL('img:'+id),cutSrc:null,cutDone:false,_img:null,_cutImg:null,driveId:f.id};
+      await new Promise(res=>{const im=new Image();im.onload=()=>{o._img=im;res();};im.onerror=res;im.src=o.src;});
+      assets.push(o);added++;
+    }
+    renderDb();save();gdStat('同步完成：新增 '+added+'，雲端共 '+files.length+' 張');setStatus('雲端同步完成（新增 '+added+'）','ok');
+  }catch(e){console.error(e);gdStat('同步失敗：'+(e.message||e));}
+}
+async function gdUpload(o,file){
+  if(!gdToken||!gdCfg.folderId||!gdCfg.autoUpload)return;
+  try{
+    const ext=((file.type.split('/')[1]||'png').replace('jpeg','jpg'));
+    const meta={name:(o.name||'image')+'.'+ext,parents:[gdCfg.folderId]};
+    const form=new FormData();form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));form.append('file',file);
+    const r=await gdFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true',{method:'POST',body:form});
+    if(r.ok){const d=await r.json();o.driveId=d.id;save();gdStat('已上傳到雲端：'+meta.name);}
+  }catch(e){console.warn('drive upload failed',e);}
+}
 
 /* ---------- AI cutout (CDN model) ---------- */
 async function aiCut(src){
@@ -1387,6 +1459,16 @@ loadExportPrefs();
 
 // 吸管/本機去背 強度滑桿
 $('eyedropTol').oninput=e=>{eyedropTol=+e.target.value;$('tolVal').textContent=e.target.value;};
+
+// Google Drive 雲端共享圖庫
+gdLoadCfg();
+$('gdClient').value=gdCfg.clientId;$('gdFolder').value=gdCfg.folderId;$('gdAuto').checked=gdCfg.autoUpload;
+$('gdClient').onchange=e=>{gdCfg.clientId=e.target.value.trim();gdSaveCfg();};
+$('gdFolder').onchange=e=>{gdCfg.folderId=e.target.value.trim();gdSaveCfg();renderCloud();};
+$('gdAuto').onchange=e=>{gdCfg.autoUpload=e.target.checked;gdSaveCfg();};
+$('gdConnectBtn').onclick=gdConnect;
+$('gdSyncBtn').onclick=gdSync;
+renderCloud();
 
 // 欄寬拖動調整 + 記憶
 const wrapEl=document.querySelector('.wrap');
