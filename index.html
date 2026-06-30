@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具箱 · ivan-work</title>
+<style>
+  :root{--bg:#11100d;--panel:#1b1a16;--ink:#f3efe4;--muted:#9c977f;--line:#34322a;--accent:#d98a3d;--accent2:#5fb6a8;}
+  *{box-sizing:border-box;}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:"Iowan Old Style","Palatino Linotype",ui-serif,Georgia,serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:40px;}
+  h1{font-size:26px;margin:0;letter-spacing:1px;}
+  .sub{color:var(--muted);font-size:13px;font-family:ui-monospace,Menlo,monospace;}
+  .cards{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;max-width:760px;}
+  a.card{text-decoration:none;color:inherit;width:300px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;transition:.15s;display:block;}
+  a.card:hover{border-color:var(--accent2);transform:translateY(-2px);box-shadow:0 12px 30px rgba(0,0,0,.4);}
+  a.card h2{margin:0 0 6px;font-size:20px;}
+  a.card .en{color:var(--accent2);font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:1px;}
+  a.card p{color:var(--muted);font-size:13px;line-height:1.6;margin:10px 0 0;}
+  .note{color:var(--muted);font-size:12px;max-width:620px;text-align:center;line-height:1.7;border-top:1px solid var(--line);padding-top:18px;}
+  .note b{color:var(--accent);}
+</style>
+</head>
+<body>
+  <h1>工具箱</h1>
+  <div class="sub">ivan-work · 桌機 Chrome / Edge</div>
+  <div class="cards">
+    <a class="card" href="合成台/compositor.html">
+      <h2>合成台</h2><div class="en">Compositor</div>
+      <p>多圖層影像合成：去背（AI／本機／吸管）、文字特效（立體／弧形）、裁切、版位模組、批次與備份匯出入。</p>
+    </a>
+    <a class="card" href="著色本/coloring.html">
+      <h2>著色本</h2><div class="en">Coloring</div>
+      <p>著色工具。</p>
+    </a>
+  </div>
+  <div class="note">
+    這些工具需在 <b>localhost</b> 或 <b>https</b> 下開啟（用到資料夾備份、本地儲存與去背模型）。
+    請勿用 <b>file://</b> 直接點開 HTML，否則部分功能會失效。
+  </div>
+</body>
+</html>
