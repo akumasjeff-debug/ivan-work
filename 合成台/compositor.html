@@ -385,7 +385,7 @@
     <div class="scroll">
       <div>
         <div class="zone-head"><p class="sec-label"><span class="num">01</span> · 圖片資料庫</p></div>
-        <div class="backup-bar" id="backupBar"><span class="dot"></span><span class="txt" id="backupTxt">未設定備份資料夾</span><button class="btn tiny" id="pickFolderBtn">選擇資料夾</button></div>
+        <div class="backup-bar" id="backupBar"><span class="dot"></span><span class="txt" id="backupTxt">未綁定共享資料夾</span><button class="btn tiny" id="pickFolderBtn">選擇資料夾</button><button class="btn tiny" id="syncFolderBtn" title="讀取共享資料夾，載入別人新增的圖">🔄</button></div>
         <div class="upload-zone" id="dropZone" style="margin-bottom:10px;">點此或拖入上傳 · <span>自動命名、記住、備份</span></div>
         <input type="file" id="fileInput" accept="image/*" multiple hidden>
         <div class="add-folder-row"><input id="newFolderName" placeholder="新資料夾名稱…"><button class="btn sm" id="addFolderBtn">＋ 資料夾</button></div>
@@ -492,11 +492,47 @@ function dataURLtoBlob(dataUrl){return fetch(dataUrl).then(r=>r.blob());}
 async function requestPersistence(){try{if(navigator.storage&&navigator.storage.persist){const already=await navigator.storage.persisted();if(!already)await navigator.storage.persist();}}catch(e){}}
 
 /* ---------- dir handle (folder backup) ---------- */
-async function pickFolder(){if(!window.showDirectoryPicker){setStatus('此瀏覽器不支援資料夾備份（需桌機 Chrome/Edge）','warn');return;}try{dirHandle=await window.showDirectoryPicker({mode:'readwrite'});await idbPut(ST_HANDLES,'dir',dirHandle);renderBackup();setStatus('已設定備份資料夾','ok');}catch(e){}}
+async function pickFolder(){if(!window.showDirectoryPicker){setStatus('此瀏覽器不支援資料夾功能（需桌機 Chrome/Edge）','warn');return;}try{dirHandle=await window.showDirectoryPicker({mode:'readwrite'});await idbPut(ST_HANDLES,'dir',dirHandle);renderBackup();setStatus('已綁定共享資料夾，載入中…','ok');syncFolder();}catch(e){}}
 async function restoreFolder(){try{const h=await idbGet(ST_HANDLES,'dir');if(!h)return;const perm=await h.queryPermission({mode:'readwrite'});dirHandle=h;renderBackup(perm==='granted');}catch(e){}}
 async function ensurePerm(){if(!dirHandle)return false;let p=await dirHandle.queryPermission({mode:'readwrite'});if(p==='granted')return true;p=await dirHandle.requestPermission({mode:'readwrite'});return p==='granted';}
 async function backupBlob(name,blob){if(!dirHandle)return;if(!await ensurePerm())return;try{const ext=(blob.type.split('/')[1]||'png').replace('jpeg','jpg');const safe=name.replace(/[\\/:*?"<>|]/g,'_');const fh=await dirHandle.getFileHandle(`${safe}_${Date.now()}.${ext}`,{create:true});const w=await fh.createWritable();await w.write(blob);await w.close();}catch(e){console.warn('backup failed',e);}}
-function renderBackup(granted=true){const bar=$('backupBar');if(dirHandle){bar.classList.add('on');$('backupTxt').textContent=(granted?'備份中 · ':'需重新授權 · ')+(dirHandle.name||'資料夾');$('pickFolderBtn').textContent='更換';}else{bar.classList.remove('on');$('backupTxt').textContent='未設定備份資料夾';$('pickFolderBtn').textContent='選擇資料夾';}}
+
+/* ---------- 共享圖庫資料夾（配合 Google Drive/OneDrive 桌面同步同一夾） ---------- */
+async function folderHas(name){try{await dirHandle.getFileHandle(name,{create:false});return true;}catch(e){return false;}}
+async function saveToFolder(baseName,blob){          // 把新圖寫進共享夾，回傳實際檔名（當作 fileKey 供去重）
+  if(!dirHandle)return null;
+  if(!await ensurePerm())return null;
+  try{
+    const ext=(blob.type.split('/')[1]||'png').replace('jpeg','jpg');
+    const safe=(baseName||'img').replace(/[\\/:*?"<>|]/g,'_');
+    let fname=`${safe}.${ext}`,n=1;
+    while(await folderHas(fname)){fname=`${safe}_${n}.${ext}`;n++;}
+    const fh=await dirHandle.getFileHandle(fname,{create:true});
+    const w=await fh.createWritable();await w.write(blob);await w.close();
+    return fname;
+  }catch(e){console.warn('write folder failed',e);return null;}
+}
+async function syncFolder(){                          // 讀取共享夾，載入尚未匯入的圖（依檔名去重）
+  if(!dirHandle){setStatus('請先按「選擇資料夾」綁定共享夾','warn');return;}
+  if(!await ensurePerm()){setStatus('資料夾權限未授予','warn');return;}
+  setStatus('讀取共享資料夾…','warn');
+  try{
+    const have=new Set(assets.map(a=>a.fileKey).filter(Boolean));
+    let added=0,total=0;
+    for await (const entry of dirHandle.values()){
+      if(entry.kind!=='file'||!/\.(png|jpe?g|webp|gif|bmp)$/i.test(entry.name))continue;
+      total++;
+      if(have.has(entry.name))continue;
+      const file=await entry.getFile();
+      const id=uid();await putBlob('img:'+id,file);
+      const o={id,name:entry.name.replace(/\.[^.]+$/,''),folderId:'_root',src:await getBlobURL('img:'+id),cutSrc:null,cutDone:false,_img:null,_cutImg:null,fileKey:entry.name};
+      await new Promise(res=>{const im=new Image();im.onload=()=>{o._img=im;res();};im.onerror=res;im.src=o.src;});
+      assets.push(o);added++;
+    }
+    renderDb();save();renderBackup();setStatus(`共享資料夾同步：新增 ${added}（夾內共 ${total} 張）`,'ok');
+  }catch(e){console.error(e);setStatus('同步失敗：'+(e.message||e),'warn');}
+}
+function renderBackup(granted=true){const bar=$('backupBar');if(dirHandle){bar.classList.add('on');$('backupTxt').textContent=(granted?'共享中 · ':'需重新授權 · ')+(dirHandle.name||'資料夾');$('pickFolderBtn').textContent='更換';}else{bar.classList.remove('on');$('backupTxt').textContent='未綁定共享資料夾';$('pickFolderBtn').textContent='選擇資料夾';}}
 
 /* ---------- persistence: metadata only in localStorage, binaries in IndexedDB ----------
    Blob keys:  img:<assetId>      original image
@@ -509,7 +545,7 @@ function save(){
     localStorage.setItem(META_KEY,JSON.stringify({
       version:6,canvasW,canvasH,sizePresets,folders,templates,
       fonts:fonts.map(f=>({id:f.id,name:f.name,family:f.family})),
-      assets:assets.map(a=>({id:a.id,name:a.name,folderId:a.folderId||'_root',hasCut:!!a.cutSrc,driveId:a.driveId||null})),
+      assets:assets.map(a=>({id:a.id,name:a.name,folderId:a.folderId||'_root',hasCut:!!a.cutSrc,driveId:a.driveId||null,fileKey:a.fileKey||null})),
       placements:placements.map(p=>({...p})),
       frameAsset:frameAsset?{id:frameAsset.id,name:frameAsset.name,hasCut:!!frameAsset.cutSrc}:null,
       texts:Object.fromEntries(Object.entries(texts).map(([k,v])=>[k,{...v,_canvas:undefined}]))
@@ -543,7 +579,7 @@ async function load(){
   const tick=()=>{if(--pending<=0){renderAll();rebuildAllTexts();}};
   if(pending===0){renderAll();rebuildAllTexts();return;}
   for(const a of metaAssets){
-    const o={id:a.id,name:a.name,folderId:a.folderId||'_root',src:null,cutSrc:null,cutDone:!!a.hasCut,_img:null,_cutImg:null,driveId:a.driveId||null};
+    const o={id:a.id,name:a.name,folderId:a.folderId||'_root',src:null,cutSrc:null,cutDone:!!a.hasCut,_img:null,_cutImg:null,driveId:a.driveId||null,fileKey:a.fileKey||null};
     assets.push(o);
     o.src=await getBlobURL('img:'+a.id);
     if(a.hasCut)o.cutSrc=await getBlobURL('cut:'+a.id);
@@ -595,8 +631,8 @@ function addFiles(files,folderId='_root'){
       o.src=await getBlobURL('img:'+id);
       const done=()=>{assets.push(o);renderDb();save();};
       const img=new Image();img.onload=()=>{o._img=img;done();};img.onerror=done;img.src=o.src;
-      backupBlob(name,f);
-      gdUpload(o,f);   // 若已連結雲端且開啟自動上傳，新圖同步到 Drive 共享資料夾
+      saveToFolder(name,f).then(fk=>{if(fk){o.fileKey=fk;save();}}); // 寫進共享資料夾（別人 🔄 同步就看得到）
+      gdUpload(o,f);   // 若另有連結 Google Drive(OAuth) 也一併上傳
     }).catch(e=>{console.error('上傳失敗',name,e);setStatus(`「${name}」儲存失敗`,'warn');});
   });
 }
@@ -1436,6 +1472,7 @@ $('addTextBtn').onclick=addTextLayer;
 $('saveTplBtn').onclick=saveTemplate;
 $('saveSizeBtn').onclick=saveSizePreset;
 $('pickFolderBtn').onclick=pickFolder;
+$('syncFolderBtn').onclick=syncFolder;
 $('cw').onchange=()=>changeSize(+$('cw').value,canvasH);
 $('ch').onchange=()=>changeSize(canvasW,+$('ch').value);
 qSlider.oninput=()=>qVal.textContent=qSlider.value;
