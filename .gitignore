@@ -7,6 +7,11 @@
 合成台/*.jpeg
 合成台/*.webp
 
+# 獨立 git repo（資料夾名 = GitHub repo 名），不納入本 repo
+air-conditioner/
+pokemon-funsite/
+couple-court/
+
 # 其他
 *.log
 Thumbs.db
