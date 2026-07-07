@@ -23,6 +23,7 @@
 | `air-conditioner/` | 冷氣安裝・錄音分析 | 客戶通話錄音→Gemini 逐字稿→AI 抽欄位標色→Firebase RTDB。**獨立 git repo**（github.com/akumasjeff-debug/air-conditioner），已在本 repo `.gitignore` 排除 | `air-conditioner/aircon.html` | `air-conditioner/start.bat`（port 8002） |
 | `pokemon-funsite/` | Pokemon 寶可夢旗艦館 | PChome 旗艦館頁面（index.html + img/css/js）。**獨立 git repo**（github.com/akumasjeff-debug/pokemon-funsite），已在本 repo `.gitignore` 排除。改完要打包 zip 放下載區給操作者上傳 PChome | `pokemon-funsite/index.html` | 無（靜態頁） |
 | `couple-court/` | Ai公道伯（名稱暫定案） | 手機 App（iOS+Android）：情侶雙人綁定的關係經營工具＋AI 吵架判決。**構想討論階段**，尚無程式碼。暫定 React Native + Expo + Firebase。**獨立 git repo**（github.com/akumasjeff-debug/couple-court），已在本 repo `.gitignore` 排除 | `couple-court/OVERVIEW.md` | 無（尚未建骨架） |
+| `賣場資訊文案/` | 賣場資訊文案 | 賣場（PChome 24h）商品頁 HTML 介紹文案，一商品一子資料夾（目前：NS2 主機）。**僅存本機不上傳**，已在 `.gitignore` 排除 | `賣場資訊文案/NS2主機/ns2-pchome.html` | 無（瀏覽器直接開檔預覽） |
 
 各專案的細節看該資料夾內的 `OVERVIEW.md` 與 `HANDOVER.md`。
 
