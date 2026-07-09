@@ -232,6 +232,9 @@
   .cloud-in{background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--ink);font:inherit;font-size:12px;padding:7px 9px;width:100%;box-sizing:border-box;}
   textarea.cloud-in{resize:vertical;font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.4;}
   .cloud-in:focus{outline:1px solid var(--accent2);}
+  .adv-toggle{cursor:pointer;user-select:none;}
+  .adv-toggle:hover .sec-label{color:var(--ink);}
+  #advCloud.collapsed{display:none;}
 
   /* --- 3-column layout: left = 01/02, center = canvas + export, right = 03/05/04 --- */
   .side-col{width:360px;border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0;}
@@ -286,6 +289,8 @@
         </div>
       </div>
 
+      <div class="zone-head adv-toggle" id="advCloudToggle"><p class="sec-label">▸ 進階雲端（Firebase / Google Drive）</p></div>
+      <div id="advCloud" class="collapsed">
       <div>
         <div class="zone-head"><p class="sec-label">（選用）Firebase</p></div>
         <div class="cloud-box">
@@ -305,6 +310,7 @@
           <div class="status" id="gdStatus" style="font-size:11px;">未連結</div>
         </div>
       </div>
+      </div><!-- /advCloud -->
 
       <div>
         <div class="zone-head"><p class="sec-label"><span class="num">03</span> · 加入框架（去背後預設置頂，可調圖層）</p></div>
@@ -1638,6 +1644,9 @@ $('sbUrl').value=sbCfg.url;$('sbAnon').value=sbCfg.anon;$('sbBucket').value=sbCf
 $('sbConnectBtn').onclick=sbConnect;
 $('sbSyncBtn').onclick=sbSync;
 if($('sbStatus'))$('sbStatus').textContent=sbReady()?'已設定（按連線/同步）':'未連線';
+
+// 進階雲端（Firebase / Google Drive）收合
+$('advCloudToggle').onclick=()=>{const a=$('advCloud');const c=a.classList.toggle('collapsed');const lb=$('advCloudToggle').querySelector('.sec-label');if(lb)lb.textContent=(c?'▸':'▾')+' 進階雲端（Firebase / Google Drive）';};
 
 // Firebase 雲端共享圖庫
 fbLoadCfg();
