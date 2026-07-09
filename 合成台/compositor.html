@@ -1072,7 +1072,7 @@ async function sbUploadAll(){
   if(!sbReady()){sbStat('請先填 URL/anon 並連線');return;}
   const pending=assets.filter(a=>!a.sbKey);
   if(!pending.length){sbStat('沒有需要上傳的圖（都已在雲端）');return;}
-  let done=0,ok=0;sbStat('上傳 0/'+pending.length+'…');
+  let done=0,ok=0,firstErr='';sbStat('上傳 0/'+pending.length+'…');
   for(const a of pending){
     try{
       const blob=await idbGet(ST_BLOBS,'img:'+a.id);
@@ -1081,12 +1081,12 @@ async function sbUploadAll(){
         const ext=((blob.type.split('/')[1]||'png').replace('jpeg','jpg'));
         const key=Date.now()+'_'+Math.random().toString(36).slice(2,6)+'_'+safe+'.'+ext;
         const r=await fetch(sbCfg.url+'/storage/v1/object/'+encodeURIComponent(sbCfg.bucket)+'/'+encodeURIComponent(key),{method:'POST',headers:{apikey:sbCfg.anon,Authorization:'Bearer '+sbCfg.anon,'Content-Type':blob.type||'image/png','x-upsert':'true'},body:blob});
-        if(r.ok){a.sbKey=key;ok++;}else{const t=await r.text().catch(()=>'');console.warn('sb uploadAll',r.status,t);}
+        if(r.ok){a.sbKey=key;ok++;}else{const t=await r.text().catch(()=>'');if(!firstErr)firstErr=r.status+' '+(t||'').slice(0,160);console.warn('sb uploadAll',r.status,t);}
       }
-    }catch(e){console.warn(e);}
+    }catch(e){if(!firstErr)firstErr='例外 '+(e.message||e);console.warn(e);}
     done++;sbStat('上傳 '+done+'/'+pending.length+'…');
   }
-  save();sbStat('上傳完成：成功 '+ok+'/'+pending.length+(ok<pending.length?'（有失敗→多半是 bucket 名稱或寫入政策 403）':''));
+  save();sbStat(ok===pending.length?('上傳完成：成功 '+ok+'/'+pending.length):('上傳失敗 '+ok+'/'+pending.length+' ✗ '+firstErr));
 }
 async function sbUpload(o,file){
   if(!sbReady())return;
