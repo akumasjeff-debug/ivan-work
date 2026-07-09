@@ -276,9 +276,20 @@
       </div>
 
       <div>
-        <div class="zone-head"><p class="sec-label">☁ 雲端共享圖庫 · Firebase</p></div>
+        <div class="zone-head"><p class="sec-label">☁ 雲端共享圖庫 · Supabase（免費/免綁卡）</p></div>
         <div class="cloud-box">
-          <textarea id="fbConfig" class="cloud-in" rows="4" placeholder="貼上 Firebase 主控台的 firebaseConfig 整段（{ apiKey:…, storageBucket:… }）"></textarea>
+          <input id="sbUrl" class="cloud-in" placeholder="Project URL（https://xxxx.supabase.co）">
+          <input id="sbAnon" class="cloud-in" placeholder="anon public key（很長的一串）">
+          <input id="sbBucket" class="cloud-in" placeholder="bucket 名稱（預設 library）" value="library">
+          <div class="row-2btn"><button class="btn sm" id="sbConnectBtn" style="flex:1;">連線 Supabase</button><button class="btn sm" id="sbSyncBtn" style="flex:1;">🔄 同步雲端</button></div>
+          <div class="status" id="sbStatus" style="font-size:11px;">未連線</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="zone-head"><p class="sec-label">（選用）Firebase</p></div>
+        <div class="cloud-box">
+          <textarea id="fbConfig" class="cloud-in" rows="3" placeholder="貼上 Firebase 主控台的 firebaseConfig 整段（需綁卡才可用 Storage）"></textarea>
           <div class="row-2btn"><button class="btn sm" id="fbConnectBtn" style="flex:1;">連線 Firebase</button><button class="btn sm" id="fbSyncBtn" style="flex:1;">🔄 同步雲端</button></div>
           <div class="status" id="fbStatus" style="font-size:11px;">未連線</div>
         </div>
@@ -555,7 +566,7 @@ function save(){
     localStorage.setItem(META_KEY,JSON.stringify({
       version:6,canvasW,canvasH,sizePresets,folders,templates,
       fonts:fonts.map(f=>({id:f.id,name:f.name,family:f.family})),
-      assets:assets.map(a=>({id:a.id,name:a.name,folderId:a.folderId||'_root',hasCut:!!a.cutSrc,driveId:a.driveId||null,fileKey:a.fileKey||null,fbKey:a.fbKey||null})),
+      assets:assets.map(a=>({id:a.id,name:a.name,folderId:a.folderId||'_root',hasCut:!!a.cutSrc,driveId:a.driveId||null,fileKey:a.fileKey||null,fbKey:a.fbKey||null,sbKey:a.sbKey||null})),
       placements:placements.map(p=>({...p})),
       frameAsset:frameAsset?{id:frameAsset.id,name:frameAsset.name,hasCut:!!frameAsset.cutSrc}:null,
       texts:Object.fromEntries(Object.entries(texts).map(([k,v])=>[k,{...v,_canvas:undefined}]))
@@ -589,7 +600,7 @@ async function load(){
   const tick=()=>{if(--pending<=0){renderAll();rebuildAllTexts();}};
   if(pending===0){renderAll();rebuildAllTexts();return;}
   for(const a of metaAssets){
-    const o={id:a.id,name:a.name,folderId:a.folderId||'_root',src:null,cutSrc:null,cutDone:!!a.hasCut,_img:null,_cutImg:null,driveId:a.driveId||null,fileKey:a.fileKey||null,fbKey:a.fbKey||null};
+    const o={id:a.id,name:a.name,folderId:a.folderId||'_root',src:null,cutSrc:null,cutDone:!!a.hasCut,_img:null,_cutImg:null,driveId:a.driveId||null,fileKey:a.fileKey||null,fbKey:a.fbKey||null,sbKey:a.sbKey||null};
     assets.push(o);
     o.src=await getBlobURL('img:'+a.id);
     if(a.hasCut)o.cutSrc=await getBlobURL('cut:'+a.id);
@@ -642,8 +653,9 @@ function addFiles(files,folderId='_root'){
       const done=()=>{assets.push(o);renderDb();save();};
       const img=new Image();img.onload=()=>{o._img=img;done();};img.onerror=done;img.src=o.src;
       saveToFolder(name,f).then(fk=>{if(fk){o.fileKey=fk;save();}}); // 寫進共享資料夾（別人 🔄 同步就看得到）
-      fbUpload(o,f);   // 若已連線 Firebase，新圖上傳雲端共享
-      gdUpload(o,f);   // 若另有連結 Google Drive(OAuth) 也一併上傳
+      sbUpload(o,f);   // Supabase 雲端共享（主要）
+      fbUpload(o,f);   // Firebase（若有連線）
+      gdUpload(o,f);   // Google Drive OAuth（若有連結）
     }).catch(e=>{console.error('上傳失敗',name,e);setStatus(`「${name}」儲存失敗`,'warn');});
   });
 }
@@ -1048,6 +1060,60 @@ async function fbUpload(o,file){
     await uploadBytes(ref(fbStorage,key),file,{contentType:file.type||'image/png'});
     o.fbKey=key;save();fbStat('已上傳雲端：'+key.split('/').pop());
   }catch(e){console.warn('fb upload failed',e);}
+}
+
+/* ---------- Supabase 雲端共享圖庫（免費、免綁卡、同事免登入） ----------
+   貼上 Project URL + anon key（+ bucket 名）→ 連線 → 從 bucket 載入/上傳/🔄同步。
+   需求：bucket 設為 Public，並允許 anon 讀寫（見設定說明）。純 REST，不需 SDK。 */
+const SB_KEY='compositor.supabase.v1';
+let sbCfg={url:'',anon:'',bucket:'library'};
+function sbLoadCfg(){try{const d=JSON.parse(localStorage.getItem(SB_KEY)||'null');if(d)sbCfg={url:d.url||'',anon:d.anon||'',bucket:d.bucket||'library'};}catch(e){}}
+function sbSaveCfg(){try{localStorage.setItem(SB_KEY,JSON.stringify(sbCfg));}catch(e){}}
+function sbStat(t){const el=$('sbStatus');if(el)el.textContent=t;}
+function sbReady(){return sbCfg.url&&sbCfg.anon;}
+function sbConnect(){
+  sbCfg.url=($('sbUrl').value||'').trim().replace(/\/+$/,'');
+  sbCfg.anon=($('sbAnon').value||'').trim();
+  sbCfg.bucket=(($('sbBucket').value||'library').trim())||'library';
+  sbSaveCfg();
+  if(!sbReady()){sbStat('請填 Project URL 與 anon key');return;}
+  const b=$('sbConnectBtn');if(b)b.textContent='重新連線';
+  sbStat('連線並同步中…');sbSync();
+}
+async function sbSync(){
+  if(!sbReady()){sbStat('請先填 Project URL 與 anon key 並按連線');return;}
+  sbStat('從雲端載入中…');
+  try{
+    const r=await fetch(sbCfg.url+'/storage/v1/object/list/'+encodeURIComponent(sbCfg.bucket),{method:'POST',headers:{apikey:sbCfg.anon,Authorization:'Bearer '+sbCfg.anon,'Content-Type':'application/json'},body:JSON.stringify({prefix:'',limit:1000,offset:0,sortBy:{column:'name',order:'asc'}})});
+    if(!r.ok)throw new Error('清單 '+r.status+'（檢查 URL/金鑰/bucket 名稱與讀取政策）');
+    const list=await r.json();
+    const files=(Array.isArray(list)?list:[]).filter(x=>x&&x.name&&x.name!=='.emptyFolderPlaceholder'&&x.id!==null);
+    const have=new Set(assets.map(a=>a.sbKey).filter(Boolean));
+    let added=0;
+    for(const f of files){
+      const key=f.name;
+      if(have.has(key))continue;
+      const dl=await fetch(sbCfg.url+'/storage/v1/object/public/'+encodeURIComponent(sbCfg.bucket)+'/'+encodeURIComponent(key),{headers:{apikey:sbCfg.anon}});
+      if(!dl.ok)continue;const blob=await dl.blob();
+      const id=uid();await putBlob('img:'+id,blob);
+      const nm=key.replace(/^\d+_/,'').replace(/\.[^.]+$/,'');
+      const o={id,name:nm||autoName(),folderId:'_root',src:await getBlobURL('img:'+id),cutSrc:null,cutDone:false,_img:null,_cutImg:null,sbKey:key};
+      await new Promise(res2=>{const im=new Image();im.onload=()=>{o._img=im;res2();};im.onerror=res2;im.src=o.src;});
+      assets.push(o);added++;
+    }
+    renderDb();save();sbStat('同步完成：新增 '+added+'，雲端共 '+files.length+' 張');setStatus('雲端同步完成（新增 '+added+'）','ok');
+  }catch(e){console.error(e);sbStat('同步失敗：'+(e.message||e));}
+}
+async function sbUpload(o,file){
+  if(!sbReady())return;
+  try{
+    const safe=(o.name||'img').replace(/[\\/:*?"<>|\s]/g,'_');
+    const ext=((file.type.split('/')[1]||'png').replace('jpeg','jpg'));
+    const key=Date.now()+'_'+safe+'.'+ext;
+    const r=await fetch(sbCfg.url+'/storage/v1/object/'+encodeURIComponent(sbCfg.bucket)+'/'+encodeURIComponent(key),{method:'POST',headers:{apikey:sbCfg.anon,Authorization:'Bearer '+sbCfg.anon,'Content-Type':file.type||'image/png','x-upsert':'true'},body:file});
+    if(r.ok){o.sbKey=key;save();sbStat('已上傳雲端：'+key);}
+    else{const t=await r.text().catch(()=>'');console.warn('sb upload',r.status,t);sbStat('上傳失敗 '+r.status+'（檢查 bucket 名稱與寫入政策）');}
+  }catch(e){console.warn(e);}
 }
 
 /* ---------- AI cutout (CDN model) ---------- */
@@ -1565,6 +1631,13 @@ loadExportPrefs();
 
 // 吸管/本機去背 強度滑桿
 $('eyedropTol').oninput=e=>{eyedropTol=+e.target.value;$('tolVal').textContent=e.target.value;};
+
+// Supabase 雲端共享圖庫（主要）
+sbLoadCfg();
+$('sbUrl').value=sbCfg.url;$('sbAnon').value=sbCfg.anon;$('sbBucket').value=sbCfg.bucket||'library';
+$('sbConnectBtn').onclick=sbConnect;
+$('sbSyncBtn').onclick=sbSync;
+if($('sbStatus'))$('sbStatus').textContent=sbReady()?'已設定（按連線/同步）':'未連線';
 
 // Firebase 雲端共享圖庫
 fbLoadCfg();
