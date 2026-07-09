@@ -413,7 +413,6 @@
     <div class="scroll">
       <div>
         <div class="zone-head"><p class="sec-label"><span class="num">01</span> · 圖片資料庫</p></div>
-        <div class="backup-bar" id="backupBar"><span class="dot"></span><span class="txt" id="backupTxt">未綁定共享資料夾</span><button class="btn tiny" id="pickFolderBtn">選擇資料夾</button><button class="btn tiny" id="syncFolderBtn" title="讀取共享資料夾，載入別人新增的圖">🔄</button><button class="btn tiny" id="unbindFolderBtn" title="解除綁定本機共享資料夾（用 Supabase 就不需要它）">✕</button></div>
         <div class="upload-zone" id="dropZone" style="margin-bottom:10px;">點此或拖入上傳 · <span>自動命名、記住、備份</span></div>
         <input type="file" id="fileInput" accept="image/*" multiple hidden>
         <div class="add-folder-row"><input id="newFolderName" placeholder="新資料夾名稱…"><button class="btn sm" id="addFolderBtn">＋ 資料夾</button></div>
@@ -519,49 +518,7 @@ function dataURLtoBlob(dataUrl){return fetch(dataUrl).then(r=>r.blob());}
 
 async function requestPersistence(){try{if(navigator.storage&&navigator.storage.persist){const already=await navigator.storage.persisted();if(!already)await navigator.storage.persist();}}catch(e){}}
 
-/* ---------- dir handle (folder backup) ---------- */
-async function pickFolder(){if(!window.showDirectoryPicker){setStatus('此瀏覽器不支援資料夾功能（需桌機 Chrome/Edge）','warn');return;}try{dirHandle=await window.showDirectoryPicker({mode:'readwrite'});await idbPut(ST_HANDLES,'dir',dirHandle);renderBackup();setStatus('已綁定共享資料夾，載入中…','ok');syncFolder();}catch(e){}}
-async function restoreFolder(){try{const h=await idbGet(ST_HANDLES,'dir');if(!h)return;const perm=await h.queryPermission({mode:'readwrite'});dirHandle=h;renderBackup(perm==='granted');}catch(e){}}
-async function ensurePerm(){if(!dirHandle)return false;let p=await dirHandle.queryPermission({mode:'readwrite'});if(p==='granted')return true;p=await dirHandle.requestPermission({mode:'readwrite'});return p==='granted';}
-async function backupBlob(name,blob){if(!dirHandle)return;if(!await ensurePerm())return;try{const ext=(blob.type.split('/')[1]||'png').replace('jpeg','jpg');const safe=name.replace(/[\\/:*?"<>|]/g,'_');const fh=await dirHandle.getFileHandle(`${safe}_${Date.now()}.${ext}`,{create:true});const w=await fh.createWritable();await w.write(blob);await w.close();}catch(e){console.warn('backup failed',e);}}
-
-/* ---------- 共享圖庫資料夾（配合 Google Drive/OneDrive 桌面同步同一夾） ---------- */
-async function folderHas(name){try{await dirHandle.getFileHandle(name,{create:false});return true;}catch(e){return false;}}
-async function saveToFolder(baseName,blob){          // 把新圖寫進共享夾，回傳實際檔名（當作 fileKey 供去重）
-  if(!dirHandle)return null;
-  if(!await ensurePerm())return null;
-  try{
-    const ext=(blob.type.split('/')[1]||'png').replace('jpeg','jpg');
-    const safe=(baseName||'img').replace(/[\\/:*?"<>|]/g,'_');
-    let fname=`${safe}.${ext}`,n=1;
-    while(await folderHas(fname)){fname=`${safe}_${n}.${ext}`;n++;}
-    const fh=await dirHandle.getFileHandle(fname,{create:true});
-    const w=await fh.createWritable();await w.write(blob);await w.close();
-    return fname;
-  }catch(e){console.warn('write folder failed',e);return null;}
-}
-async function syncFolder(){                          // 讀取共享夾，載入尚未匯入的圖（依檔名去重）
-  if(!dirHandle){setStatus('請先按「選擇資料夾」綁定共享夾','warn');return;}
-  if(!await ensurePerm()){setStatus('資料夾權限未授予','warn');return;}
-  setStatus('讀取共享資料夾…','warn');
-  try{
-    const have=new Set(assets.map(a=>a.fileKey).filter(Boolean));
-    let added=0,total=0;
-    for await (const entry of dirHandle.values()){
-      if(entry.kind!=='file'||!/\.(png|jpe?g|webp|gif|bmp)$/i.test(entry.name))continue;
-      total++;
-      if(have.has(entry.name))continue;
-      const file=await entry.getFile();
-      const id=uid();await putBlob('img:'+id,file);
-      const o={id,name:entry.name.replace(/\.[^.]+$/,''),folderId:'_root',src:await getBlobURL('img:'+id),cutSrc:null,cutDone:false,_img:null,_cutImg:null,fileKey:entry.name};
-      await new Promise(res=>{const im=new Image();im.onload=()=>{o._img=im;res();};im.onerror=res;im.src=o.src;});
-      assets.push(o);added++;
-    }
-    renderDb();save();renderBackup();setStatus(`共享資料夾同步：新增 ${added}（夾內共 ${total} 張）`,'ok');
-  }catch(e){console.error(e);setStatus('同步失敗：'+(e.message||e),'warn');}
-}
-function renderBackup(granted=true){const bar=$('backupBar');const ub=$('unbindFolderBtn');if(dirHandle){bar.classList.add('on');$('backupTxt').textContent=(granted?'共享中 · ':'需重新授權 · ')+(dirHandle.name||'資料夾');$('pickFolderBtn').textContent='更換';if(ub)ub.style.display='';}else{bar.classList.remove('on');$('backupTxt').textContent='未綁定共享資料夾';$('pickFolderBtn').textContent='選擇資料夾';if(ub)ub.style.display='none';}}
-async function unbindFolder(){dirHandle=null;try{await idbDel(ST_HANDLES,'dir');}catch(e){}renderBackup();setStatus('已解除本機共享資料夾（改用 Supabase）','ok');}
+/* 本機共享資料夾（File System Access）功能已移除，改用 Supabase 雲端共享 */
 
 /* ---------- persistence: metadata only in localStorage, binaries in IndexedDB ----------
    Blob keys:  img:<assetId>      original image
@@ -660,7 +617,6 @@ function addFiles(files,folderId='_root'){
       o.src=await getBlobURL('img:'+id);
       const done=()=>{assets.push(o);renderDb();save();};
       const img=new Image();img.onload=()=>{o._img=img;done();};img.onerror=done;img.src=o.src;
-      saveToFolder(name,f).then(fk=>{if(fk){o.fileKey=fk;save();}}); // 寫進共享資料夾（別人 🔄 同步就看得到）
       sbUpload(o,f);   // Supabase 雲端共享（主要）
       fbUpload(o,f);   // Firebase（若有連線）
       gdUpload(o,f);   // Google Drive OAuth（若有連結）
@@ -1279,7 +1235,7 @@ function renderFrame(){
   frameArea.appendChild(box);
 }
 function addFramePlacement(){if(!frameAsset||!frameAsset._img)return;if(framePlacement())return;pushHistory();const z=placements.length?Math.max(...placements.map(p=>p.z))+1:1;const fp=normPlacement({pid:uid(),assetId:frameAsset.id,kind:'frame',x:0,y:0,w:canvasW,h:canvasH,z,useCut:!!frameAsset.cutSrc});placements.push(fp);selectOne(fp.pid);renderAll();save();}
-frameInput.onchange=e=>{const f=e.target.files[0];if(!f||!f.type.startsWith('image/'))return;const id='frame_'+uid();putBlob('img:'+id,f).then(async()=>{const src=await getBlobURL('img:'+id);const img=new Image();img.onload=()=>{placements=placements.filter(p=>p.kind!=='frame');frameAsset={id,name:'框架',src,cutSrc:null,cutDone:false,_img:img,_cutImg:null};backupBlob('框架',f);renderFrame();renderAll();save();};img.src=src;});frameInput.value='';};
+frameInput.onchange=e=>{const f=e.target.files[0];if(!f||!f.type.startsWith('image/'))return;const id='frame_'+uid();putBlob('img:'+id,f).then(async()=>{const src=await getBlobURL('img:'+id);const img=new Image();img.onload=()=>{placements=placements.filter(p=>p.kind!=='frame');frameAsset={id,name:'框架',src,cutSrc:null,cutDone:false,_img:img,_cutImg:null};renderFrame();renderAll();save();};img.src=src;});frameInput.value='';};
 
 /* ---------- FONTS ---------- */
 function addFontFiles(files){
@@ -1634,9 +1590,6 @@ $('newFolderName').onkeydown=e=>{if(e.key==='Enter'){addFolder(e.target.value.tr
 $('addTextBtn').onclick=addTextLayer;
 $('saveTplBtn').onclick=saveTemplate;
 $('saveSizeBtn').onclick=saveSizePreset;
-$('pickFolderBtn').onclick=pickFolder;
-$('syncFolderBtn').onclick=syncFolder;
-$('unbindFolderBtn').onclick=unbindFolder;
 $('cw').onchange=()=>changeSize(+$('cw').value,canvasH);
 $('ch').onchange=()=>changeSize(canvasW,+$('ch').value);
 qSlider.oninput=()=>qVal.textContent=qSlider.value;
@@ -1705,7 +1658,6 @@ document.querySelectorAll('.resizer').forEach(rz=>{
 });
 loadColWidths();
 
-restoreFolder();
 load();
 </script>
 </body>
