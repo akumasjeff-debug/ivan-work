@@ -229,7 +229,8 @@
   .tools-row{display:flex;gap:8px;flex-wrap:wrap;}
   .tools-row .btn{flex:1;min-width:110px;}
   .cloud-box{display:flex;flex-direction:column;gap:7px;}
-  .cloud-in{background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--ink);font:inherit;font-size:12px;padding:7px 9px;width:100%;}
+  .cloud-in{background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--ink);font:inherit;font-size:12px;padding:7px 9px;width:100%;box-sizing:border-box;}
+  textarea.cloud-in{resize:vertical;font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.4;}
   .cloud-in:focus{outline:1px solid var(--accent2);}
 
   /* --- 3-column layout: left = 01/02, center = canvas + export, right = 03/05/04 --- */
@@ -275,7 +276,16 @@
       </div>
 
       <div>
-        <div class="zone-head"><p class="sec-label">雲端共享圖庫 · Google Drive</p></div>
+        <div class="zone-head"><p class="sec-label">☁ 雲端共享圖庫 · Firebase</p></div>
+        <div class="cloud-box">
+          <textarea id="fbConfig" class="cloud-in" rows="4" placeholder="貼上 Firebase 主控台的 firebaseConfig 整段（{ apiKey:…, storageBucket:… }）"></textarea>
+          <div class="row-2btn"><button class="btn sm" id="fbConnectBtn" style="flex:1;">連線 Firebase</button><button class="btn sm" id="fbSyncBtn" style="flex:1;">🔄 同步雲端</button></div>
+          <div class="status" id="fbStatus" style="font-size:11px;">未連線</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="zone-head"><p class="sec-label">（進階/選用）Google Drive OAuth</p></div>
         <div class="cloud-box">
           <input id="gdClient" class="cloud-in" placeholder="OAuth Client ID（…apps.googleusercontent.com）">
           <input id="gdFolder" class="cloud-in" placeholder="共享資料夾 ID（Drive 網址 /folders/ 後那串）">
@@ -545,7 +555,7 @@ function save(){
     localStorage.setItem(META_KEY,JSON.stringify({
       version:6,canvasW,canvasH,sizePresets,folders,templates,
       fonts:fonts.map(f=>({id:f.id,name:f.name,family:f.family})),
-      assets:assets.map(a=>({id:a.id,name:a.name,folderId:a.folderId||'_root',hasCut:!!a.cutSrc,driveId:a.driveId||null,fileKey:a.fileKey||null})),
+      assets:assets.map(a=>({id:a.id,name:a.name,folderId:a.folderId||'_root',hasCut:!!a.cutSrc,driveId:a.driveId||null,fileKey:a.fileKey||null,fbKey:a.fbKey||null})),
       placements:placements.map(p=>({...p})),
       frameAsset:frameAsset?{id:frameAsset.id,name:frameAsset.name,hasCut:!!frameAsset.cutSrc}:null,
       texts:Object.fromEntries(Object.entries(texts).map(([k,v])=>[k,{...v,_canvas:undefined}]))
@@ -579,7 +589,7 @@ async function load(){
   const tick=()=>{if(--pending<=0){renderAll();rebuildAllTexts();}};
   if(pending===0){renderAll();rebuildAllTexts();return;}
   for(const a of metaAssets){
-    const o={id:a.id,name:a.name,folderId:a.folderId||'_root',src:null,cutSrc:null,cutDone:!!a.hasCut,_img:null,_cutImg:null,driveId:a.driveId||null,fileKey:a.fileKey||null};
+    const o={id:a.id,name:a.name,folderId:a.folderId||'_root',src:null,cutSrc:null,cutDone:!!a.hasCut,_img:null,_cutImg:null,driveId:a.driveId||null,fileKey:a.fileKey||null,fbKey:a.fbKey||null};
     assets.push(o);
     o.src=await getBlobURL('img:'+a.id);
     if(a.hasCut)o.cutSrc=await getBlobURL('cut:'+a.id);
@@ -632,6 +642,7 @@ function addFiles(files,folderId='_root'){
       const done=()=>{assets.push(o);renderDb();save();};
       const img=new Image();img.onload=()=>{o._img=img;done();};img.onerror=done;img.src=o.src;
       saveToFolder(name,f).then(fk=>{if(fk){o.fileKey=fk;save();}}); // 寫進共享資料夾（別人 🔄 同步就看得到）
+      fbUpload(o,f);   // 若已連線 Firebase，新圖上傳雲端共享
       gdUpload(o,f);   // 若另有連結 Google Drive(OAuth) 也一併上傳
     }).catch(e=>{console.error('上傳失敗',name,e);setStatus(`「${name}」儲存失敗`,'warn');});
   });
@@ -979,6 +990,64 @@ async function gdUpload(o,file){
     const r=await gdFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true',{method:'POST',body:form});
     if(r.ok){const d=await r.json();o.driveId=d.id;save();gdStat('已上傳到雲端：'+meta.name);}
   }catch(e){console.warn('drive upload failed',e);}
+}
+
+/* ---------- Firebase 雲端共享圖庫（用個人 Google 帳號建，免 IT、同事免登入） ----------
+   貼上 Firebase 專案的 firebaseConfig → 連線 → 從雲端 library/ 載入、上傳、🔄同步。
+   Storage 規則需允許 library/ 讀寫（見設定說明）。SDK 由 gstatic 動態載入，不影響離線核心。 */
+const FB_KEY='compositor.firebase.v1';
+let fbCfgText='',fbApp=null,fbStorage=null,fbMods=null,_fbPromise=null;
+function fbLoadCfg(){try{fbCfgText=localStorage.getItem(FB_KEY)||'';}catch(e){}}
+function fbSaveCfg(){try{localStorage.setItem(FB_KEY,fbCfgText);}catch(e){}}
+function fbStat(t){const el=$('fbStatus');if(el)el.textContent=t;}
+function fbParseConfig(text){try{const m=(text||'').match(/\{[\s\S]*\}/);if(!m)return null;return new Function('return ('+m[0]+')')();}catch(e){return null;}}
+function loadFirebase(){if(_fbPromise)return _fbPromise;_fbPromise=(async()=>{const app=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');const st=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js');return{app,st};})().catch(e=>{_fbPromise=null;throw e;});return _fbPromise;}
+async function fbInit(){
+  if(fbStorage)return fbStorage;
+  const cfg=fbParseConfig(fbCfgText);
+  if(!cfg||!cfg.storageBucket){fbStat('設定不完整（缺 storageBucket）；請貼整段 firebaseConfig');return null;}
+  const {app,st}=await loadFirebase();
+  try{fbApp=app.initializeApp(cfg);}catch(e){try{fbApp=app.getApp();}catch(e2){throw e;}}
+  fbStorage=st.getStorage(fbApp);fbMods=st;return fbStorage;
+}
+async function fbConnect(){
+  fbSaveCfg();fbStat('連線中…');
+  try{await fbInit();if(!fbStorage)return;fbStat('已連線，開始同步…');const b=$('fbConnectBtn');if(b)b.textContent='重新連線';fbSync();}
+  catch(e){console.error(e);fbStat('連線失敗：'+(e.message||e)+'（可能被防火牆擋，或設定/規則有誤）');}
+}
+async function fbSync(){
+  try{ if(!fbStorage){await fbInit();} }catch(e){fbStat('尚未連線');return;}
+  if(!fbStorage){fbStat('請先按「連線 Firebase」');return;}
+  fbStat('從雲端載入中…');
+  try{
+    const {ref,listAll,getDownloadURL}=fbMods;
+    const res=await listAll(ref(fbStorage,'library'));
+    const have=new Set(assets.map(a=>a.fbKey).filter(Boolean));
+    let added=0;
+    for(const item of res.items){
+      const key=item.fullPath;
+      if(have.has(key))continue;
+      const url=await getDownloadURL(item);
+      const r=await fetch(url);if(!r.ok)continue;const blob=await r.blob();
+      const id=uid();await putBlob('img:'+id,blob);
+      const nm=(item.name||'').replace(/^\d+_/,'').replace(/\.[^.]+$/,'');
+      const o={id,name:nm||autoName(),folderId:'_root',src:await getBlobURL('img:'+id),cutSrc:null,cutDone:false,_img:null,_cutImg:null,fbKey:key};
+      await new Promise(res2=>{const im=new Image();im.onload=()=>{o._img=im;res2();};im.onerror=res2;im.src=o.src;});
+      assets.push(o);added++;
+    }
+    renderDb();save();fbStat('同步完成：新增 '+added+'，雲端共 '+res.items.length+' 張');setStatus('雲端同步完成（新增 '+added+'）','ok');
+  }catch(e){console.error(e);fbStat('同步失敗：'+(e.message||e));}
+}
+async function fbUpload(o,file){
+  if(!fbStorage)return;
+  try{
+    const {ref,uploadBytes}=fbMods;
+    const safe=(o.name||'img').replace(/[\\/:*?"<>|]/g,'_');
+    const ext=((file.type.split('/')[1]||'png').replace('jpeg','jpg'));
+    const key='library/'+Date.now()+'_'+safe+'.'+ext;
+    await uploadBytes(ref(fbStorage,key),file,{contentType:file.type||'image/png'});
+    o.fbKey=key;save();fbStat('已上傳雲端：'+key.split('/').pop());
+  }catch(e){console.warn('fb upload failed',e);}
 }
 
 /* ---------- AI cutout (CDN model) ---------- */
@@ -1496,6 +1565,13 @@ loadExportPrefs();
 
 // 吸管/本機去背 強度滑桿
 $('eyedropTol').oninput=e=>{eyedropTol=+e.target.value;$('tolVal').textContent=e.target.value;};
+
+// Firebase 雲端共享圖庫
+fbLoadCfg();
+$('fbConfig').value=fbCfgText;
+$('fbConfig').onchange=e=>{fbCfgText=e.target.value;fbSaveCfg();};
+$('fbConnectBtn').onclick=fbConnect;
+$('fbSyncBtn').onclick=fbSync;
 
 // Google Drive 雲端共享圖庫
 gdLoadCfg();
