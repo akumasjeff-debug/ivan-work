@@ -24,6 +24,7 @@
 | `pokemon-funsite/` | Pokemon 寶可夢旗艦館 | PChome 旗艦館頁面（index.html + img/css/js）。**獨立 git repo**（github.com/akumasjeff-debug/pokemon-funsite），已在本 repo `.gitignore` 排除。改完要打包 zip 放下載區給操作者上傳 PChome | `pokemon-funsite/index.html` | 無（靜態頁） |
 | `couple-court/` | Ai公道伯（名稱暫定案） | 手機 App（iOS+Android）：情侶雙人綁定的關係經營工具＋AI 吵架判決。**構想討論階段**，尚無程式碼。暫定 React Native + Expo + Firebase。**獨立 git repo**（github.com/akumasjeff-debug/couple-court），已在本 repo `.gitignore` 排除 | `couple-court/OVERVIEW.md` | 無（尚未建骨架） |
 | `pchome-listing/` | 賣場資訊文案 | PChome 24h 商品上架素材（文案 HTML／主圖／GIF／欄位文字），一商品一子資料夾（NS2 主機、PS5×3、NS 節奏天國）。遊戲商品固定流程見該 repo 的 `遊戲商品SOP.md`。**獨立 git repo**（github.com/akumasjeff-debug/pchome-listing，Private），已在本 repo `.gitignore` 排除 | `pchome-listing/OVERVIEW.md` | 無（`detail-預覽.html` 瀏覽器直接開） |
+| `內部比價程式/` | 內部比價程式 | PChome 24h 比價 CLI：區域→賣場→商品（過濾無可賣量）→品名搜全站同商品比價，產出 xlsx/md/tsv 報表（放 `reports/`）。**僅存本機、不上傳 GitHub**（已在 `.gitignore` 排除）。API 端點與可賣量判讀見該夾 `HANDOVER.md` | `內部比價程式/比價.py` | `py 內部比價程式\比價.py`（CLI，無伺服器） |
 
 各專案的細節看該資料夾內的 `OVERVIEW.md` 與 `HANDOVER.md`。
 

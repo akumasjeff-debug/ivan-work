@@ -16,6 +16,9 @@ couple-court/
 賣場資訊文案/
 pchome-listing/
 
+# 內部比價程式：僅存本機，不上傳 GitHub
+內部比價程式/
+
 # 其他
 *.log
 Thumbs.db
