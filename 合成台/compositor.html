@@ -1077,7 +1077,7 @@ async function sbUploadAll(){
     try{
       const blob=await idbGet(ST_BLOBS,'img:'+a.id);
       if(blob){
-        const safe=(a.name||'img').replace(/[\\/:*?"<>|\s]/g,'_');
+        let safe=(a.name||'img').replace(/[^A-Za-z0-9._-]/g,'');if(!safe)safe='img'; // Supabase key 僅允許 ASCII，中文會 InvalidKey
         const ext=((blob.type.split('/')[1]||'png').replace('jpeg','jpg'));
         const key=Date.now()+'_'+Math.random().toString(36).slice(2,6)+'_'+safe+'.'+ext;
         const r=await fetch(sbCfg.url+'/storage/v1/object/'+encodeURIComponent(sbCfg.bucket)+'/'+encodeURIComponent(key),{method:'POST',headers:{apikey:sbCfg.anon,Authorization:'Bearer '+sbCfg.anon,'Content-Type':blob.type||'image/png','x-upsert':'true'},body:blob});
@@ -1091,7 +1091,7 @@ async function sbUploadAll(){
 async function sbUpload(o,file){
   if(!sbReady())return;
   try{
-    const safe=(o.name||'img').replace(/[\\/:*?"<>|\s]/g,'_');
+    let safe=(o.name||'img').replace(/[^A-Za-z0-9._-]/g,'');if(!safe)safe='img'; // Supabase key 僅允許 ASCII，中文會 InvalidKey
     const ext=((file.type.split('/')[1]||'png').replace('jpeg','jpg'));
     const key=Date.now()+'_'+safe+'.'+ext;
     const r=await fetch(sbCfg.url+'/storage/v1/object/'+encodeURIComponent(sbCfg.bucket)+'/'+encodeURIComponent(key),{method:'POST',headers:{apikey:sbCfg.anon,Authorization:'Bearer '+sbCfg.anon,'Content-Type':file.type||'image/png','x-upsert':'true'},body:file});
