@@ -213,6 +213,9 @@
   .align-bar .ab.fit{border-color:var(--accent);color:var(--accent);font-size:12px;}
   .align-bar .ab.fit:hover{background:var(--accent);color:#1a120a;}
   .align-bar .ab-label{font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;}
+  .align-bar .ab.on{border-color:var(--accent2);color:var(--accent2);}
+  .align-bar .ab:disabled{opacity:.45;cursor:default;}
+  .edit-bar{max-width:700px;}
   .align-bar .ab-sep{width:1px;height:16px;background:var(--line);}
   .align-bar .ab-chk{display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--ink);}
   .stage-shell.show-safe .safe-overlay{display:block;}
@@ -262,7 +265,7 @@
 <header>
   <h1>合成台</h1>
   <span class="tag" id="tagSize">1000 × 1000 · jpg / png</span>
-  <span class="tag" style="color:var(--accent2);border:1px solid var(--accent2);border-radius:5px;padding:1px 6px;">v3 · 裁切/去背優化</span>
+  <span class="tag" style="color:var(--accent2);border:1px solid var(--accent2);border-radius:5px;padding:1px 6px;">v4 · 編輯工具列</span>
 </header>
 
 <div class="wrap">
@@ -371,6 +374,23 @@
       <span class="ab-sep"></span>
       <label class="ab-chk"><input type="checkbox" id="safeGuide"> 安全框</label>
     </div>
+    <!-- 編輯工具列：單選一個圖片/框架圖層時出現（文字圖層有自己的編輯器） -->
+    <div class="align-bar edit-bar" id="editBar">
+      <span class="ab-label">編輯</span>
+      <button class="ab" id="ebCutAI" title="AI 去背（CDN 模型，需連網；以目前結果為來源可逐次堆疊）">✂AI 去背</button>
+      <button class="ab" id="ebCutLocal" title="本機去背：純色/單色背景（去背紙、白底商品圖），可堆疊">✂本機</button>
+      <button class="ab" id="ebEyedrop" title="吸管去背：點畫布上的背景色去除，可逐色堆疊（Esc 取消）">💧吸管</button>
+      <button class="ab" id="ebResetCut" title="還原成原圖：清除這張圖所有去背結果">↩原圖</button>
+      <span class="ab-sep"></span>
+      <button class="ab" id="ebCrop" title="裁切：半透明=會被切掉的部分；拖 8 個控點調整、拖圖身平移（Esc 結束）">▣裁切</button>
+      <button class="ab" id="ebUncrop" title="重設裁切：還原成整張圖（保持縮放比例）">▣↺重設</button>
+      <span class="ab-sep"></span>
+      <button class="ab" id="ebRotL" title="左轉15°">⟲</button>
+      <button class="ab" id="ebRotR" title="右轉15°">⟳</button>
+      <button class="ab" id="ebFlip" title="水平翻轉">⇋</button>
+      <span class="ab-sep"></span>
+      <button class="ab" id="ebReplace" title="置換內容：保留位置/大小，換成資料庫另一張圖">🔁置換</button>
+    </div>
     <div class="replace-banner" id="replaceBanner">🔁 置換模式：到左側資料庫點任一張圖，即可換掉此圖層內容（保留位置/大小）　<button class="btn sm" id="cancelReplace">取消</button></div>
     <div class="stage-meta">
       <span>輸出 <b id="outDim">1000×1000</b></span>
@@ -461,6 +481,7 @@ let editingTextPid=null;        // 目前展開「編輯文字」面板的 pid�
 let eyedropPid=null;            // 吸管去背模式：等待在畫布上點顏色的圖層 pid
 let eyedropTol=36;              // 吸管/本機去背 吸色強度（顏色容差，越小越嚴格）
 let cropPid=null;               // 裁切模式：拖把=切、拖圖身=平移露出範圍
+let _aiBusy=false;              // AI 去背進行中（避免重複觸發、供編輯工具列顯示狀態）
 let dirHandle=null;
 let undoStack=[], redoStack=[]; const HIST_MAX=60; let lastNudgeHist=0;
 let clipboard=[];               // copied placement specs
@@ -678,8 +699,25 @@ function renderStage(){
   stage.classList.toggle('replace-mode',inReplace);
   replaceBanner.classList.toggle('show',inReplace);
   updateAlignBar();
+  renderEditBar();
 }
 function updateAlignBar(){$('alignBar').classList.toggle('show',selPids.size>=1);}
+/* 編輯工具列（畫布下方）：單選一個圖片/框架圖層時出現，去背/裁切/旋轉/翻轉/置換都在這 */
+function curEditP(){const p=selPids.size===1?placement(selPid):null;return (p&&p.kind!=='text'&&!p.locked)?p:null;}
+function renderEditBar(){
+  const p=curEditP();
+  $('editBar').classList.toggle('show',!!p);
+  if(!p)return;
+  const a=asset(p.assetId);
+  const ai=$('ebCutAI');ai.disabled=_aiBusy;ai.textContent=_aiBusy?'✂ 處理中…':'✂AI 去背';
+  $('ebResetCut').style.display=(a&&a.cutDone)?'':'none';
+  $('ebCrop').classList.toggle('on',cropPid===p.pid);
+  const cropped=((p.cropX||0)>0.0001||(p.cropY||0)>0.0001||(p.cropW!=null&&p.cropW<0.9999)||(p.cropH!=null&&p.cropH<0.9999));
+  $('ebUncrop').style.display=cropped?'':'none';
+  $('ebEyedrop').classList.toggle('on',eyedropPid===p.pid);
+  $('ebFlip').classList.toggle('on',!!p.flipX);
+  $('ebReplace').style.display=p.kind==='image'?'':'none';
+}
 function layerName(p){if(p.kind==='text')return '文字「'+((texts[p.pid]?.content||'').slice(0,6))+'」';if(p.kind==='frame')return '框架';return asset(p.assetId)?.name||'';}
 function liveUpdateSlot(p){
   const c=[...stage.querySelectorAll('.slot')].find(x=>x.__pid===p.pid);if(!c)return;
@@ -793,7 +831,7 @@ function buildAssetRow(a){
   if(editing){const inp=row.querySelector('.db-name-edit');inp.onclick=e=>e.stopPropagation();setTimeout(()=>{inp.focus();inp.select();},0);const commit=()=>{a.name=inp.value.trim()||a.name;editingAssetId=null;renderDb();renderLayers();save();};inp.onkeydown=e=>{if(e.key==='Enter')commit();if(e.key==='Escape'){editingAssetId=null;renderDb();}};inp.onblur=commit;}
   else{row.querySelector('.db-name').onclick=e=>{e.stopPropagation();if(replaceTargetPid!=null){doReplace(a.id);return;}previewAssetId=previewAssetId===a.id?null:a.id;renderDb();};}
   row.querySelector('.edit').onclick=e=>{e.stopPropagation();editingAssetId=a.id;renderDb();};
-  row.querySelector('.del').onclick=e=>{e.stopPropagation();delBlob('img:'+a.id);delBlob('cut:'+a.id);assets=assets.filter(x=>x.id!==a.id);placements=placements.filter(p=>p.assetId!==a.id);if(previewAssetId===a.id)previewAssetId=null;renderAll();save();};
+  row.querySelector('.del').onclick=e=>{e.stopPropagation();if(!confirm(`刪除「${a.name}」？\n原圖與去背結果會一併刪除，無法復原${isPlaced(a.id)?'（畫布上的圖層也會移除）':''}。`))return;delBlob('img:'+a.id);delBlob('cut:'+a.id);assets=assets.filter(x=>x.id!==a.id);placements=placements.filter(p=>p.assetId!==a.id);if(previewAssetId===a.id)previewAssetId=null;renderAll();save();};
   row.addEventListener('dragstart',e=>{row.classList.add('dragging');e.dataTransfer.setData('x-asset',a.id);e.dataTransfer.effectAllowed='move';});
   row.addEventListener('dragend',()=>row.classList.remove('dragging'));
   const frag=document.createDocumentFragment();frag.appendChild(row);
@@ -823,29 +861,22 @@ function renderLayers(){
   ordered.forEach(p=>{
     const isFrame=p.kind==='frame',isText=p.kind==='text';
     const row=document.createElement('div');row.className='lrow'+(isFrame?' frame':'')+(isText?' text':'')+(selPids.has(p.pid)?' sel':'');row.draggable=true;row.dataset.pid=p.pid;
-    let thumbStyle='',nameTxt='',badge='',cutBtn='';
+    let thumbStyle='',nameTxt='',badge='';
     if(isText){const t=texts[p.pid];nameTxt=esc((t?.content||'文字').slice(0,12));badge='<span class="badge t">文字</span>';if(t&&t._canvas)thumbStyle=`background-image:url('${t._canvas.toDataURL()}')`;}
-    else{const a=asset(p.assetId);if(!a)return;const thumb=(p.useCut&&a.cutSrc)?a.cutSrc:a.src;thumbStyle=`background-image:url('${thumb}')`;nameTxt=esc(a.name);if(isFrame)badge='<span class="badge f">框架</span>';cutBtn=`<button class="icon cut ${a.cutDone?'on':''}" title="AI 去背（可逐次堆疊；以目前結果為來源；需連網）">✂AI</button><button class="icon lcut" title="本機去背：純色背景，可堆疊">✂本機</button><button class="icon eyed" title="吸管去背：點背景色去除，可逐色堆疊">💧吸管</button>${a.cutDone?'<button class="icon reset" title="還原成原圖：清除所有去背結果">↩原圖</button>':''}${isFrame?'':'<button class="icon repl" title="置換內容：保留位置/大小，換成資料庫另一張圖">🔁置換</button>'}`;}
+    else{const a=asset(p.assetId);if(!a)return;const thumb=(p.useCut&&a.cutSrc)?a.cutSrc:a.src;thumbStyle=`background-image:url('${thumb}')`;nameTxt=esc(a.name);if(isFrame)badge='<span class="badge f">框架</span>';}
     const opv=Math.round((p.opacity==null?1:p.opacity)*100);
-    const cropped=!isText&&((p.cropX||0)>0.0001||(p.cropY||0)>0.0001||(p.cropW!=null&&p.cropW<0.9999)||(p.cropH!=null&&p.cropH<0.9999));
-    const xform=isText?'':`<button class="icon rotL" title="左轉15°">⟲</button><button class="icon rotR" title="右轉15°">⟳</button><button class="icon flip ${p.flipX?'on':''}" title="水平翻轉">⇋</button><button class="icon crop ${cropPid===p.pid?'on':''}" title="裁切：半透明=會被切掉的部分；拖 8 個控點調整、拖圖身平移露出範圍">▣裁切</button>${cropped?'<button class="icon uncrop" title="重設裁切：還原成整張圖（保持縮放比例）">▣↺重設</button>':''}`;
+    // 去背/裁切/旋轉/翻轉/置換 已移到畫布下方的「編輯」工具列（選取單一圖層時出現）
     row.innerHTML=`<div class="top"><span class="grip">⋮⋮</span><div class="thumb" style="${thumbStyle}"></div><span class="lname">${nameTxt}</span>${badge}</div>
-      <div class="ctrls">${isText?'<button class="icon edt">✎ 編輯文字</button>':cutBtn}<button class="icon dup" title="複製這個圖層（含位置/效果）">⧉複製</button><button class="icon lock ${p.locked?'on':''}" title="鎖定">${p.locked?'🔒':'🔓'}</button><button class="icon hide ${p.hidden?'on':''}" title="顯示/隱藏">${p.hidden?'🙈':'👁'}</button>${xform}<button class="icon danger rm">移除</button></div>
+      <div class="ctrls">${isText?'<button class="icon edt">✎ 編輯文字</button>':''}<button class="icon dup" title="複製這個圖層（含位置/效果）">⧉複製</button><button class="icon lock ${p.locked?'on':''}" title="鎖定">${p.locked?'🔒':'🔓'}</button><button class="icon hide ${p.hidden?'on':''}" title="顯示/隱藏">${p.hidden?'🙈':'👁'}</button><button class="icon danger rm">移除</button></div>
       ${isText?'':`<div class="op-row"><span class="mini-label">透明</span><input type="range" class="r op-sld" min="0" max="100" value="${opv}"><span class="opval">${opv}</span></div>`}`;
     // 點整列上半部（縮圖/名稱/抓桿）即可選取該圖層
     row.querySelector('.top').onclick=e=>{if(e.shiftKey)toggleSel(p.pid);else selectOne(p.pid);renderAll();};
     row.querySelector('.rm').onclick=()=>{removePlacement(p.pid);};
     const lk=row.querySelector('.lock');lk.onclick=()=>{pushHistory();p.locked=!p.locked;if(p.locked)selPids.delete(p.pid);renderAll();save();};
     const hb=row.querySelector('.hide');hb.onclick=()=>{pushHistory();p.hidden=!p.hidden;renderAll();save();};
-    const rl=row.querySelector('.rotL');if(rl)rl.onclick=()=>{pushHistory();p.rotate=((p.rotate||0)-15)%360;renderStage();save();};
-    const rr=row.querySelector('.rotR');if(rr)rr.onclick=()=>{pushHistory();p.rotate=((p.rotate||0)+15)%360;renderStage();save();};
-    const fl=row.querySelector('.flip');if(fl)fl.onclick=()=>{pushHistory();p.flipX=!p.flipX;renderStage();save();};
     const du=row.querySelector('.dup');if(du)du.onclick=()=>duplicatePlacement(p.pid);
-    const cr=row.querySelector('.crop');if(cr)cr.onclick=()=>toggleCrop(p.pid);
-    const uc=row.querySelector('.uncrop');if(uc)uc.onclick=()=>resetCrop(p.pid);
     const op=row.querySelector('.op-sld');if(op){op.onpointerdown=()=>pushHistory();op.oninput=e=>{p.opacity=+e.target.value/100;row.querySelector('.opval').textContent=e.target.value;renderStage();};op.onchange=()=>save();}
     if(isText){row.querySelector('.edt').onclick=()=>{editingTextPid=(editingTextPid===p.pid?null:p.pid);selectOne(p.pid);renderAll();};}
-    else{const cb=row.querySelector('.cut');if(cb)cb.onclick=ev=>handleCut(ev.currentTarget,p,asset(p.assetId));const lc=row.querySelector('.lcut');if(lc)lc.onclick=()=>handleLocalCut(p,asset(p.assetId));const ed=row.querySelector('.eyed');if(ed)ed.onclick=()=>startEyedrop(p,asset(p.assetId));const rs=row.querySelector('.reset');if(rs)rs.onclick=()=>resetCut(p,asset(p.assetId));const rp=row.querySelector('.repl');if(rp)rp.onclick=()=>startReplace(p.pid);}
     row.addEventListener('dragstart',e=>{row.classList.add('dragging');e.dataTransfer.setData('text/plain',p.pid);e.dataTransfer.effectAllowed='move';});
     row.addEventListener('dragend',()=>row.classList.remove('dragging'));
     row.addEventListener('dragover',e=>{e.preventDefault();row.classList.add('drag-over');});
@@ -1153,17 +1184,16 @@ async function aiCut(src){
   const removeBackground=await loadBgRemover();
   return await removeBackground(src,{progress:(key,cur,tot)=>{if(key.includes('fetch'))setStatus(`下載模型 ${Math.round((cur/tot)*100)||0}%`,'warn');else setStatus('AI 運算中…','warn');}});
 }
-async function handleCut(btn,p,a){
-  if(!a)return;
-  if(btn.classList.contains('busy'))return;
-  btn.classList.add('busy');btn.textContent='✂ 處理中…';
+async function handleCut(p,a){
+  if(!a||_aiBusy)return;
+  _aiBusy=true;renderEditBar();
   try{
     const srcUrl=a.cutSrc||a.src;                  // 堆疊：以目前去背結果為來源
     const blob=await aiCut(srcUrl);                 // PNG blob
     await delBlob('cut:'+a.id);await putBlob('cut:'+a.id,blob);
     a.cutSrc=await getBlobURL('cut:'+a.id);a.cutDone=true;
-    const ci=new Image();ci.onload=()=>{a._cutImg=ci;placements.filter(x=>x.assetId===a.id).forEach(x=>x.useCut=true);renderAll();save();setStatus('AI 去背完成','ok');};ci.src=a.cutSrc;
-  }catch(e){console.error(e);setStatus(`AI 去背失敗（${e.message||'無法載入模型'}）→ 公司網路可能擋了，改按「✂本機」`,'warn');btn.classList.remove('busy');renderLayers();}
+    const ci=new Image();ci.onload=()=>{a._cutImg=ci;placements.filter(x=>x.assetId===a.id).forEach(x=>x.useCut=true);_aiBusy=false;renderAll();save();setStatus('AI 去背完成','ok');};ci.src=a.cutSrc;
+  }catch(e){console.error(e);setStatus(`AI 去背失敗（${e.message||'無法載入模型'}）→ 公司網路可能擋了，改按「✂本機」`,'warn');_aiBusy=false;renderEditBar();}
 }
 /* 還原成原圖：清除目前所有去背結果（堆疊都清掉） */
 function resetCut(p,a){
@@ -1276,9 +1306,9 @@ function startEyedrop(p,a){
   };
   window.addEventListener('pointermove',_loupeMove);
 }
-function cancelEyedrop(){if(eyedropPid!=null){eyedropPid=null;hideLoupe();setStatus('已取消吸管','');}}
+function cancelEyedrop(){if(eyedropPid!=null){eyedropPid=null;hideLoupe();renderEditBar();setStatus('已取消吸管','');}}
 function doEyedropSample(e,el,p,a){
-  eyedropPid=null;hideLoupe();
+  eyedropPid=null;hideLoupe();renderEditBar();
   if(!a||!a._img){setStatus('沒有可去背的原圖','warn');return;}
   const f=eyedropSrcFrac(e.clientX,e.clientY,el.getBoundingClientRect(),p);
   runLocalCut(p,a,{seedFrac:{fx:f.fx,fy:f.fy}},'吸管');
@@ -1297,7 +1327,7 @@ function renderFrame(){
   const add=box.querySelector('.fadd');if(add)add.onclick=()=>addFramePlacement();
   const top=box.querySelector('.ftop');if(top)top.onclick=()=>{const fp=framePlacement();if(fp){fp.z=Math.max(...placements.map(p=>p.z))+1;renderAll();save();}};
   box.querySelector('.fchg').onclick=()=>frameInput.click();
-  box.querySelector('.frm').onclick=()=>{if(frameAsset){delBlob('img:'+frameAsset.id);delBlob('cut:'+frameAsset.id);}placements=placements.filter(p=>p.kind!=='frame');frameAsset=null;renderAll();save();};
+  box.querySelector('.frm').onclick=()=>{if(!confirm('刪除框架圖？原圖與去背結果會一併刪除，無法復原。'))return;if(frameAsset){delBlob('img:'+frameAsset.id);delBlob('cut:'+frameAsset.id);}placements=placements.filter(p=>p.kind!=='frame');frameAsset=null;renderAll();save();};
   frameArea.appendChild(box);
 }
 function addFramePlacement(){if(!frameAsset||!frameAsset._img)return;if(framePlacement())return;pushHistory();const z=placements.length?Math.max(...placements.map(p=>p.z))+1:1;const fp=normPlacement({pid:uid(),assetId:frameAsset.id,kind:'frame',x:0,y:0,w:canvasW,h:canvasH,z,useCut:!!frameAsset.cutSrc});placements.push(fp);selectOne(fp.pid);renderAll();save();}
@@ -1667,6 +1697,17 @@ window.addEventListener('resize',applySize);
 
 // new wiring: align bar / ratios / safe area / backup / batch
 document.querySelectorAll('#alignBar .ab').forEach(b=>b.onclick=()=>alignSel(b.dataset.a));
+// 編輯工具列（去背/裁切/旋轉/翻轉/置換）：作用在目前單選的圖片/框架圖層
+$('ebCutAI').onclick=()=>{const p=curEditP();if(p)handleCut(p,asset(p.assetId));};
+$('ebCutLocal').onclick=()=>{const p=curEditP();if(p)handleLocalCut(p,asset(p.assetId));};
+$('ebEyedrop').onclick=()=>{const p=curEditP();if(!p)return;eyedropPid===p.pid?cancelEyedrop():startEyedrop(p,asset(p.assetId));};
+$('ebResetCut').onclick=()=>{const p=curEditP();if(p)resetCut(p,asset(p.assetId));};
+$('ebCrop').onclick=()=>{const p=curEditP();if(p)toggleCrop(p.pid);};
+$('ebUncrop').onclick=()=>{const p=curEditP();if(p)resetCrop(p.pid);};
+$('ebRotL').onclick=()=>{const p=curEditP();if(p){pushHistory();p.rotate=((p.rotate||0)-15)%360;renderStage();save();}};
+$('ebRotR').onclick=()=>{const p=curEditP();if(p){pushHistory();p.rotate=((p.rotate||0)+15)%360;renderStage();save();}};
+$('ebFlip').onclick=()=>{const p=curEditP();if(p){pushHistory();p.flipX=!p.flipX;renderStage();save();}};
+$('ebReplace').onclick=()=>{const p=curEditP();if(p&&p.kind==='image')startReplace(p.pid);};
 $('safeGuide').onchange=e=>{safeGuide=e.target.checked;stage.classList.toggle('show-safe',safeGuide);};
 document.querySelectorAll('.ratios .rc').forEach(b=>b.onclick=()=>changeSize(+b.dataset.w,+b.dataset.h));
 $('batchBtn').onclick=batchExport;
