@@ -12,6 +12,11 @@
   - 需要時附 `start.bat`（本機啟動用）
 - 根目錄只放跨專案共用的東西（本檔 `CLAUDE.md`、`.gitignore`、`.git`、入口頁 `index.html`、共用字型 `fonts/`）。
 - **獨立 git repo 的專案，資料夾名稱 = 該 repo 在 GitHub 上的名稱**（例：`air-conditioner/`、`pokemon-funsite/`），並在本 repo 的 `.gitignore` 排除。
+- **每個專案資料夾放一個歸屬標記檔**（檔名即標籤、`_` 開頭排最前），在檔案總管一眼看出上傳歸屬，三種：
+  - `_歸屬=ivan-work（會上傳GitHub）.txt` — 主 repo 追蹤
+  - `_歸屬=獨立repo <名稱>.txt` — 自己的 GitHub repo（該 repo 的 `.gitignore` 已排除 `_歸屬=*.txt`，標記檔僅存本機）
+  - `_歸屬=僅本機（不上傳GitHub）.txt` — 完全不上傳
+  - 新專案開資料夾時記得一併放。
 
 ## 目前的專案
 
@@ -19,14 +24,16 @@
 |--------|------|------|------|------|
 | `合成台/` | 合成台 Compositor | 純前端、單一 HTML 的影像合成工具（圖層、文字特效、去背 AI/本機/吸管、裁切、版位、批次/備份匯出入） | `合成台/compositor.html` | `合成台/start.bat`（桌面捷徑「影像合成台」） |
 | `著色本/` | 著色本 | coloring 工具 | `著色本/coloring.html` | `著色本/start.bat` |
+| `PTT彈幕/` | PTT 留言彈幕 | 選 PTT 熱門看板文章，推文化作彈幕、常駐 5 秒輪詢自動更新。主要版本＝桌面覆蓋層（tkinter：透明置頂、滑鼠穿透、可拖曳調位置大小）；另有網頁版（server.py 代理＋App 模式視窗，port 8003） | `PTT彈幕/overlay.pyw` | `PTT彈幕/start.bat`（覆蓋層版，桌面捷徑「PTT Danmaku」）；網頁版 `start-web.bat` |
 | `遊戲下單數量分析/` | 遊戲下單數量分析 | 實體遊戲商品進貨前的決策分析：聲量調查→需求推估→建議下單量，產出 Markdown 報告（放 `reports/`） | `遊戲下單數量分析/報告範本.md` | 無（純文件） |
 | `air-conditioner/` | 冷氣安裝・錄音分析 | 客戶通話錄音→Gemini 逐字稿→AI 抽欄位標色→Firebase RTDB。**獨立 git repo**（github.com/akumasjeff-debug/air-conditioner），已在本 repo `.gitignore` 排除 | `air-conditioner/aircon.html` | `air-conditioner/start.bat`（port 8002） |
 | `pokemon-funsite/` | Pokemon 寶可夢旗艦館 | PChome 旗艦館頁面（index.html + img/css/js）。**獨立 git repo**（github.com/akumasjeff-debug/pokemon-funsite），已在本 repo `.gitignore` 排除。改完要打包 zip 放下載區給操作者上傳 PChome | `pokemon-funsite/index.html` | 無（靜態頁） |
 | `couple-court/` | Ai公道伯（名稱暫定案） | 手機 App（iOS+Android）：情侶雙人綁定的關係經營工具＋AI 吵架判決。**構想討論階段**，尚無程式碼。暫定 React Native + Expo + Firebase。**獨立 git repo**（github.com/akumasjeff-debug/couple-court），已在本 repo `.gitignore` 排除 | `couple-court/OVERVIEW.md` | 無（尚未建骨架） |
 | `pchome-listing/` | 賣場資訊文案 | PChome 24h 商品上架素材（文案 HTML／主圖／GIF／欄位文字），一商品一子資料夾（NS2 主機、PS5×3、NS 節奏天國）。遊戲商品固定流程見該 repo 的 `遊戲商品SOP.md`。**獨立 git repo**（github.com/akumasjeff-debug/pchome-listing，Private），已在本 repo `.gitignore` 排除 | `pchome-listing/OVERVIEW.md` | 無（`detail-預覽.html` 瀏覽器直接開） |
 | `內部比價程式/` | 內部比價程式 | PChome 24h 比價 CLI：區域→賣場→商品（過濾無可賣量）→品名搜全站同商品比價，產出 xlsx/md/tsv 報表（放 `reports/`）。**僅存本機、不上傳 GitHub**（已在 `.gitignore` 排除）。API 端點與可賣量判讀見該夾 `HANDOVER.md` | `內部比價程式/比價.py` | `py 內部比價程式\比價.py`（CLI，無伺服器） |
+| `PS旗艦館/` | PS旗艦館 | PChome PlayStation 品牌旗艦館（sites/playstation）：前台+本機後台+Firebase 資料庫+每日 GAS 自動化（備份/巡檢/PID切換）+每週一缺漏/缺貨例行。**實際檔案在 `C:\工作用資料夾\PlayStation 旗艦店\PS 新旗艦館\`（就地維護、不搬動）**，本資料夾僅登錄點，已在 `.gitignore` 排除。交接細節看實際資料夾的 `HANDOVER.md` | `PS旗艦館/OVERVIEW.md` | 無（改完打增量 zip 上傳 PChome） |
 
-各專案的細節看該資料夾內的 `OVERVIEW.md` 與 `HANDOVER.md`。
+**進某個專案工作前，先讀該資料夾的 `CLAUDE.md`（若有，是精簡規則）**；要動架構或資料結構再讀 `HANDOVER.md`（完整交接細節），功能全貌看 `OVERVIEW.md`。目前已有子 `CLAUDE.md` 的專案：`合成台/`、`內部比價程式/`。
 
 ## 執行環境備註
 

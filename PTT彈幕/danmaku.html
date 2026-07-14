@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PTT 留言彈幕</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#171a22; --panel2:#1e2230; --ink:#eef1f8; --muted:#8a92a8;
+    --line:#2a2f40; --accent:#ffb648; --push:#7dff8a; --boo:#ff6b6b; --arrow:#cfd6e6;
+    --live:#ff4d6d;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;}
+  button{font-family:inherit;}
+  .hidden{display:none !important;}
+
+  /* ---------- 選擇畫面 ---------- */
+  #pickerView{max-width:1080px;margin:0 auto;padding:28px 20px 60px;}
+  #pickerView h1{font-size:22px;margin:0 0 4px;letter-spacing:1px;}
+  #pickerView .sub{color:var(--muted);font-size:13px;margin-bottom:20px;}
+  .topRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
+  .topRow input{background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+    border-radius:8px;padding:8px 12px;font-size:14px;width:220px;}
+  .btn{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;
+    padding:8px 14px;font-size:14px;cursor:pointer;transition:.15s;}
+  .btn:hover{border-color:var(--accent);color:var(--accent);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#1a1206;font-weight:700;}
+  .btn.primary:hover{filter:brightness(1.1);color:#1a1206;}
+  .btn:disabled{opacity:.35;cursor:default;}
+  .btn:disabled:hover{border-color:var(--line);color:var(--ink);}
+
+  #boardGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
+  .boardCard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+    cursor:pointer;transition:.12s;}
+  .boardCard:hover{border-color:var(--accent);transform:translateY(-1px);}
+  .boardCard .bn{font-size:16px;font-weight:700;}
+  .boardCard .bu{float:right;font-size:12px;color:var(--live);font-weight:700;}
+  .boardCard .bt{font-size:12px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  #articleList{display:flex;flex-direction:column;gap:6px;}
+  .artRow{display:flex;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);
+    border-radius:8px;padding:10px 14px;cursor:pointer;transition:.12s;}
+  .artRow:hover{border-color:var(--accent);}
+  .artRow .nrec{width:34px;text-align:center;font-weight:700;flex:none;color:var(--push);}
+  .artRow .nrec.hot{color:var(--boo);}
+  .artRow .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .artRow .a{color:var(--muted);font-size:12px;flex:none;}
+  .artRow .d{color:var(--muted);font-size:12px;flex:none;width:44px;text-align:right;}
+  .pager{display:flex;gap:8px;margin:14px 0;}
+  .loading,.errmsg{color:var(--muted);padding:30px;text-align:center;font-size:14px;}
+  .errmsg{color:var(--boo);}
+
+  /* ---------- 彈幕舞台 ---------- */
+  #stageView{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;}
+  #stage{position:relative;flex:1;overflow:hidden;}
+  #stage .dm{position:absolute;left:0;top:0;white-space:nowrap;font-weight:700;will-change:transform;
+    text-shadow:0 0 4px #000,1px 1px 2px #000,-1px -1px 2px #000;pointer-events:none;line-height:1.4;}
+  .dm .uid{font-size:.55em;opacity:.65;margin-right:.4em;font-weight:400;}
+  .dm.tag-push{color:var(--push);}
+  .dm.tag-boo{color:var(--boo);}
+  .dm.tag-arrow{color:var(--arrow);}
+
+  #stageTop{position:absolute;top:0;left:0;right:0;z-index:10;display:flex;gap:12px;align-items:center;
+    padding:10px 14px;background:linear-gradient(#000d,#0000);}
+  #stageTop .title{flex:1;font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #stageTop .stats{font-size:12px;color:var(--muted);flex:none;}
+  #liveDot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#555;margin-right:5px;vertical-align:1px;}
+  #liveDot.on{background:var(--live);box-shadow:0 0 8px var(--live);animation:blink 1.2s infinite;}
+  @keyframes blink{50%{opacity:.4;}}
+
+  #ctrlBar{z-index:10;display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+    padding:10px 16px;background:#10121aee;border-top:1px solid var(--line);}
+  #ctrlBar label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  #ctrlBar input[type=range]{width:90px;accent-color:var(--accent);}
+  #ctrlBar .sep{width:1px;height:22px;background:var(--line);}
+
+  #bodyPanel{position:absolute;top:52px;right:0;bottom:0;width:min(420px,80%);z-index:9;
+    background:#10121af2;border-left:1px solid var(--line);padding:16px;overflow-y:auto;
+    font-size:13px;line-height:1.8;color:#cfd6e6;white-space:pre-wrap;word-break:break-word;}
+</style>
+</head>
+<body>
+
+<!-- ============ 選擇畫面 ============ -->
+<div id="pickerView">
+  <h1>PTT 留言彈幕 <span style="font-size:12px;color:var(--muted)">v2</span></h1>
+  <div class="sub">選熱門看板 → 選文章 → 推文化作彈幕（播放中每 5 秒自動抓新推文）</div>
+
+  <div class="topRow">
+    <button class="btn" id="btnBackBoards" style="display:none">&larr; 回看板列表</button>
+    <span id="curBoardName" style="font-weight:700;font-size:16px"></span>
+    <span style="flex:1"></span>
+    <input id="boardInput" placeholder="直接輸入看板名（如 Gossiping）" spellcheck="false">
+    <button class="btn" id="btnGoBoard">開看板</button>
+    <button class="btn" id="btnReload">重新整理</button>
+  </div>
+
+  <div id="boardGrid"></div>
+  <div id="articleArea" class="hidden">
+    <div class="pager">
+      <button class="btn" id="btnNewer">← 較新</button>
+      <button class="btn" id="btnOlder">較舊 →</button>
+    </div>
+    <div id="articleList"></div>
+  </div>
+  <div id="pickerMsg" class="loading">載入熱門看板中…</div>
+</div>
+
+<!-- ============ 彈幕舞台 ============ -->
+<div id="stageView" class="hidden">
+  <div id="stage">
+    <div id="stageTop">
+      <button class="btn" id="btnExit">&larr; 離開</button>
+      <div class="title" id="stTitle"></div>
+      <div class="stats"><span id="liveDot"></span><span id="stStats"></span></div>
+      <button class="btn" id="btnBody">內文</button>
+    </div>
+    <div id="bodyPanel" class="hidden"></div>
+  </div>
+  <div id="ctrlBar">
+    <button class="btn primary" id="btnReplay">▶ 從頭重播</button>
+    <button class="btn" id="btnLive">● 直播模式</button>
+    <button class="btn" id="btnPause">⏸ 暫停</button>
+    <div class="sep"></div>
+    <label>速度 <input type="range" id="rSpeed" min="60" max="400" value="150"></label>
+    <label>字級 <input type="range" id="rFont" min="16" max="48" value="28"></label>
+    <label>密度 <input type="range" id="rDensity" min="1" max="12" value="4"><span id="densityVal">4/秒</span></label>
+    <label>透明 <input type="range" id="rOpacity" min="30" max="100" value="100"></label>
+    <label><input type="checkbox" id="cbUid" checked> 顯示 ID</label>
+    <div class="sep"></div>
+    <button class="btn" id="btnClear">清空畫面</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+
+/* ============ PTT 抓取 / 解析（經 /ptt 代理） ============ */
+async function fetchDoc(path){
+  const r = await fetch('/ptt' + path);
+  if(!r.ok) throw new Error('HTTP ' + r.status + '（' + path + '）');
+  return new DOMParser().parseFromString(await r.text(), 'text/html');
+}
+
+async function loadHotboards(){
+  const doc = await fetchDoc('/bbs/hotboards.html');
+  return [...doc.querySelectorAll('a.board')].map(a => ({
+    href:  a.getAttribute('href'),
+    name:  a.querySelector('.board-name')?.textContent.trim() || '',
+    nuser: a.querySelector('.board-nuser')?.textContent.trim() || '',
+    title: a.querySelector('.board-title')?.textContent.trim() || '',
+  }));
+}
+
+async function loadIndex(path){
+  const doc = await fetchDoc(path);
+  const list = doc.querySelector('.r-list-container');
+  if(!list) throw new Error('看不到文章列表（看板名打錯？）');
+  const items = [];
+  let afterSep = false;
+  for(const el of list.children){
+    if(el.classList.contains('r-list-sep')){ afterSep = true; continue; } // 之後是置底文
+    if(afterSep || !el.classList.contains('r-ent')) continue;
+    const a = el.querySelector('.title a');
+    if(!a) continue; // 已刪除
+    items.push({
+      href:  a.getAttribute('href'),
+      title: a.textContent.trim(),
+      nrec:  el.querySelector('.nrec')?.textContent.trim() || '',
+      author:el.querySelector('.meta .author')?.textContent.trim() || '',
+      date:  el.querySelector('.meta .date')?.textContent.trim() || '',
+    });
+  }
+  items.reverse(); // 新的在上面
+  const btns = [...doc.querySelectorAll('.btn-group-paging a.btn.wide')];
+  const findBtn = t => btns.find(b => b.textContent.includes(t) && b.getAttribute('href'));
+  return { items, older: findBtn('上頁')?.getAttribute('href') || null,
+                  newer: findBtn('下頁')?.getAttribute('href') || null };
+}
+
+async function loadArticle(path){
+  const doc = await fetchDoc(path);
+  const main = doc.querySelector('#main-content');
+  if(!main) throw new Error('讀不到文章內容');
+  let title = '', author = '';
+  for(const m of main.querySelectorAll('.article-metaline')){
+    const tag = m.querySelector('.article-meta-tag')?.textContent;
+    const val = m.querySelector('.article-meta-value')?.textContent || '';
+    if(tag === '標題') title = val;
+    if(tag === '作者') author = val;
+  }
+  const pushes = parsePushEls(main.querySelectorAll('div.push'));
+  const clone = main.cloneNode(true);
+  clone.querySelectorAll('div.push, .article-metaline, .article-metaline-right').forEach(e => e.remove());
+  // PTT 官方即時推文機制：文章頁只渲染到 data-offset，之後的推文用
+  // longpoll（拿 size+sig）→ pollurl&size&size-sig（拿新增 HTML）接力
+  const pd = doc.querySelector('#article-polling');
+  const poll = (pd && pd.getAttribute('data-pollurl') && pd.getAttribute('data-longpollurl')) ? {
+    pollurl: pd.getAttribute('data-pollurl'),
+    longpollurl: pd.getAttribute('data-longpollurl'),
+    offset: +(pd.getAttribute('data-offset') || 0),
+  } : null;
+  return { title, author, pushes, poll, body: clone.textContent.trim() };
+}
+
+function parsePushEls(els){
+  return [...els].map(p => ({
+    tag:  p.querySelector('.push-tag')?.textContent.trim() || '→',
+    user: p.querySelector('.push-userid')?.textContent.trim() || '',
+    text: (p.querySelector('.push-content')?.textContent || '').replace(/^:\s?/, '').trim(),
+  })).filter(p => p.text);
+}
+
+/* ============ 選擇畫面 ============ */
+let curBoardPath = null, pageNewer = null, pageOlder = null;
+
+function showMsg(t, isErr){
+  const m = $('#pickerMsg');
+  m.textContent = t || '';
+  m.className = isErr ? 'errmsg' : 'loading';
+  m.classList.toggle('hidden', !t);
+}
+
+async function showBoards(){
+  $('#articleArea').classList.add('hidden');
+  $('#btnBackBoards').style.display = 'none';
+  $('#curBoardName').textContent = '';
+  $('#boardGrid').innerHTML = '';
+  showMsg('載入熱門看板中…');
+  try{
+    const boards = await loadHotboards();
+    showMsg('');
+    $('#boardGrid').innerHTML = boards.map((b,i) => `
+      <div class="boardCard" data-i="${i}">
+        <span class="bu">${esc(b.nuser)} 人</span>
+        <div class="bn">${esc(b.name)}</div>
+        <div class="bt">${esc(b.title)}</div>
+      </div>`).join('');
+    $('#boardGrid').querySelectorAll('.boardCard').forEach(el => {
+      el.onclick = () => { const b = boards[+el.dataset.i]; openBoard(b.href, b.name); };
+    });
+  }catch(e){ showMsg('熱門看板載入失敗：' + e.message, true); }
+}
+
+async function openBoard(path, name){
+  curBoardPath = path;
+  $('#boardGrid').innerHTML = '';
+  $('#btnBackBoards').style.display = '';
+  $('#curBoardName').textContent = name;
+  $('#articleArea').classList.remove('hidden');
+  $('#articleList').innerHTML = '';
+  showMsg('載入文章列表中…');
+  try{
+    const { items, older, newer } = await loadIndex(path);
+    pageOlder = older; pageNewer = newer;
+    $('#btnOlder').disabled = !older;
+    $('#btnNewer').disabled = !newer;
+    showMsg(items.length ? '' : '這一頁沒有文章');
+    $('#articleList').innerHTML = items.map((a,i) => `
+      <div class="artRow" data-i="${i}">
+        <div class="nrec ${a.nrec === '爆' || (+a.nrec >= 60) ? 'hot' : ''}">${esc(a.nrec)}</div>
+        <div class="t">${esc(a.title)}</div>
+        <div class="a">${esc(a.author)}</div>
+        <div class="d">${esc(a.date)}</div>
+      </div>`).join('');
+    $('#articleList').querySelectorAll('.artRow').forEach(el => {
+      el.onclick = () => enterStage(items[+el.dataset.i].href);
+    });
+  }catch(e){ showMsg('文章列表載入失敗：' + e.message, true); }
+}
+
+$('#btnBackBoards').onclick = showBoards;
+$('#btnReload').onclick = () => curBoardPath ? openBoard(curBoardPath, $('#curBoardName').textContent) : showBoards();
+$('#btnOlder').onclick = () => pageOlder && openBoard(pageOlder, $('#curBoardName').textContent);
+$('#btnNewer').onclick = () => pageNewer && openBoard(pageNewer, $('#curBoardName').textContent);
+$('#btnGoBoard').onclick = () => {
+  const n = $('#boardInput').value.trim();
+  if(n) openBoard('/bbs/' + encodeURIComponent(n) + '/index.html', n);
+};
+$('#boardInput').addEventListener('keydown', e => { if(e.key === 'Enter') $('#btnGoBoard').click(); });
+
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============ 彈幕引擎 ============ */
+const stage = $('#stage');
+const cfg = { speed:150, font:28, density:4, opacity:1, showUid:true };
+let flying = [];          // {el, x, w}
+let lanes = [];           // 每條軌道下次可用的時間 (ms)
+let queue = [];           // 待發射的推文
+let paused = false, lastT = 0;
+let article = null, articlePath = null;
+let seenCount = 0, pollGen = 0, pollErr = false, playedCount = 0, lastPollAt = null;
+
+function laneH(){ return cfg.font * 1.5; }
+function laneCount(){ return Math.max(1, Math.floor((stage.clientHeight - 60) / laneH())); }
+function pickLane(now, w){
+  const n = laneCount();
+  if(lanes.length !== n) lanes = Array(n).fill(0);
+  const occupy = now + (w + 60) / cfg.speed * 1000; // 尾巴離開右緣的時間
+  for(let i = 0; i < n; i++) if(lanes[i] <= now){ lanes[i] = occupy; return i; }
+  let best = 0;
+  for(let i = 1; i < n; i++) if(lanes[i] < lanes[best]) best = i;
+  lanes[best] = Math.max(lanes[best], now) + (w + 60) / cfg.speed * 1000;
+  return best;
+}
+
+function spawn(p){
+  const el = document.createElement('div');
+  el.className = 'dm ' + (p.tag === '推' ? 'tag-push' : p.tag === '噓' ? 'tag-boo' : 'tag-arrow');
+  el.style.fontSize = cfg.font + 'px';
+  el.style.opacity = cfg.opacity;
+  if(cfg.showUid && p.user){
+    const u = document.createElement('span');
+    u.className = 'uid'; u.textContent = p.user;
+    el.appendChild(u);
+  }
+  el.appendChild(document.createTextNode(p.text));
+  stage.appendChild(el);
+  const w = el.offsetWidth;
+  const lane = pickLane(performance.now(), w);
+  const x = stage.clientWidth;
+  el.style.top = (52 + lane * laneH()) + 'px';
+  el.style.transform = 'translateX(' + x + 'px)';
+  flying.push({ el, x, w });
+  playedCount++;
+  updateStats();
+}
+
+let emitBudget = 0, lastEmit = 0;
+function tick(t){
+  // dt 上限 0.1s：視窗被縮小/背景分頁時 rAF 會停，恢復時避免彈幕瞬間跳走
+  const dt = paused ? 0 : Math.min((t - lastT) / 1000, 0.1);
+  lastT = t;
+  // 發射
+  emitBudget = Math.min(emitBudget + cfg.density * dt, cfg.density);
+  while(!paused && emitBudget >= 1 && queue.length){ spawn(queue.shift()); emitBudget--; }
+  // 移動
+  for(const d of flying){
+    d.x -= cfg.speed * dt;
+    d.el.style.transform = 'translateX(' + d.x + 'px)';
+  }
+  flying = flying.filter(d => {
+    if(d.x + d.w < -10){ d.el.remove(); return false; }
+    return true;
+  });
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(t => { lastT = t; tick(t); });
+
+function clearStage(){
+  for(const d of flying) d.el.remove();
+  flying = []; lanes = []; queue = []; emitBudget = 0;
+}
+
+function updateStats(){
+  if(!article) return;
+  let s = '推文 ' + seenCount + ' 則';
+  if(queue.length) s += '｜待播 ' + queue.length;
+  s += pollErr ? '｜連線失敗，重試中' : '｜自動更新中';
+  if(lastPollAt) s += '（' + lastPollAt.toLocaleTimeString('zh-TW', {hour12:false}) + ' 檢查）';
+  $('#stStats').textContent = s;
+  $('#liveDot').classList.add('on');
+}
+
+/* ============ 舞台流程 ============ */
+async function enterStage(path){
+  articlePath = path;
+  $('#pickerView').classList.add('hidden');
+  $('#stageView').classList.remove('hidden');
+  $('#stTitle').textContent = '載入中…';
+  clearStage(); pollGen++; playedCount = 0;
+  try{
+    article = await loadArticle(path);
+  }catch(e){
+    $('#stTitle').textContent = '載入失敗：' + e.message;
+    return;
+  }
+  seenCount = article.pushes.length;
+  $('#stTitle').textContent = article.title + '（' + article.author.split(' ')[0] + '）';
+  $('#bodyPanel').textContent = article.body;
+  updateStats();
+  startReplay();
+}
+
+function startReplay(){
+  clearStage();
+  queue = article.pushes.slice();
+  seenCount = article.pushes.length;
+  paused = false; $('#btnPause').textContent = '⏸ 暫停';
+  beginPoll(); updateStats();
+}
+
+function startLive(){ // 跳過舊推文，只看新的（前 5 則暖場）
+  clearStage();
+  seenCount = article.pushes.length;
+  queue = article.pushes.slice(-5);
+  paused = false; $('#btnPause').textContent = '⏸ 暫停';
+  beginPoll(); updateStats();
+}
+
+// 只要在舞台上就常駐即時同步：走 PTT 官方 longpoll 機制（新推文約 1 秒內到，
+// 不受頁面 15 分鐘快取影響）；沒有 polling 資訊的文章退回整頁重抓
+function beginPoll(){
+  const gen = ++pollGen;
+  if(!article.poll){ beginPollFallback(gen); return; }
+  let { pollurl, longpollurl, offset } = article.poll;
+  const loop = async () => {
+    if(gen !== pollGen) return;
+    let delay = 1000;
+    try{
+      const lp = await (await fetch('/ptt' + longpollurl)).json();
+      if(gen !== pollGen) return;
+      if(lp.size > offset){
+        const d = await (await fetch('/ptt' + pollurl +
+          '&size=' + lp.size + '&size-sig=' + encodeURIComponent(lp.sig || ''))).json();
+        if(gen !== pollGen) return;
+        if(d.success){
+          const frag = new DOMParser().parseFromString(d.contentHtml || '', 'text/html');
+          const news = parsePushEls(frag.querySelectorAll('div.push'));
+          queue.push(...news);
+          seenCount += news.length;
+          offset = lp.size;
+          if(d.pollUrl) pollurl = d.pollUrl;
+        }else if(lp.cacheKey){ // 原文被編輯 → 從結尾重新跟隨
+          pollurl = pollurl.split('?')[0] + '?cacheKey=' + encodeURIComponent(lp.cacheKey) +
+                    '&offset=' + lp.size + '&offset-sig=' + encodeURIComponent(lp.sig || '');
+          offset = lp.size;
+        }
+      }
+      pollErr = false;
+    }catch(e){ pollErr = true; delay = 5000; }
+    lastPollAt = new Date();
+    updateStats();
+    setTimeout(loop, delay);
+  };
+  setTimeout(loop, 1000);
+}
+
+function beginPollFallback(gen){
+  const loop = async () => {
+    if(gen !== pollGen || !articlePath) return;
+    try{
+      const fresh = await loadArticle(articlePath + '?_=' + Date.now());
+      if(gen !== pollGen) return;
+      if(fresh.pushes.length > seenCount){
+        queue.push(...fresh.pushes.slice(seenCount));
+        seenCount = fresh.pushes.length;
+      }
+      pollErr = false;
+    }catch(e){ pollErr = true; }
+    lastPollAt = new Date();
+    updateStats();
+    setTimeout(loop, 5000);
+  };
+  setTimeout(loop, 5000);
+}
+
+/* ============ 控制列 ============ */
+$('#btnExit').onclick = () => {
+  pollGen++; clearStage(); article = null;
+  $('#liveDot').classList.remove('on');
+  $('#stageView').classList.add('hidden');
+  $('#pickerView').classList.remove('hidden');
+};
+$('#btnReplay').onclick = () => article && startReplay();
+$('#btnLive').onclick = () => article && startLive();
+$('#btnPause').onclick = () => {
+  paused = !paused;
+  $('#btnPause').textContent = paused ? '▶ 繼續' : '⏸ 暫停';
+};
+$('#btnClear').onclick = () => { for(const d of flying) d.el.remove(); flying = []; lanes = []; };
+$('#btnBody').onclick = () => $('#bodyPanel').classList.toggle('hidden');
+
+$('#rSpeed').oninput = e => cfg.speed = +e.target.value;
+$('#rFont').oninput = e => cfg.font = +e.target.value;
+$('#rDensity').oninput = e => { cfg.density = +e.target.value; $('#densityVal').textContent = cfg.density + '/秒'; };
+$('#rOpacity').oninput = e => cfg.opacity = +e.target.value / 100;
+$('#cbUid').onchange = e => cfg.showUid = e.target.checked;
+
+/* ============ 啟動 ============ */
+showBoards();
+</script>
+</body>
+</html>
