@@ -30,12 +30,14 @@
   .preset .pdel{opacity:.5;font-size:10px;}
   .preset .pdel:hover{opacity:1;color:var(--danger);}
 
-  .stage-frame{display:flex;width:min(70vmin,540px);height:min(70vmin,540px);overflow:auto;}
+  /* 畫布四周留 26px 工作區（gutter）：滿版圖層的裁切/縮放控點落在畫布邊上也點得到 */
+  .stage-frame{display:flex;width:min(74vmin,592px);height:min(74vmin,592px);overflow:auto;padding:26px;}
   .stage-shell{position:relative;margin:auto;flex-shrink:0;
     background:linear-gradient(45deg,#1a1916 25%,transparent 25%),linear-gradient(-45deg,#1a1916 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#1a1916 75%),linear-gradient(-45deg,transparent 75%,#1a1916 75%);
     background-size:22px 22px;background-position:0 0,0 11px,11px -11px,-11px 0;background-color:#262420;
     border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.45);touch-action:none;user-select:none;}
   .stage-shell.replace-mode{border-color:var(--accent2);box-shadow:0 0 0 2px var(--accent2),0 14px 40px rgba(0,0,0,.45);}
+  .stage-shell.crop-view{overflow:visible;} /* 裁切模式：鬼影與控點可超出畫布，邊緣控點才點得到 */
   .stage-shell .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;text-align:center;padding:20px;pointer-events:none;}
   .slot{position:absolute;cursor:grab;touch-action:none;}
   .slot img{display:block;pointer-events:none;width:100%;height:100%;}
@@ -266,7 +268,7 @@
 <header>
   <h1>合成台</h1>
   <span class="tag" id="tagSize">1000 × 1000 · jpg / png</span>
-  <span class="tag" style="color:var(--accent2);border:1px solid var(--accent2);border-radius:5px;padding:1px 6px;">v5 · 縮放/退一步/批次</span>
+  <span class="tag" style="color:var(--accent2);border:1px solid var(--accent2);border-radius:5px;padding:1px 6px;">v6 · 畫布外工作區</span>
 </header>
 
 <div class="wrap">
@@ -608,8 +610,11 @@ function loadImgs(o,done){if(!o.src){done();return;}const img=new Image();img.on
 
 /* ---------- size ---------- */
 function applySize(){
-  const box=540, ratio=canvasW/canvasH;let w,h;
-  if(ratio>=1){w=Math.min(box,window.innerWidth*0.7);h=w/ratio;}else{h=Math.min(box,window.innerWidth*0.7);w=h*ratio;}
+  // 以 stage-frame 實際內容區（扣掉 26px×2 gutter）為可用空間，等比塞入畫布
+  const fr=document.querySelector('.stage-frame');
+  const availW=Math.max(120,fr.clientWidth-52),availH=Math.max(120,fr.clientHeight-52);
+  const ratio=canvasW/canvasH,fratio=availW/availH;let w,h;
+  if(ratio>=fratio){w=availW;h=w/ratio;}else{h=availH;w=h*ratio;}
   stage.style.width=(w*zoom)+'px';stage.style.height=(h*zoom)+'px';
   const zp=$('zoomPct');if(zp)zp.textContent=Math.round(zoom*100)+'%';
   $('outDim').textContent=`${canvasW}×${canvasH}`;$('tagSize').textContent=`${canvasW} × ${canvasH} · jpg / png`;
@@ -701,6 +706,7 @@ function renderStage(){
   const inReplace=replaceTargetPid!=null&&!!placement(replaceTargetPid);
   if(replaceTargetPid!=null&&!inReplace)replaceTargetPid=null;
   stage.classList.toggle('replace-mode',inReplace);
+  stage.classList.toggle('crop-view',cropPid!=null);
   replaceBanner.classList.toggle('show',inReplace);
   updateAlignBar();
   renderEditBar();
