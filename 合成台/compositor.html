@@ -262,7 +262,7 @@
 <header>
   <h1>合成台</h1>
   <span class="tag" id="tagSize">1000 × 1000 · jpg / png</span>
-  <span class="tag" style="color:var(--accent2);border:1px solid var(--accent2);border-radius:5px;padding:1px 6px;">v2 · 中文檔名修正</span>
+  <span class="tag" style="color:var(--accent2);border:1px solid var(--accent2);border-radius:5px;padding:1px 6px;">v3 · 裁切/去背優化</span>
 </header>
 
 <div class="wrap">
@@ -657,6 +657,11 @@ function renderStage(){
     im.style.width=(p.w*sx/cw1)+'px';im.style.height=(p.h*sy/ch1)+'px';
     im.style.left=(-(cx1/cw1)*p.w*sx)+'px';im.style.top=(-(cy1/ch1)*p.h*sy)+'px';
     wrap.appendChild(im);el.appendChild(wrap);
+    if(cropping){ // 鬼影：整張圖半透明墊在裁切窗後面，看得到被切掉的部分
+      const gh=im.cloneNode();gh.className='crop-ghost';
+      gh.style.opacity='.3';gh.style.pointerEvents='none';gh.style.zIndex='-1';
+      el.appendChild(gh);
+    }
     const single=selPids.size===1&&sel&&!p.locked;
     if(single){
       const dirs=cropping?['nw','n','ne','e','se','s','sw','w']:['se'];
@@ -681,9 +686,22 @@ function liveUpdateSlot(p){
   const SX=scaleX(),SY=scaleY();
   c.style.left=(p.x*SX)+'px';c.style.top=(p.y*SY)+'px';c.style.width=(p.w*SX)+'px';c.style.height=(p.h*SY)+'px';
   const wi=c.querySelector('.crop-wrap img');
-  if(wi){const cw1=p.cropW||1,ch1=p.cropH||1;wi.style.width=(p.w*SX/cw1)+'px';wi.style.height=(p.h*SY/ch1)+'px';wi.style.left=(-((p.cropX||0)/cw1)*p.w*SX)+'px';wi.style.top=(-((p.cropY||0)/ch1)*p.h*SY)+'px';}
+  if(wi){const cw1=p.cropW||1,ch1=p.cropH||1;wi.style.width=(p.w*SX/cw1)+'px';wi.style.height=(p.h*SY/ch1)+'px';wi.style.left=(-((p.cropX||0)/cw1)*p.w*SX)+'px';wi.style.top=(-((p.cropY||0)/ch1)*p.h*SY)+'px';
+    const gh=c.querySelector('.crop-ghost');
+    if(gh){gh.style.width=wi.style.width;gh.style.height=wi.style.height;gh.style.left=wi.style.left;gh.style.top=wi.style.top;}}
 }
 function commitHist(before){if(layoutSnapshot()!==before){undoStack.push(before);if(undoStack.length>HIST_MAX)undoStack.shift();redoStack.length=0;}}
+/* 旋轉/翻轉圖層改變外框（x,y,w,h）時的位置補正：
+   元素以中心為軸旋轉，外框一變中心就位移，畫面內容會跳。
+   把「中心位移向量」先翻轉再旋轉回螢幕方向，內容就會待在原地。rot=0 且未翻轉時等於原值。 */
+function keepAnchored(o,nx,ny,nw,nh,th,flip){
+  if(!th&&!flip)return{x:nx,y:ny};
+  const c0x=o.x+o.w/2,c0y=o.y+o.h/2;
+  let vx=nx+nw/2-c0x;const vy=ny+nh/2-c0y;
+  if(flip)vx=-vx;
+  const rx=vx*Math.cos(th)-vy*Math.sin(th),ry=vx*Math.sin(th)+vy*Math.cos(th);
+  return{x:c0x+rx-nw/2,y:c0y+ry-nh/2};
+}
 function attachDrag(el,p){
   el.addEventListener('pointerdown',e=>{
     if(eyedropPid===p.pid){e.preventDefault();doEyedropSample(e,el,p,asset(p.assetId));return;}
@@ -699,14 +717,19 @@ function attachDrag(el,p){
       const img=currentSrcImg(p);const natW=(img&&(img.naturalWidth||img.width))||p.w,natH=(img&&(img.naturalHeight||img.height))||p.h;
       const o={cx:p.cropX||0,cy:p.cropY||0,cw:p.cropW||1,ch:p.cropH||1,w:p.w,h:p.h,x:p.x,y:p.y};
       const sclX=o.w/(o.cw*natW),sclY=o.h/(o.ch*natH);
-      const cmove=ev=>{const rr=stage.getBoundingClientRect();const dx=(ev.clientX-rr.left-sx0)/scaleX(),dy=(ev.clientY-rr.top-sy0)/scaleY();
+      const th=(p.rotate||0)*Math.PI/180,cosR=Math.cos(th),sinR=Math.sin(th),flip=!!p.flipX;
+      const cmove=ev=>{const rr=stage.getBoundingClientRect();const sdx=(ev.clientX-rr.left-sx0)/scaleX(),sdy=(ev.clientY-rr.top-sy0)/scaleY();
+        // 螢幕位移 → 圖層自身座標（先反旋轉再反翻轉），旋轉後拖控點方向才會跟手
+        let dx=sdx*cosR+sdy*sinR;const dy=-sdx*sinR+sdy*cosR;if(flip)dx=-dx;
         if(hdir){
           let cx=o.cx,cy=o.cy,cw=o.cw,ch=o.ch,x=o.x,y=o.y;
           if(hdir.includes('e')){cw=Math.max(0.02,Math.min(1-o.cx,o.cw+dx/(sclX*natW)));}
           if(hdir.includes('w')){const ncx=Math.max(0,Math.min(o.cx+o.cw-0.02,o.cx+dx/(sclX*natW)));cw=o.cw-(ncx-o.cx);cx=ncx;x=o.x+(ncx-o.cx)*sclX*natW;}
           if(hdir.includes('s')){ch=Math.max(0.02,Math.min(1-o.cy,o.ch+dy/(sclY*natH)));}
           if(hdir.includes('n')){const ncy=Math.max(0,Math.min(o.cy+o.ch-0.02,o.cy+dy/(sclY*natH)));ch=o.ch-(ncy-o.cy);cy=ncy;y=o.y+(ncy-o.cy)*sclY*natH;}
-          p.cropX=cx;p.cropY=cy;p.cropW=cw;p.cropH=ch;p.x=Math.round(x);p.y=Math.round(y);p.w=Math.max(8,Math.round(sclX*cw*natW));p.h=Math.max(8,Math.round(sclY*ch*natH));
+          const nw=Math.max(8,sclX*cw*natW),nh=Math.max(8,sclY*ch*natH);
+          const fx=keepAnchored(o,x,y,nw,nh,th,flip);
+          p.cropX=cx;p.cropY=cy;p.cropW=cw;p.cropH=ch;p.x=Math.round(fx.x);p.y=Math.round(fx.y);p.w=Math.round(nw);p.h=Math.round(nh);
         }else{
           p.cropX=Math.max(0,Math.min(1-o.cw,o.cx-dx/(sclX*natW)));
           p.cropY=Math.max(0,Math.min(1-o.ch,o.cy-dy/(sclY*natH)));
@@ -723,7 +746,14 @@ function attachDrag(el,p){
     const grp=selectedPlacements().filter(q=>!q.locked).map(q=>({q,ox:q.x,oy:q.y,ow:q.w,oh:q.h,os:q.kind==='text'?(texts[q.pid]?.size||0):0}));
     const move=ev=>{const rr=stage.getBoundingClientRect();const dx=(ev.clientX-rr.left-sx0)/scaleX(),dy=(ev.clientY-rr.top-sy0)/scaleY();
       if(mode==='move'){grp.forEach(g=>{g.q.x=Math.round(g.ox+dx);g.q.y=Math.round(g.oy+dy);});}
-      else{const g=grp.find(g=>g.q===p)||grp[0];if(g){const ratio=g.ow/g.oh;let nw=Math.max(20,Math.round(g.ow+dx));g.q.w=nw;g.q.h=Math.round(nw/ratio);if(g.q.kind==='text'){const t=texts[g.q.pid];if(t)t.size=Math.max(6,Math.round(g.os*(nw/g.ow)));}}}
+      else{const g=grp.find(g=>g.q===p)||grp[0];if(g){const ratio=g.ow/g.oh;
+        // 旋轉/翻轉時把螢幕位移轉進圖層自身座標，控點才跟手；並補正位置讓對角維持不動
+        const th=(g.q.rotate||0)*Math.PI/180,flip=!!g.q.flipX;
+        let ldx=dx*Math.cos(th)+dy*Math.sin(th);if(flip)ldx=-ldx;
+        let nw=Math.max(20,Math.round(g.ow+ldx));const nh=Math.round(nw/ratio);
+        const fx=keepAnchored({x:g.ox,y:g.oy,w:g.ow,h:g.oh},g.ox,g.oy,nw,nh,th,flip);
+        g.q.x=Math.round(fx.x);g.q.y=Math.round(fx.y);g.q.w=nw;g.q.h=nh;
+        if(g.q.kind==='text'){const t=texts[g.q.pid];if(t)t.size=Math.max(6,Math.round(g.os*(nw/g.ow)));}}}
       grp.forEach(g=>liveUpdateSlot(g.q));
       const sp=placement(selPid);$('selInfo').textContent=selPids.size>1?`已選 ${selPids.size} 層`:(sp?`已選 ${layerName(sp)} · ${sp.w}×${sp.h}`:'');
     };
@@ -797,7 +827,8 @@ function renderLayers(){
     if(isText){const t=texts[p.pid];nameTxt=esc((t?.content||'文字').slice(0,12));badge='<span class="badge t">文字</span>';if(t&&t._canvas)thumbStyle=`background-image:url('${t._canvas.toDataURL()}')`;}
     else{const a=asset(p.assetId);if(!a)return;const thumb=(p.useCut&&a.cutSrc)?a.cutSrc:a.src;thumbStyle=`background-image:url('${thumb}')`;nameTxt=esc(a.name);if(isFrame)badge='<span class="badge f">框架</span>';cutBtn=`<button class="icon cut ${a.cutDone?'on':''}" title="AI 去背（可逐次堆疊；以目前結果為來源；需連網）">✂AI</button><button class="icon lcut" title="本機去背：純色背景，可堆疊">✂本機</button><button class="icon eyed" title="吸管去背：點背景色去除，可逐色堆疊">💧吸管</button>${a.cutDone?'<button class="icon reset" title="還原成原圖：清除所有去背結果">↩原圖</button>':''}${isFrame?'':'<button class="icon repl" title="置換內容：保留位置/大小，換成資料庫另一張圖">🔁置換</button>'}`;}
     const opv=Math.round((p.opacity==null?1:p.opacity)*100);
-    const xform=isText?'':`<button class="icon rotL" title="左轉15°">⟲</button><button class="icon rotR" title="右轉15°">⟳</button><button class="icon flip ${p.flipX?'on':''}" title="水平翻轉">⇋</button><button class="icon crop ${cropPid===p.pid?'on':''}" title="裁切：進入後在畫布拖右下角=切掉、拖圖身=平移露出範圍">▣裁切</button>`;
+    const cropped=!isText&&((p.cropX||0)>0.0001||(p.cropY||0)>0.0001||(p.cropW!=null&&p.cropW<0.9999)||(p.cropH!=null&&p.cropH<0.9999));
+    const xform=isText?'':`<button class="icon rotL" title="左轉15°">⟲</button><button class="icon rotR" title="右轉15°">⟳</button><button class="icon flip ${p.flipX?'on':''}" title="水平翻轉">⇋</button><button class="icon crop ${cropPid===p.pid?'on':''}" title="裁切：半透明=會被切掉的部分；拖 8 個控點調整、拖圖身平移露出範圍">▣裁切</button>${cropped?'<button class="icon uncrop" title="重設裁切：還原成整張圖（保持縮放比例）">▣↺重設</button>':''}`;
     row.innerHTML=`<div class="top"><span class="grip">⋮⋮</span><div class="thumb" style="${thumbStyle}"></div><span class="lname">${nameTxt}</span>${badge}</div>
       <div class="ctrls">${isText?'<button class="icon edt">✎ 編輯文字</button>':cutBtn}<button class="icon dup" title="複製這個圖層（含位置/效果）">⧉複製</button><button class="icon lock ${p.locked?'on':''}" title="鎖定">${p.locked?'🔒':'🔓'}</button><button class="icon hide ${p.hidden?'on':''}" title="顯示/隱藏">${p.hidden?'🙈':'👁'}</button>${xform}<button class="icon danger rm">移除</button></div>
       ${isText?'':`<div class="op-row"><span class="mini-label">透明</span><input type="range" class="r op-sld" min="0" max="100" value="${opv}"><span class="opval">${opv}</span></div>`}`;
@@ -811,6 +842,7 @@ function renderLayers(){
     const fl=row.querySelector('.flip');if(fl)fl.onclick=()=>{pushHistory();p.flipX=!p.flipX;renderStage();save();};
     const du=row.querySelector('.dup');if(du)du.onclick=()=>duplicatePlacement(p.pid);
     const cr=row.querySelector('.crop');if(cr)cr.onclick=()=>toggleCrop(p.pid);
+    const uc=row.querySelector('.uncrop');if(uc)uc.onclick=()=>resetCrop(p.pid);
     const op=row.querySelector('.op-sld');if(op){op.onpointerdown=()=>pushHistory();op.oninput=e=>{p.opacity=+e.target.value/100;row.querySelector('.opval').textContent=e.target.value;renderStage();};op.onchange=()=>save();}
     if(isText){row.querySelector('.edt').onclick=()=>{editingTextPid=(editingTextPid===p.pid?null:p.pid);selectOne(p.pid);renderAll();};}
     else{const cb=row.querySelector('.cut');if(cb)cb.onclick=ev=>handleCut(ev.currentTarget,p,asset(p.assetId));const lc=row.querySelector('.lcut');if(lc)lc.onclick=()=>handleLocalCut(p,asset(p.assetId));const ed=row.querySelector('.eyed');if(ed)ed.onclick=()=>startEyedrop(p,asset(p.assetId));const rs=row.querySelector('.reset');if(rs)rs.onclick=()=>resetCut(p,asset(p.assetId));const rp=row.querySelector('.repl');if(rp)rp.onclick=()=>startReplace(p.pid);}
@@ -869,8 +901,22 @@ function toggleCrop(pid){
   const p=placement(pid);if(!p)return;
   if(p.kind==='text'){setStatus('文字圖層不支援裁切','warn');return;}
   if(cropPid===pid){cropPid=null;setStatus('已結束裁切','');}
-  else{cropPid=pid;selectOne(pid);setStatus('裁切模式：在畫布拖右下角控點＝切掉邊緣、拖圖身＝平移露出範圍（Esc 結束）','warn');}
+  else{cropPid=pid;selectOne(pid);setStatus('裁切模式：半透明＝會被切掉的部分；拖 8 個控點調整、拖圖身平移露出範圍（Esc 結束）','warn');}
   renderAll();
+}
+/* 重設裁切：還原成整張圖。維持像素縮放比例；位置補正讓原本露出的部分不動 */
+function resetCrop(pid){
+  const p=placement(pid);if(!p||p.kind==='text')return;
+  const img=currentSrcImg(p);if(!img){setStatus('圖片尚未載入完成','warn');return;}
+  pushHistory();
+  const natW=img.naturalWidth||img.width,natH=img.naturalHeight||img.height;
+  const cw=p.cropW==null?1:p.cropW,ch=p.cropH==null?1:p.cropH,cx=p.cropX||0,cy=p.cropY||0;
+  const sclX=p.w/(cw*natW),sclY=p.h/(ch*natH);
+  const nw=sclX*natW,nh=sclY*natH,nx=p.x-cx*sclX*natW,ny=p.y-cy*sclY*natH;
+  const fx=keepAnchored({x:p.x,y:p.y,w:p.w,h:p.h},nx,ny,nw,nh,(p.rotate||0)*Math.PI/180,!!p.flipX);
+  p.cropX=0;p.cropY=0;p.cropW=1;p.cropH=1;
+  p.x=Math.round(fx.x);p.y=Math.round(fx.y);p.w=Math.round(nw);p.h=Math.round(nh);
+  renderAll();save();setStatus('已重設裁切，還原成整張圖','ok');
 }
 
 /* ---------- batch export by templates ---------- */
@@ -1133,8 +1179,8 @@ function resetCut(p,a){
 function localCut(img,tol,opts){
   opts=opts||{};
   tol=tol||44;
-  let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
-  // 大圖先縮小，避免 flood-fill 運算過久 / 記憶體爆掉
+  const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+  // flood-fill 在縮小的工作畫布上算（求快），輸出時把遮罩放大回原尺寸套用 → 去背不降解析度
   const MAXSIDE=1600,scale=Math.min(1,MAXSIDE/Math.max(w,h));
   const cw=Math.max(1,Math.round(w*scale)),ch=Math.max(1,Math.round(h*scale));
   const c=document.createElement('canvas');c.width=cw;c.height=ch;const ctx=c.getContext('2d',{willReadFrequently:true});
@@ -1153,11 +1199,30 @@ function localCut(img,tol,opts){
   const seed=pp=>{if(!vis[pp]){vis[pp]=1;st[sp++]=pp;}};
   if(seedIdx>=0){seed(seedIdx);}                                   // 吸管：從點到的位置往外擴散
   else{for(let x=0;x<cw;x++){seed(x);seed((ch-1)*cw+x);}for(let y=0;y<ch;y++){seed(y*cw);seed(y*cw+(cw-1));}}
+  const mask=new Uint8ClampedArray(N);                             // 255＝要去掉的背景
   let removed=0;
-  while(sp>0){const pp=st[--sp];const i=pp*4;if(!close(i))continue;d[i+3]=0;removed++;const x=pp%cw;
+  while(sp>0){const pp=st[--sp];const i=pp*4;if(!close(i))continue;mask[pp]=255;removed++;const x=pp%cw;
     if(x+1<cw)seed(pp+1);if(x>0)seed(pp-1);if(pp+cw<N)seed(pp+cw);if(pp-cw>=0)seed(pp-cw);}
-  ctx.putImageData(id,0,0);
-  return {canvas:c,removed,total:N};
+  // 邊緣柔化：遮罩做一次 3×3 平均，去背邊變成半透明漸層（抗鋸齒），不再是硬階梯
+  const soft=new Uint8ClampedArray(N);
+  for(let y=0;y<ch;y++)for(let x=0;x<cw;x++){
+    let s=0,n=0;
+    for(let oy=-1;oy<=1;oy++){const yy=y+oy;if(yy<0||yy>=ch)continue;
+      for(let ox=-1;ox<=1;ox++){const xx=x+ox;if(xx<0||xx>=cw)continue;s+=mask[yy*cw+xx];n++;}}
+    soft[y*cw+x]=s/n;
+  }
+  // 遮罩畫布 → 放大回原尺寸，從原圖挖掉（destination-out）
+  const mcv=document.createElement('canvas');mcv.width=cw;mcv.height=ch;
+  const mctx=mcv.getContext('2d'),mid=mctx.createImageData(cw,ch);
+  for(let p2=0;p2<N;p2++)mid.data[p2*4+3]=soft[p2];
+  mctx.putImageData(mid,0,0);
+  const out=document.createElement('canvas');out.width=w;out.height=h;
+  const octx=out.getContext('2d');
+  octx.drawImage(img,0,0,w,h);
+  octx.globalCompositeOperation='destination-out';
+  octx.imageSmoothingEnabled=true;octx.imageSmoothingQuality='high';
+  octx.drawImage(mcv,0,0,cw,ch,0,0,w,h);
+  return {canvas:out,removed,total:N};
 }
 async function runLocalCut(p,a,opts,label){
   if(!a||!a._img){setStatus('沒有可去背的原圖','warn');return;}
