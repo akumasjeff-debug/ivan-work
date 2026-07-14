@@ -30,8 +30,8 @@
   .preset .pdel{opacity:.5;font-size:10px;}
   .preset .pdel:hover{opacity:1;color:var(--danger);}
 
-  .stage-frame{display:flex;align-items:center;justify-content:center;width:min(70vmin,540px);height:min(70vmin,540px);}
-  .stage-shell{position:relative;max-width:100%;max-height:100%;
+  .stage-frame{display:flex;width:min(70vmin,540px);height:min(70vmin,540px);overflow:auto;}
+  .stage-shell{position:relative;margin:auto;flex-shrink:0;
     background:linear-gradient(45deg,#1a1916 25%,transparent 25%),linear-gradient(-45deg,#1a1916 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#1a1916 75%),linear-gradient(-45deg,transparent 75%,#1a1916 75%);
     background-size:22px 22px;background-position:0 0,0 11px,11px -11px,-11px 0;background-color:#262420;
     border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.45);touch-action:none;user-select:none;}
@@ -216,6 +216,7 @@
   .align-bar .ab.on{border-color:var(--accent2);color:var(--accent2);}
   .align-bar .ab:disabled{opacity:.45;cursor:default;}
   .edit-bar{max-width:700px;}
+  .edit-bar .eb-tol{display:inline-flex;align-items:center;gap:4px;}
   .align-bar .ab-sep{width:1px;height:16px;background:var(--line);}
   .align-bar .ab-chk{display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--ink);}
   .stage-shell.show-safe .safe-overlay{display:block;}
@@ -265,7 +266,7 @@
 <header>
   <h1>合成台</h1>
   <span class="tag" id="tagSize">1000 × 1000 · jpg / png</span>
-  <span class="tag" style="color:var(--accent2);border:1px solid var(--accent2);border-radius:5px;padding:1px 6px;">v4 · 編輯工具列</span>
+  <span class="tag" style="color:var(--accent2);border:1px solid var(--accent2);border-radius:5px;padding:1px 6px;">v5 · 縮放/退一步/批次</span>
 </header>
 
 <div class="wrap">
@@ -276,10 +277,6 @@
       <div>
         <div class="zone-head"><p class="sec-label">工具</p></div>
         <button class="btn sm wide" id="addTextBtn">＋ 新增文字圖層</button>
-        <div class="fld" style="margin-top:10px;">
-          <label style="font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,monospace;">吸管 / 本機去背 吸色強度 <span id="tolVal">36</span>（小=只去很接近的色）</label>
-          <input type="range" id="eyedropTol" min="8" max="120" value="36" style="width:100%;accent-color:var(--accent2);">
-        </div>
       </div>
 
       <div>
@@ -357,7 +354,7 @@
       </span>
     </div>
     <div class="stage-frame">
-      <div class="stage-shell" id="stage"><div class="ph" id="ph">勾選左側圖片即可放上畫布<br>點擊格子可選取 · 拖移 / 縮放</div></div>
+      <div class="stage-shell" id="stage"><div class="ph" id="ph">勾選右側圖片即可放上畫布<br>點擊格子可選取 · 拖移 / 縮放 · Ctrl+滾輪縮放檢視</div></div>
     </div>
     <div class="align-bar" id="alignBar">
       <span class="ab-label">對齊</span>
@@ -374,27 +371,30 @@
       <span class="ab-sep"></span>
       <label class="ab-chk"><input type="checkbox" id="safeGuide"> 安全框</label>
     </div>
-    <!-- 編輯工具列：單選一個圖片/框架圖層時出現（文字圖層有自己的編輯器） -->
+    <!-- 編輯工具列：單選圖片/框架圖層＝全功能；多選＝只留旋轉/翻轉（批次） -->
     <div class="align-bar edit-bar" id="editBar">
       <span class="ab-label">編輯</span>
-      <button class="ab" id="ebCutAI" title="AI 去背（CDN 模型，需連網；以目前結果為來源可逐次堆疊）">✂AI 去背</button>
-      <button class="ab" id="ebCutLocal" title="本機去背：純色/單色背景（去背紙、白底商品圖），可堆疊">✂本機</button>
-      <button class="ab" id="ebEyedrop" title="吸管去背：點畫布上的背景色去除，可逐色堆疊（Esc 取消）">💧吸管</button>
-      <button class="ab" id="ebResetCut" title="還原成原圖：清除這張圖所有去背結果">↩原圖</button>
+      <button class="ab eb-single" id="ebCutAI" title="AI 去背（CDN 模型，需連網；以目前結果為來源可逐次堆疊）">✂AI 去背</button>
+      <button class="ab eb-single" id="ebCutLocal" title="本機去背：純色/單色背景（去背紙、白底商品圖），可堆疊">✂本機</button>
+      <button class="ab eb-single" id="ebEyedrop" title="吸管去背：點畫布上的背景色去除，可逐色堆疊（Esc 取消）">💧吸管</button>
+      <span class="eb-single eb-tol" title="吸管/本機去背 吸色強度（小=只去很接近的色）"><span class="ab-label">強度</span><input type="range" id="eyedropTol" min="8" max="120" value="36" style="width:76px;accent-color:var(--accent2);"><span class="ab-label" id="tolVal">36</span></span>
+      <button class="ab eb-single" id="ebUndoCut" title="去背退一步：回到上一次去背結果">↶退一步</button>
+      <button class="ab eb-single" id="ebResetCut" title="還原成原圖：清除這張圖所有去背結果">↩原圖</button>
+      <span class="ab-sep eb-single"></span>
+      <button class="ab eb-single" id="ebCrop" title="裁切：半透明=會被切掉的部分；拖 8 個控點調整、拖圖身平移（Esc 結束）">▣裁切</button>
+      <button class="ab eb-single" id="ebUncrop" title="重設裁切：還原成整張圖（保持縮放比例）">▣↺重設</button>
       <span class="ab-sep"></span>
-      <button class="ab" id="ebCrop" title="裁切：半透明=會被切掉的部分；拖 8 個控點調整、拖圖身平移（Esc 結束）">▣裁切</button>
-      <button class="ab" id="ebUncrop" title="重設裁切：還原成整張圖（保持縮放比例）">▣↺重設</button>
-      <span class="ab-sep"></span>
-      <button class="ab" id="ebRotL" title="左轉15°">⟲</button>
-      <button class="ab" id="ebRotR" title="右轉15°">⟳</button>
-      <button class="ab" id="ebFlip" title="水平翻轉">⇋</button>
-      <span class="ab-sep"></span>
-      <button class="ab" id="ebReplace" title="置換內容：保留位置/大小，換成資料庫另一張圖">🔁置換</button>
+      <button class="ab" id="ebRotL" title="左轉15°（多選時一起轉）">⟲</button>
+      <button class="ab" id="ebRotR" title="右轉15°（多選時一起轉）">⟳</button>
+      <button class="ab" id="ebFlip" title="水平翻轉（多選時一起翻）">⇋</button>
+      <span class="ab-sep eb-single"></span>
+      <button class="ab eb-single" id="ebReplace" title="置換內容：保留位置/大小，換成資料庫另一張圖">🔁置換</button>
     </div>
     <div class="replace-banner" id="replaceBanner">🔁 置換模式：到左側資料庫點任一張圖，即可換掉此圖層內容（保留位置/大小）　<button class="btn sm" id="cancelReplace">取消</button></div>
     <div class="stage-meta">
       <span>輸出 <b id="outDim">1000×1000</b></span>
       <span>圖層 <b id="layerCount">0</b></span>
+      <span title="Ctrl+滾輪縮放畫布 · 點擊重設 100%" style="cursor:pointer;" id="zoomMeta">縮放 <b id="zoomPct">100%</b></span>
       <span id="selInfo">未選取</span>
     </div>
 
@@ -482,6 +482,7 @@ let eyedropPid=null;            // 吸管去背模式：等待在畫布上點顏
 let eyedropTol=36;              // 吸管/本機去背 吸色強度（顏色容差，越小越嚴格）
 let cropPid=null;               // 裁切模式：拖把=切、拖圖身=平移露出範圍
 let _aiBusy=false;              // AI 去背進行中（避免重複觸發、供編輯工具列顯示狀態）
+let zoom=1;                     // 畫布檢視縮放（1=符合視窗，Ctrl+滾輪 1~4 倍，只影響顯示不影響輸出）
 let dirHandle=null;
 let undoStack=[], redoStack=[]; const HIST_MAX=60; let lastNudgeHist=0;
 let clipboard=[];               // copied placement specs
@@ -494,7 +495,7 @@ function selectOne(pid){selPids.clear();if(pid)selPids.add(pid);selPid=pid||null
 function toggleSel(pid){if(selPids.has(pid)){selPids.delete(pid);if(selPid===pid)selPid=[...selPids][selPids.size-1]||null;}else{selPids.add(pid);selPid=pid;}}
 
 /* ---------- undo / redo (layout = placements + texts) ---------- */
-function layoutSnapshot(){return JSON.stringify({placements,texts:Object.fromEntries(Object.entries(texts).map(([k,v])=>[k,{...v,_canvas:undefined}]))});}
+function layoutSnapshot(){return JSON.stringify({placements,texts:Object.fromEntries(Object.entries(texts).map(([k,v])=>[k,{...v,_canvas:undefined,_dataUrl:undefined}]))});}
 function pushHistory(){undoStack.push(layoutSnapshot());if(undoStack.length>HIST_MAX)undoStack.shift();redoStack.length=0;}
 function restoreLayout(json){const d=JSON.parse(json);placements=(d.placements||[]).map(normPlacement);texts=d.texts||{};selPids.clear();selPid=null;rebuildAllTexts();renderAll();save();}
 function undo(){if(!undoStack.length){setStatus('沒有可復原的動作','warn');return;}redoStack.push(layoutSnapshot());restoreLayout(undoStack.pop());setStatus('已復原','ok');}
@@ -507,6 +508,8 @@ const scaleX=()=>stage.clientWidth/canvasW;
 const scaleY=()=>stage.clientHeight/canvasH;
 const setStatus=(t,c='')=>{statusEl.textContent=t;statusEl.className='status '+c;};
 const asset=id=>(id===frameAsset?.id)?frameAsset:assets.find(a=>a.id===id);
+// 文字 canvas 的 dataURL 快取：toDataURL 很貴，只在 rebuildText 後第一次要用時才重算
+const textURL=t=>{if(!t._dataUrl&&t._canvas)t._dataUrl=t._canvas.toDataURL();return t._dataUrl;};
 const placement=pid=>placements.find(p=>p.pid===pid);
 const isPlaced=id=>placements.some(p=>p.assetId===id);
 const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -553,10 +556,10 @@ function save(){
     localStorage.setItem(META_KEY,JSON.stringify({
       version:6,canvasW,canvasH,sizePresets,folders,templates,
       fonts:fonts.map(f=>({id:f.id,name:f.name,family:f.family})),
-      assets:assets.map(a=>({id:a.id,name:a.name,folderId:a.folderId||'_root',hasCut:!!a.cutSrc,driveId:a.driveId||null,fileKey:a.fileKey||null,fbKey:a.fbKey||null,sbKey:a.sbKey||null})),
+      assets:assets.map(a=>({id:a.id,name:a.name,folderId:a.folderId||'_root',hasCut:!!a.cutSrc,hasCutPrev:!!a.cutPrev,driveId:a.driveId||null,fileKey:a.fileKey||null,fbKey:a.fbKey||null,sbKey:a.sbKey||null})),
       placements:placements.map(p=>({...p})),
-      frameAsset:frameAsset?{id:frameAsset.id,name:frameAsset.name,hasCut:!!frameAsset.cutSrc}:null,
-      texts:Object.fromEntries(Object.entries(texts).map(([k,v])=>[k,{...v,_canvas:undefined}]))
+      frameAsset:frameAsset?{id:frameAsset.id,name:frameAsset.name,hasCut:!!frameAsset.cutSrc,hasCutPrev:!!frameAsset.cutPrev}:null,
+      texts:Object.fromEntries(Object.entries(texts).map(([k,v])=>[k,{...v,_canvas:undefined,_dataUrl:undefined}]))
     }));
   }catch(e){setStatus('設定儲存失敗（localStorage）；圖檔仍存在 IndexedDB','warn');}
 }
@@ -587,7 +590,7 @@ async function load(){
   const tick=()=>{if(--pending<=0){renderAll();rebuildAllTexts();}};
   if(pending===0){renderAll();rebuildAllTexts();return;}
   for(const a of metaAssets){
-    const o={id:a.id,name:a.name,folderId:a.folderId||'_root',src:null,cutSrc:null,cutDone:!!a.hasCut,_img:null,_cutImg:null,driveId:a.driveId||null,fileKey:a.fileKey||null,fbKey:a.fbKey||null,sbKey:a.sbKey||null};
+    const o={id:a.id,name:a.name,folderId:a.folderId||'_root',src:null,cutSrc:null,cutDone:!!a.hasCut,cutPrev:!!a.hasCutPrev,_img:null,_cutImg:null,driveId:a.driveId||null,fileKey:a.fileKey||null,fbKey:a.fbKey||null,sbKey:a.sbKey||null};
     assets.push(o);
     o.src=await getBlobURL('img:'+a.id);
     if(a.hasCut)o.cutSrc=await getBlobURL('cut:'+a.id);
@@ -595,7 +598,7 @@ async function load(){
   }
   if(d.frameAsset){
     const fa=d.frameAsset;
-    frameAsset={id:fa.id,name:fa.name,src:null,cutSrc:null,cutDone:!!fa.hasCut,_img:null,_cutImg:null};
+    frameAsset={id:fa.id,name:fa.name,src:null,cutSrc:null,cutDone:!!fa.hasCut,cutPrev:!!fa.hasCutPrev,_img:null,_cutImg:null};
     frameAsset.src=await getBlobURL('img:'+fa.id);
     if(fa.hasCut)frameAsset.cutSrc=await getBlobURL('cut:'+fa.id);
     loadImgs(frameAsset,tick);
@@ -607,7 +610,8 @@ function loadImgs(o,done){if(!o.src){done();return;}const img=new Image();img.on
 function applySize(){
   const box=540, ratio=canvasW/canvasH;let w,h;
   if(ratio>=1){w=Math.min(box,window.innerWidth*0.7);h=w/ratio;}else{h=Math.min(box,window.innerWidth*0.7);w=h*ratio;}
-  stage.style.width=w+'px';stage.style.height=h+'px';
+  stage.style.width=(w*zoom)+'px';stage.style.height=(h*zoom)+'px';
+  const zp=$('zoomPct');if(zp)zp.textContent=Math.round(zoom*100)+'%';
   $('outDim').textContent=`${canvasW}×${canvasH}`;$('tagSize').textContent=`${canvasW} × ${canvasH} · jpg / png`;
   renderSizePresets();renderStage();renderTemplates();
 }
@@ -661,7 +665,7 @@ function renderStage(){
   [...placements].sort((a,b)=>a.z-b.z).forEach(p=>{
     if(p.hidden)return;
     let imgSrc;
-    if(p.kind==='text'){const t=texts[p.pid];if(!t||!t._canvas)return;imgSrc=t._canvas.toDataURL();}
+    if(p.kind==='text'){const t=texts[p.pid];if(!t||!t._canvas)return;imgSrc=textURL(t);}
     else{const a=asset(p.assetId);if(!a)return;imgSrc=(p.useCut&&a.cutSrc)?a.cutSrc:a.src;}
     const sel=selPids.has(p.pid);
     const cropping=cropPid===p.pid;
@@ -702,20 +706,25 @@ function renderStage(){
   renderEditBar();
 }
 function updateAlignBar(){$('alignBar').classList.toggle('show',selPids.size>=1);}
-/* 編輯工具列（畫布下方）：單選一個圖片/框架圖層時出現，去背/裁切/旋轉/翻轉/置換都在這 */
+/* 編輯工具列（畫布下方）：單選圖片/框架圖層＝全功能；多選＝只留旋轉/翻轉批次操作 */
 function curEditP(){const p=selPids.size===1?placement(selPid):null;return (p&&p.kind!=='text'&&!p.locked)?p:null;}
+function editTargets(){return selectedPlacements().filter(q=>!q.locked&&q.kind!=='text');}
 function renderEditBar(){
   const p=curEditP();
-  $('editBar').classList.toggle('show',!!p);
+  const multi=!p&&selPids.size>1&&editTargets().length>0;
+  $('editBar').classList.toggle('show',!!p||multi);
+  if(!p&&!multi)return;
+  document.querySelectorAll('#editBar .eb-single').forEach(el=>el.style.display=p?'':'none');
+  $('ebFlip').classList.toggle('on',!!(p&&p.flipX));
   if(!p)return;
   const a=asset(p.assetId);
   const ai=$('ebCutAI');ai.disabled=_aiBusy;ai.textContent=_aiBusy?'✂ 處理中…':'✂AI 去背';
+  $('ebUndoCut').style.display=(a&&a.cutPrev)?'':'none';
   $('ebResetCut').style.display=(a&&a.cutDone)?'':'none';
   $('ebCrop').classList.toggle('on',cropPid===p.pid);
   const cropped=((p.cropX||0)>0.0001||(p.cropY||0)>0.0001||(p.cropW!=null&&p.cropW<0.9999)||(p.cropH!=null&&p.cropH<0.9999));
   $('ebUncrop').style.display=cropped?'':'none';
   $('ebEyedrop').classList.toggle('on',eyedropPid===p.pid);
-  $('ebFlip').classList.toggle('on',!!p.flipX);
   $('ebReplace').style.display=p.kind==='image'?'':'none';
 }
 function layerName(p){if(p.kind==='text')return '文字「'+((texts[p.pid]?.content||'').slice(0,6))+'」';if(p.kind==='frame')return '框架';return asset(p.assetId)?.name||'';}
@@ -831,7 +840,7 @@ function buildAssetRow(a){
   if(editing){const inp=row.querySelector('.db-name-edit');inp.onclick=e=>e.stopPropagation();setTimeout(()=>{inp.focus();inp.select();},0);const commit=()=>{a.name=inp.value.trim()||a.name;editingAssetId=null;renderDb();renderLayers();save();};inp.onkeydown=e=>{if(e.key==='Enter')commit();if(e.key==='Escape'){editingAssetId=null;renderDb();}};inp.onblur=commit;}
   else{row.querySelector('.db-name').onclick=e=>{e.stopPropagation();if(replaceTargetPid!=null){doReplace(a.id);return;}previewAssetId=previewAssetId===a.id?null:a.id;renderDb();};}
   row.querySelector('.edit').onclick=e=>{e.stopPropagation();editingAssetId=a.id;renderDb();};
-  row.querySelector('.del').onclick=e=>{e.stopPropagation();if(!confirm(`刪除「${a.name}」？\n原圖與去背結果會一併刪除，無法復原${isPlaced(a.id)?'（畫布上的圖層也會移除）':''}。`))return;delBlob('img:'+a.id);delBlob('cut:'+a.id);assets=assets.filter(x=>x.id!==a.id);placements=placements.filter(p=>p.assetId!==a.id);if(previewAssetId===a.id)previewAssetId=null;renderAll();save();};
+  row.querySelector('.del').onclick=e=>{e.stopPropagation();if(!confirm(`刪除「${a.name}」？\n原圖與去背結果會一併刪除，無法復原${isPlaced(a.id)?'（畫布上的圖層也會移除）':''}。`))return;delBlob('img:'+a.id);delBlob('cut:'+a.id);delBlob('cutprev:'+a.id);assets=assets.filter(x=>x.id!==a.id);placements=placements.filter(p=>p.assetId!==a.id);if(previewAssetId===a.id)previewAssetId=null;renderAll();save();};
   row.addEventListener('dragstart',e=>{row.classList.add('dragging');e.dataTransfer.setData('x-asset',a.id);e.dataTransfer.effectAllowed='move';});
   row.addEventListener('dragend',()=>row.classList.remove('dragging'));
   const frag=document.createDocumentFragment();frag.appendChild(row);
@@ -862,7 +871,7 @@ function renderLayers(){
     const isFrame=p.kind==='frame',isText=p.kind==='text';
     const row=document.createElement('div');row.className='lrow'+(isFrame?' frame':'')+(isText?' text':'')+(selPids.has(p.pid)?' sel':'');row.draggable=true;row.dataset.pid=p.pid;
     let thumbStyle='',nameTxt='',badge='';
-    if(isText){const t=texts[p.pid];nameTxt=esc((t?.content||'文字').slice(0,12));badge='<span class="badge t">文字</span>';if(t&&t._canvas)thumbStyle=`background-image:url('${t._canvas.toDataURL()}')`;}
+    if(isText){const t=texts[p.pid];nameTxt=esc((t?.content||'文字').slice(0,12));badge='<span class="badge t">文字</span>';if(t&&t._canvas)thumbStyle=`background-image:url('${textURL(t)}')`;}
     else{const a=asset(p.assetId);if(!a)return;const thumb=(p.useCut&&a.cutSrc)?a.cutSrc:a.src;thumbStyle=`background-image:url('${thumb}')`;nameTxt=esc(a.name);if(isFrame)badge='<span class="badge f">框架</span>';}
     const opv=Math.round((p.opacity==null?1:p.opacity)*100);
     // 去背/裁切/旋轉/翻轉/置換 已移到畫布下方的「編輯」工具列（選取單一圖層時出現）
@@ -913,7 +922,7 @@ function alignSel(kind){
 
 /* ---------- copy / paste layers ---------- */
 function copySel(){const ps=selectedPlacements();if(!ps.length)return;
-  clipboard=ps.map(p=>({p:JSON.parse(JSON.stringify(p)),t:p.kind==='text'?JSON.parse(JSON.stringify({...texts[p.pid],_canvas:undefined})):null}));
+  clipboard=ps.map(p=>({p:JSON.parse(JSON.stringify(p)),t:p.kind==='text'?JSON.parse(JSON.stringify({...texts[p.pid],_canvas:undefined,_dataUrl:undefined})):null}));
   setStatus(`已複製 ${ps.length} 層`,'ok');}
 function pasteSel(){if(!clipboard.length)return;pushHistory();selPids.clear();let z=placements.length?Math.max(...placements.map(p=>p.z)):0;
   clipboard.forEach(item=>{const np=normPlacement({...item.p,pid:uid(),x:(item.p.x||0)+24,y:(item.p.y||0)+24,z:++z});placements.push(np);if(item.t){texts[np.pid]={...item.t};rebuildText(np.pid);}selPids.add(np.pid);selPid=np.pid;});
@@ -924,7 +933,7 @@ function duplicatePlacement(pid){
   const z=placements.length?Math.max(...placements.map(q=>q.z)):0;
   const np=normPlacement(JSON.parse(JSON.stringify({...p,pid:uid(),x:(p.x||0)+24,y:(p.y||0)+24,z:z+1})));
   placements.push(np);
-  if(p.kind==='text'&&texts[pid]){texts[np.pid]=JSON.parse(JSON.stringify({...texts[pid],_canvas:undefined}));rebuildText(np.pid);if(editingTextPid===pid)editingTextPid=np.pid;}
+  if(p.kind==='text'&&texts[pid]){texts[np.pid]=JSON.parse(JSON.stringify({...texts[pid],_canvas:undefined,_dataUrl:undefined}));rebuildText(np.pid);if(editingTextPid===pid)editingTextPid=np.pid;}
   selectOne(np.pid);renderAll();save();setStatus('已複製一份圖層','ok');
 }
 /* 進入/結束 裁切模式 */
@@ -1184,12 +1193,30 @@ async function aiCut(src){
   const removeBackground=await loadBgRemover();
   return await removeBackground(src,{progress:(key,cur,tot)=>{if(key.includes('fetch'))setStatus(`下載模型 ${Math.round((cur/tot)*100)||0}%`,'warn');else setStatus('AI 運算中…','warn');}});
 }
+/* 去背前先把「目前的去背結果」搬去 cutprev:<id>，供「↶退一步」用（保留一層） */
+async function stashCutPrev(a){
+  try{
+    if(a.cutSrc){const prev=await idbGet(ST_BLOBS,'cut:'+a.id);if(prev){await delBlob('cutprev:'+a.id);await putBlob('cutprev:'+a.id,prev);a.cutPrev=true;return;}}
+    await delBlob('cutprev:'+a.id);a.cutPrev=false;
+  }catch(e){console.warn('stashCutPrev',e);}
+}
+/* 去背退一步：回到上一次去背結果（只保留一層；第一次去背請用 ↩原圖） */
+async function undoCut(p,a){
+  if(!a||!a.cutPrev){setStatus('沒有上一步去背可退（第一次去背請按 ↩原圖）','warn');return;}
+  const prev=await idbGet(ST_BLOBS,'cutprev:'+a.id);
+  if(!prev){a.cutPrev=false;renderEditBar();setStatus('找不到上一步去背資料','warn');return;}
+  await delBlob('cut:'+a.id);await putBlob('cut:'+a.id,prev);
+  await delBlob('cutprev:'+a.id);a.cutPrev=false;
+  a.cutSrc=await getBlobURL('cut:'+a.id);a.cutDone=true;
+  const ci=new Image();ci.onload=()=>{a._cutImg=ci;renderAll();save();setStatus('已退回上一步去背','ok');};ci.src=a.cutSrc;
+}
 async function handleCut(p,a){
   if(!a||_aiBusy)return;
   _aiBusy=true;renderEditBar();
   try{
     const srcUrl=a.cutSrc||a.src;                  // 堆疊：以目前去背結果為來源
     const blob=await aiCut(srcUrl);                 // PNG blob
+    await stashCutPrev(a);
     await delBlob('cut:'+a.id);await putBlob('cut:'+a.id,blob);
     a.cutSrc=await getBlobURL('cut:'+a.id);a.cutDone=true;
     const ci=new Image();ci.onload=()=>{a._cutImg=ci;placements.filter(x=>x.assetId===a.id).forEach(x=>x.useCut=true);_aiBusy=false;renderAll();save();setStatus('AI 去背完成','ok');};ci.src=a.cutSrc;
@@ -1199,7 +1226,7 @@ async function handleCut(p,a){
 function resetCut(p,a){
   if(!a||!a.cutDone){setStatus('這張圖沒有去背結果','warn');return;}
   if(!confirm('還原成原圖？將清除這張圖目前所有去背（含分階段堆疊的結果）。'))return;
-  delBlob('cut:'+a.id);a.cutSrc=null;a._cutImg=null;a.cutDone=false;
+  delBlob('cut:'+a.id);delBlob('cutprev:'+a.id);a.cutSrc=null;a._cutImg=null;a.cutDone=false;a.cutPrev=false;
   placements.filter(x=>x.assetId===a.id).forEach(x=>x.useCut=false);
   renderAll();save();setStatus('已還原為原圖','ok');
 }
@@ -1264,6 +1291,7 @@ async function runLocalCut(p,a,opts,label){
     if(removed/total<0.005){setStatus(`${label}去背沒偵測到可去除的背景（顏色與背景不夠接近）→ 試試「✂AI」`,'warn');return;}
     const blob=await new Promise(res=>c.toBlob(res,'image/png'));
     if(!blob)throw new Error('產生圖片失敗');
+    await stashCutPrev(a);
     await delBlob('cut:'+a.id);await putBlob('cut:'+a.id,blob);
     a.cutSrc=await getBlobURL('cut:'+a.id);a.cutDone=true;
     const ci=new Image();ci.onload=()=>{a._cutImg=ci;placements.filter(x=>x.assetId===a.id).forEach(x=>x.useCut=true);renderAll();save();setStatus(`${label}去背完成（去掉約 ${Math.round(removed/total*100)}% 背景）`,'ok');};ci.src=a.cutSrc;
@@ -1327,7 +1355,7 @@ function renderFrame(){
   const add=box.querySelector('.fadd');if(add)add.onclick=()=>addFramePlacement();
   const top=box.querySelector('.ftop');if(top)top.onclick=()=>{const fp=framePlacement();if(fp){fp.z=Math.max(...placements.map(p=>p.z))+1;renderAll();save();}};
   box.querySelector('.fchg').onclick=()=>frameInput.click();
-  box.querySelector('.frm').onclick=()=>{if(!confirm('刪除框架圖？原圖與去背結果會一併刪除，無法復原。'))return;if(frameAsset){delBlob('img:'+frameAsset.id);delBlob('cut:'+frameAsset.id);}placements=placements.filter(p=>p.kind!=='frame');frameAsset=null;renderAll();save();};
+  box.querySelector('.frm').onclick=()=>{if(!confirm('刪除框架圖？原圖與去背結果會一併刪除，無法復原。'))return;if(frameAsset){delBlob('img:'+frameAsset.id);delBlob('cut:'+frameAsset.id);delBlob('cutprev:'+frameAsset.id);}placements=placements.filter(p=>p.kind!=='frame');frameAsset=null;renderAll();save();};
   frameArea.appendChild(box);
 }
 function addFramePlacement(){if(!frameAsset||!frameAsset._img)return;if(framePlacement())return;pushHistory();const z=placements.length?Math.max(...placements.map(p=>p.z))+1:1;const fp=normPlacement({pid:uid(),assetId:frameAsset.id,kind:'frame',x:0,y:0,w:canvasW,h:canvasH,z,useCut:!!frameAsset.cutSrc});placements.push(fp);selectOne(fp.pid);renderAll();save();}
@@ -1417,7 +1445,7 @@ function rebuildText(pid){
   };
   lines.forEach((ln,i)=>{const yC=pad+lh*i+lh/2;paintLine(ln,yC);});
   c._opacity=t.opacity;
-  t._canvas=applyOpacity(c,t.opacity);
+  t._canvas=applyOpacity(c,t.opacity);t._dataUrl=null; // 內容變了，快取失效
   // keep placement aspect synced to text canvas
   const ratio=cw/ch;p.h=Math.round(p.w/ratio);
 }
@@ -1704,9 +1732,11 @@ $('ebEyedrop').onclick=()=>{const p=curEditP();if(!p)return;eyedropPid===p.pid?c
 $('ebResetCut').onclick=()=>{const p=curEditP();if(p)resetCut(p,asset(p.assetId));};
 $('ebCrop').onclick=()=>{const p=curEditP();if(p)toggleCrop(p.pid);};
 $('ebUncrop').onclick=()=>{const p=curEditP();if(p)resetCrop(p.pid);};
-$('ebRotL').onclick=()=>{const p=curEditP();if(p){pushHistory();p.rotate=((p.rotate||0)-15)%360;renderStage();save();}};
-$('ebRotR').onclick=()=>{const p=curEditP();if(p){pushHistory();p.rotate=((p.rotate||0)+15)%360;renderStage();save();}};
-$('ebFlip').onclick=()=>{const p=curEditP();if(p){pushHistory();p.flipX=!p.flipX;renderStage();save();}};
+$('ebUndoCut').onclick=()=>{const p=curEditP();if(p)undoCut(p,asset(p.assetId));};
+// 旋轉/翻轉支援多選批次
+$('ebRotL').onclick=()=>{const ps=editTargets();if(!ps.length)return;pushHistory();ps.forEach(p=>p.rotate=((p.rotate||0)-15)%360);renderStage();save();};
+$('ebRotR').onclick=()=>{const ps=editTargets();if(!ps.length)return;pushHistory();ps.forEach(p=>p.rotate=((p.rotate||0)+15)%360);renderStage();save();};
+$('ebFlip').onclick=()=>{const ps=editTargets();if(!ps.length)return;pushHistory();ps.forEach(p=>p.flipX=!p.flipX);renderStage();renderEditBar();save();};
 $('ebReplace').onclick=()=>{const p=curEditP();if(p&&p.kind==='image')startReplace(p.pid);};
 $('safeGuide').onchange=e=>{safeGuide=e.target.checked;stage.classList.toggle('show-safe',safeGuide);};
 document.querySelectorAll('.ratios .rc').forEach(b=>b.onclick=()=>changeSize(+b.dataset.w,+b.dataset.h));
@@ -1720,6 +1750,24 @@ loadExportPrefs();
 
 // 吸管/本機去背 強度滑桿
 $('eyedropTol').oninput=e=>{eyedropTol=+e.target.value;$('tolVal').textContent=e.target.value;};
+
+// 畫布檢視縮放：Ctrl+滾輪（以游標位置為中心），點縮放百分比重設
+const stageFrame=document.querySelector('.stage-frame');
+stageFrame.addEventListener('wheel',e=>{
+  if(!e.ctrlKey)return;
+  e.preventDefault();
+  const old=zoom;
+  zoom=Math.min(4,Math.max(1,zoom*(e.deltaY<0?1.15:1/1.15)));
+  if(Math.abs(zoom-1)<0.07)zoom=1;
+  if(zoom===old)return;
+  const sr=stage.getBoundingClientRect();
+  const fx=(e.clientX-sr.left)/sr.width,fy=(e.clientY-sr.top)/sr.height; // 游標在畫布上的比例位置
+  applySize();
+  const sr2=stage.getBoundingClientRect(); // 改完尺寸再量一次，把游標下那個點捲回原處
+  stageFrame.scrollLeft+=(sr2.left+fx*sr2.width)-e.clientX;
+  stageFrame.scrollTop+=(sr2.top+fy*sr2.height)-e.clientY;
+},{passive:false});
+$('zoomMeta').onclick=()=>{if(zoom!==1){zoom=1;applySize();}};
 
 // Supabase 雲端共享圖庫（主要）
 sbLoadCfg();
