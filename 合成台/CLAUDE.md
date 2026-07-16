@@ -22,6 +22,8 @@
 
 - 目前共享走 **Supabase Storage**（`SB_KEY='compositor.supabase.v1'`）；
   上傳檔名必須清成**純 ASCII**（中文檔名會 InvalidKey 400）。
+- 刪素材時可連帶刪雲端檔（v7 `sbDelete()`）；bucket 的 anon DELETE 政策
+  **已在 Supabase 後台設好**（2026-07-16），刪除失敗才需要回去檢查政策。
 - 舊的「本機共享資料夾」（File System Access 備份）**已移除**，
   HANDOVER 裡相關描述已過時，勿照著恢復。
 
