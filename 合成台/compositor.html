@@ -268,7 +268,7 @@
 <header>
   <h1>合成台</h1>
   <span class="tag" id="tagSize">1000 × 1000 · jpg / png</span>
-  <span class="tag" style="color:var(--accent2);border:1px solid var(--accent2);border-radius:5px;padding:1px 6px;">v6 · 畫布外工作區</span>
+  <span class="tag" style="color:var(--accent2);border:1px solid var(--accent2);border-radius:5px;padding:1px 6px;">v7 · 雲端刪除</span>
 </header>
 
 <div class="wrap">
@@ -846,7 +846,7 @@ function buildAssetRow(a){
   if(editing){const inp=row.querySelector('.db-name-edit');inp.onclick=e=>e.stopPropagation();setTimeout(()=>{inp.focus();inp.select();},0);const commit=()=>{a.name=inp.value.trim()||a.name;editingAssetId=null;renderDb();renderLayers();save();};inp.onkeydown=e=>{if(e.key==='Enter')commit();if(e.key==='Escape'){editingAssetId=null;renderDb();}};inp.onblur=commit;}
   else{row.querySelector('.db-name').onclick=e=>{e.stopPropagation();if(replaceTargetPid!=null){doReplace(a.id);return;}previewAssetId=previewAssetId===a.id?null:a.id;renderDb();};}
   row.querySelector('.edit').onclick=e=>{e.stopPropagation();editingAssetId=a.id;renderDb();};
-  row.querySelector('.del').onclick=e=>{e.stopPropagation();if(!confirm(`刪除「${a.name}」？\n原圖與去背結果會一併刪除，無法復原${isPlaced(a.id)?'（畫布上的圖層也會移除）':''}。`))return;delBlob('img:'+a.id);delBlob('cut:'+a.id);delBlob('cutprev:'+a.id);assets=assets.filter(x=>x.id!==a.id);placements=placements.filter(p=>p.assetId!==a.id);if(previewAssetId===a.id)previewAssetId=null;renderAll();save();};
+  row.querySelector('.del').onclick=e=>{e.stopPropagation();if(!confirm(`刪除「${a.name}」？\n原圖與去背結果會一併刪除，無法復原${isPlaced(a.id)?'（畫布上的圖層也會移除）':''}。`))return;let delCloud=false;if(a.sbKey&&sbReady())delCloud=confirm(`「${a.name}」也在雲端共享圖庫。\n要一併從雲端刪除嗎？（同事同步後也會消失）\n\n按「取消」＝只刪本機；沒刪雲端的話，下次「🔄 同步雲端」會再出現。`);const sbKey=a.sbKey;delBlob('img:'+a.id);delBlob('cut:'+a.id);delBlob('cutprev:'+a.id);assets=assets.filter(x=>x.id!==a.id);placements=placements.filter(p=>p.assetId!==a.id);if(previewAssetId===a.id)previewAssetId=null;renderAll();save();if(delCloud)sbDelete(sbKey,a.name);};
   row.addEventListener('dragstart',e=>{row.classList.add('dragging');e.dataTransfer.setData('x-asset',a.id);e.dataTransfer.effectAllowed='move';});
   row.addEventListener('dragend',()=>row.classList.remove('dragging'));
   const frag=document.createDocumentFragment();frag.appendChild(row);
@@ -1191,6 +1191,14 @@ async function sbUpload(o,file){
     if(r.ok){o.sbKey=key;save();sbStat('已上傳雲端：'+key);}
     else{const t=await r.text().catch(()=>'');console.warn('sb upload',r.status,t);sbStat('上傳失敗 '+r.status+'（檢查 bucket 名稱與寫入政策）');}
   }catch(e){console.warn(e);}
+}
+async function sbDelete(key,label){
+  if(!sbReady()||!key)return;
+  try{
+    const r=await fetch(sbCfg.url+'/storage/v1/object/'+encodeURIComponent(sbCfg.bucket)+'/'+encodeURIComponent(key),{method:'DELETE',headers:{apikey:sbCfg.anon,Authorization:'Bearer '+sbCfg.anon}});
+    if(r.ok){sbStat('已從雲端刪除：'+key);setStatus(`已從雲端刪除「${label||key}」`,'ok');}
+    else{const t=await r.text().catch(()=>'');console.warn('sb delete',r.status,t);sbStat('雲端刪除失敗 '+r.status+'（bucket 需允許 anon DELETE 政策）');setStatus(`雲端刪除失敗 ${r.status}——本機已刪、雲端檔案還在，需到 Supabase → Storage → Policies 幫 bucket 加 DELETE 政策`,'warn');}
+  }catch(e){console.warn(e);sbStat('雲端刪除失敗：'+(e.message||e));}
 }
 
 /* ---------- AI cutout (CDN model) ---------- */
