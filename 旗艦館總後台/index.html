@@ -1,0 +1,2587 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旗艦館總後台 v1（PS × Xbox × Nintendo）</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- jspreadsheet v4（PS／任天堂 試算表直編用） -->
+    <script src="https://bossanova.uk/jspreadsheet/v4/jexcel.js"></script>
+    <link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" type="text/css" />
+    <script src="https://jsuites.net/v4/jsuites.js"></script>
+    <link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" type="text/css" />
+
+    <!-- Flatpickr（Xbox 優惠時間選擇器用） -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <!-- Firebase compat（三館共用同一專案 game-release-schedule） -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+    <style>
+        body {
+            background-color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+        }
+
+        /* ── 共用（PS／任天堂 試算表區） ── */
+        .resizable-container {
+            width: 100%;
+            height: 280px;
+            min-height: 160px;
+            min-width: 400px;
+            resize: both;
+            overflow: auto;
+            border: 1px solid #cbd5e1;
+            padding: 6px;
+            background-color: #f8fafc;
+            border-radius: 8px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .jexcel_container {
+            width: 100% !important;
+        }
+
+        .mock-prod-img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            background: #fff;
+            padding: 2px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .ps-timeline-line {
+            position: relative;
+        }
+
+        .ps-timeline-line::before {
+            content: '';
+            position: absolute;
+            left: 14px;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg, #00439c 0%, #cbd5e1 50%, #00439c 100%);
+            z-index: 0;
+            opacity: 0.6;
+        }
+
+        .ps-node-symbol {
+            position: absolute;
+            left: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 11px;
+            color: #00439c;
+            z-index: 10;
+        }
+
+        /* ── 共用：PChome 透視鏡 ── */
+        .pchome-preview-lens {
+            display: none;
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            width: 500px;
+            height: 650px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 35px 70px -10px rgba(0, 67, 156, 0.35);
+            border-radius: 28px;
+            padding: 18px;
+            z-index: 9999;
+            pointer-events: auto;
+            animation: lensFadeIn 0.3s forwards cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .lens-iframe-container {
+            width: 100%;
+            height: 575px;
+            border-radius: 16px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #pchome-lens-frame {
+            width: 117.64%;
+            height: 117.64%;
+            border: 0;
+            transform: scale(0.85);
+            transform-origin: top left;
+        }
+
+        @keyframes lensFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* ── 頂部館別切換 ── */
+        .brand-btn {
+            padding: .45rem 1.15rem;
+            border-radius: .6rem;
+            font-weight: 800;
+            font-size: .8rem;
+            border: 2px solid transparent;
+            color: #cbd5e1;
+            background: rgba(255, 255, 255, .06);
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .brand-btn:hover {
+            color: #fff;
+        }
+
+        .brand-btn.active-ps {
+            background: #00439c;
+            border-color: #3b82f6;
+            color: #fff;
+        }
+
+        .brand-btn.active-xb {
+            background: #107C10;
+            border-color: #52b043;
+            color: #fff;
+        }
+
+        .brand-btn.active-nn {
+            background: #e60012;
+            border-color: #f87171;
+            color: #fff;
+        }
+
+        .brand-pane {
+            display: none;
+        }
+
+        .brand-pane.active {
+            display: block;
+        }
+
+        /* ══════════ Xbox 深色主題（全部限定在 #brand-xbox 內） ══════════ */
+        #brand-xbox {
+            background: #0f0f0f;
+            color: #f0f0f0;
+            font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif;
+            min-height: calc(100vh - 56px);
+        }
+
+        #brand-xbox .tabs { display: flex; gap: 0; border-bottom: 2px solid #222; background: #141414; padding: 0 1rem; overflow-x: auto; }
+        #brand-xbox .tab-btn { padding: .75rem 1.25rem; background: none; border: none; color: #888; cursor: pointer; font-size: .9rem; white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color .15s; }
+        #brand-xbox .tab-btn.active { color: #52b043; border-bottom-color: #107C10; font-weight: 600; }
+        #brand-xbox .tab-btn:hover { color: #ddd; }
+
+        #brand-xbox .tab-pane { display: none; padding: 1.5rem; }
+        #brand-xbox .tab-pane.active { display: block; }
+
+        #brand-xbox .section-card { background: #1a1a1a; border-radius: .75rem; padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid #2a2a2a; }
+        #brand-xbox .section-card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: #52b043; border-left: 3px solid #107C10; padding-left: .5rem; }
+
+        #brand-xbox label { display: block; font-size: .8rem; color: #888; margin-bottom: .25rem; margin-top: .75rem; }
+        #brand-xbox input[type=text], #brand-xbox input[type=url], #brand-xbox input[type=number], #brand-xbox input[type=datetime-local], #brand-xbox select, #brand-xbox textarea {
+            width: 100%; background: #111; border: 1px solid #333; color: #f0f0f0;
+            padding: .5rem .7rem; border-radius: .4rem; font-size: .9rem; box-sizing: border-box;
+        }
+        #brand-xbox input:focus, #brand-xbox select:focus, #brand-xbox textarea:focus { outline: none; border-color: #107C10; }
+
+        /* Flatpickr Xbox 綠（flatpickr 彈窗掛在 body 下，需全域；只有 Xbox 用得到） */
+        .flatpickr-calendar { font-family: 'Segoe UI', sans-serif !important; }
+        .flatpickr-day.selected,
+        .flatpickr-day.selected:hover,
+        .flatpickr-day.startRange,
+        .flatpickr-day.endRange { background: #107C10 !important; border-color: #107C10 !important; }
+        .flatpickr-day.today { border-color: #52b043 !important; color: #52b043 !important; }
+        .flatpickr-day:hover:not(.selected) { background: #1a2e1a !important; }
+        .flatpickr-months .flatpickr-prev-month:hover svg,
+        .flatpickr-months .flatpickr-next-month:hover svg { fill: #52b043 !important; }
+        .numInputWrapper span.arrowUp:after { border-bottom-color: #52b043 !important; }
+        .numInputWrapper span.arrowDown:after { border-top-color: #52b043 !important; }
+        .flatpickr-input { cursor: pointer !important; }
+
+        #brand-xbox .btn-primary { background: #107C10; color: #fff; border: none; padding: .5rem 1.2rem; border-radius: .4rem; cursor: pointer; font-weight: 600; }
+        #brand-xbox .btn-primary:hover { background: #0a5a0a; }
+        #brand-xbox .btn-danger { background: #7f1d1d; color: #fff; border: none; padding: .4rem .8rem; border-radius: .4rem; cursor: pointer; font-size: .8rem; }
+        #brand-xbox .btn-danger:hover { background: #991b1b; }
+
+        #brand-xbox .banner-row { background: #111; border-radius: .5rem; padding: .75rem 1rem; display: flex; align-items: center; gap: .75rem; margin-bottom: .5rem; }
+        #brand-xbox .banner-row img { width: 80px; height: 30px; object-fit: cover; border-radius: .25rem; background: #222; }
+        #brand-xbox .banner-row .banner-info { flex: 1; font-size: .85rem; }
+        #brand-xbox .banner-row .banner-title { font-weight: 600; color: #fff; }
+        #brand-xbox .banner-row .banner-meta { color: #666; font-size: .75rem; margin-top: .2rem; }
+
+        #brand-xbox .ov-section { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: .75rem; margin-bottom: 1.25rem; overflow: hidden; }
+        #brand-xbox .ov-section-header { display: flex; justify-content: space-between; align-items: center; padding: .75rem 1rem; background: #161616; border-bottom: 1px solid #2a2a2a; cursor: pointer; }
+        #brand-xbox .ov-section-header h3 { font-size: .95rem; font-weight: 700; color: #52b043; margin: 0; }
+        #brand-xbox .ov-section-header .ov-count { background: #107C10; color: #fff; font-size: .7rem; border-radius: 999px; padding: .1rem .5rem; margin-left: .5rem; }
+        #brand-xbox .ov-add-btn { background: #107C10; color: #fff; border: none; padding: .3rem .8rem; border-radius: .35rem; cursor: pointer; font-size: .8rem; font-weight: 600; }
+        #brand-xbox .ov-add-btn:hover { background: #0a5a0a; }
+        #brand-xbox .ov-row { display: flex; align-items: center; padding: .5rem .75rem; border-bottom: 1px solid #1f1f1f; gap: .6rem; transition: background .15s; }
+        #brand-xbox .ov-row:last-child { border-bottom: none; }
+        #brand-xbox .ov-row:hover { background: #1f1f1f; }
+        #brand-xbox .ov-row.drag-over { background: #1f3a1f; border-top: 2px solid #107C10; }
+        #brand-xbox .drag-handle { cursor: grab; color: #555; font-size: 1rem; padding: 0 .25rem; user-select: none; flex-shrink: 0; }
+        #brand-xbox .drag-handle:active { cursor: grabbing; }
+        #brand-xbox .ov-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: .35rem; background: #222; flex-shrink: 0; }
+        #brand-xbox .ov-yt-thumb { width: 72px; height: 42px; object-fit: cover; border-radius: .35rem; background: #222; flex-shrink: 0; }
+        #brand-xbox .ov-banner-thumb { width: 90px; height: 32px; object-fit: cover; border-radius: .25rem; background: #222; flex-shrink: 0; }
+        #brand-xbox .ov-info { flex: 1; min-width: 0; }
+        #brand-xbox .ov-name { font-size: .85rem; color: #e0e0e0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #brand-xbox .ov-meta { font-size: .75rem; color: #666; margin-top: .1rem; }
+        #brand-xbox .ov-actions { display: flex; gap: .35rem; flex-shrink: 0; }
+        #brand-xbox .ov-edit-btn { background: #1f3a1f; color: #52b043; border: 1px solid #2a5a2a; padding: .25rem .6rem; border-radius: .3rem; cursor: pointer; font-size: .75rem; }
+        #brand-xbox .ov-edit-btn:hover { background: #2a5a2a; }
+        #brand-xbox .ov-del-btn { background: #2a1010; color: #f87171; border: 1px solid #5a2020; padding: .25rem .6rem; border-radius: .3rem; cursor: pointer; font-size: .75rem; }
+        #brand-xbox .ov-del-btn:hover { background: #5a2020; }
+        #brand-xbox .ov-collapsed .ov-body { display: none; }
+
+        #status-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #0a5a0a; color: #fff; padding: .5rem 1.5rem; font-size: .85rem; transform: translateY(100%); transition: transform .3s; z-index: 100; }
+        #status-bar.show { transform: translateY(0); }
+
+        #brand-xbox .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        #brand-xbox .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+        @media(max-width:640px) {
+            #brand-xbox .grid-2, #brand-xbox .grid-3 { grid-template-columns: 1fr; }
+        }
+
+        #brand-xbox .feature-list { display: flex; flex-direction: column; gap: .4rem; }
+        #brand-xbox .feature-item { display: flex; gap: .5rem; }
+        #brand-xbox .feature-item input { flex: 1; }
+        #brand-xbox .feature-item button { background: #7f1d1d; color: #fff; border: none; padding: .3rem .6rem; border-radius: .3rem; cursor: pointer; }
+    </style>
+</head>
+
+<body class="text-xs text-slate-800">
+
+    <!-- ══════════ 共用登入（三館同一 Firebase 專案、同一組管理員帳號） ══════════ -->
+    <div id="login-wrap" class="min-h-screen flex items-center justify-center">
+        <div id="login-screen" class="w-full max-w-sm bg-white p-8 rounded-3xl shadow-2xl border border-slate-100 mx-4">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-black text-slate-900 tracking-wide mb-2">旗艦館總後台</h1>
+                <p class="text-sm font-bold text-slate-600 bg-slate-100 py-1.5 rounded-lg inline-block px-4">
+                    <span class="text-blue-700">PlayStation</span> ×
+                    <span class="text-green-700">Xbox</span> ×
+                    <span class="text-red-600">Nintendo</span>
+                </p>
+            </div>
+            <form onsubmit="handleLogin(event)" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">管理員帳號 (Email)</label>
+                    <input type="email" id="login-email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 bg-slate-50" placeholder="admin@domain.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">安全密碼</label>
+                    <input type="password" id="login-password" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 bg-slate-50" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-3 rounded-xl shadow-lg transition duration-200 text-sm mt-4">安全登入系統（一次登入管三館）</button>
+                <div id="login-error" class="hidden text-red-500 text-center text-[11px] font-bold mt-3">帳號或密碼錯誤，請重試。</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════ 主畫面 ══════════ -->
+    <div id="app" class="hidden">
+
+        <!-- 全域頂欄：館別切換 -->
+        <header class="sticky top-0 z-50 bg-slate-900 text-white px-4 py-2 flex items-center gap-3 shadow-lg" style="height:56px">
+            <span class="font-black tracking-wide text-sm hidden md:inline">🏬 旗艦館總後台 <span class="text-slate-500 font-bold">v1</span></span>
+            <nav class="flex gap-1.5">
+                <button id="brand-btn-ps" class="brand-btn" onclick="switchBrand('ps')">🕹️ PlayStation</button>
+                <button id="brand-btn-xb" class="brand-btn" onclick="switchBrand('xb')">🎮 Xbox</button>
+                <button id="brand-btn-nn" class="brand-btn" onclick="switchBrand('nn')">🍄 Nintendo</button>
+            </nav>
+            <div class="flex-1"></div>
+            <a id="front-link" href="https://24h.pchome.com.tw/sites/playstation" target="_blank" class="text-[11px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg font-bold">前台 ↗</a>
+            <span id="user-email-display" class="text-[11px] text-slate-400 hidden md:inline"></span>
+            <button onclick="handleLogout()" class="bg-slate-700 hover:bg-red-500 text-white font-bold py-1.5 px-3 rounded-lg shadow transition text-xs border border-slate-600">登出</button>
+        </header>
+
+        <!-- ════════════════════════════════════════════════
+             PlayStation（原 PS admin.html，ID 加 ps- 前綴）
+        ════════════════════════════════════════════════ -->
+        <div id="brand-ps" class="brand-pane">
+            <div class="w-full p-4 md:p-6 pb-20">
+                <div class="max-w-[1600px] mx-auto space-y-6">
+                    <header class="bg-slate-900 text-white p-5 rounded-2xl shadow-lg border-b-4 border-blue-600 flex justify-between items-center">
+                        <h1 class="text-xl font-black tracking-wide">🕹️ PlayStation 雙資料庫中央主控台</h1>
+                    </header>
+
+                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h2 class="text-sm font-black text-slate-800">🖼️ 頂部大輪播與檔期排程 (留空代表長期顯示)</h2>
+                            <button onclick="PS.saveBanners()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">儲存大輪播設定</button>
+                        </div>
+                        <div class="resizable-container">
+                            <div id="ps-banner-spreadsheet"></div>
+                        </div>
+                        <div class="text-[10px] text-slate-500 flex justify-between">
+                            <button onclick="PS.bannerTable.insertRow()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-extrabold px-3 py-1 rounded transition">➕ 追加廣告列</button>
+                            <span>💡 提示：在表格點擊「右鍵」即可刪除列。</span>
+                        </div>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h2 class="text-sm font-black text-blue-600">💿 A. 【遊戲資料庫】大批附加格網 (新增專用)</h2>
+                            <button onclick="PS.saveBulkGames()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">批次追加新增</button>
+                        </div>
+                        <div class="resizable-container">
+                            <div id="ps-game-spreadsheet"></div>
+                        </div>
+                        <button onclick="PS.gTable.insertRow()" class="mt-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-extrabold px-3 py-1 rounded transition">➕ 追加新的一行遊戲新增格</button>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h2 class="text-sm font-black text-emerald-600">🎮 B. 【主機配件資料庫】大批附加格網 (新增專用)</h2>
+                            <button onclick="PS.saveBulkHw()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">批次追加新增</button>
+                        </div>
+                        <div class="resizable-container">
+                            <div id="ps-hw-spreadsheet"></div>
+                        </div>
+                        <button onclick="PS.hTable.insertRow()" class="mt-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-extrabold px-3 py-1 rounded transition">➕ 追加新的一行周邊新增格</button>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h2 class="text-sm font-black text-blue-600">🗄️ C. 【遊戲資料庫】全量現存完整清單表 (雙擊格子直接改)</h2>
+                            <button onclick="PS.syncAllLiveGames()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-5 py-1.5 rounded-lg shadow-sm">⚡ 同步儲存修改 (含刪除)</button>
+                        </div>
+                        <div class="resizable-container" style="height: 380px;">
+                            <div id="ps-live-games-spreadsheet"></div>
+                        </div>
+                        <div class="text-[10px] text-slate-500 flex justify-between">
+                            <button onclick="PS.liveGamesTable.insertRow()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-extrabold px-3 py-1 rounded transition">➕ 插入全新物件</button>
+                            <span>💡 提示：在表格點擊「右鍵」選擇「刪除此列」，然後點擊右上角「同步儲存」即可永久刪除。</span>
+                        </div>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h2 class="text-sm font-black text-emerald-600">🗄️ D. 【主機配件資料庫】全量現存完整清單表 (雙擊格子直接改)</h2>
+                            <button onclick="PS.syncAllLiveHardware()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-5 py-1.5 rounded-lg shadow-sm">⚡ 同步儲存修改 (含刪除)</button>
+                        </div>
+                        <div class="resizable-container" style="height: 380px;">
+                            <div id="ps-live-hardware-spreadsheet"></div>
+                        </div>
+                        <div class="text-[10px] text-slate-500 flex justify-between">
+                            <button onclick="PS.liveHwTable.insertRow()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-extrabold px-3 py-1 rounded transition">➕ 插入全新物件</button>
+                            <span>💡 提示：在表格點擊「右鍵」選擇「刪除此列」，然後點擊右上角「同步儲存」即可永久刪除。</span>
+                        </div>
+                    </section>
+
+                    <div class="p-4 bg-slate-800 text-white rounded-xl font-bold text-sm tracking-wide shadow">
+                        📺 前台實際展示商品順序 • 實時模擬視圖 (純顯示，用來自訂與調整手動排序)
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white p-4 rounded-xl border shadow-inner flex flex-col">
+                            <h3 class="font-black text-slate-800 border-b pb-2 mb-3 flex justify-between items-center text-xs"><span>💿 左欄：已發售遊戲熱賣榜</span></h3>
+                            <div id="ps-preview-left-box" class="space-y-3 flex-1"></div>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border shadow-inner flex flex-col">
+                            <h3 class="font-black text-slate-800 border-b pb-2 mb-3 flex justify-between items-center text-xs"><span>⏳ 中欄：預購新品專區</span></h3>
+                            <div id="ps-preview-middle-box" class="space-y-4 flex-1"></div>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border shadow-inner flex flex-col">
+                            <h3 class="font-black text-slate-800 border-b pb-2 mb-3 flex justify-between items-center text-xs"><span>🎮 右欄：已發售主機與配件周邊</span></h3>
+                            <div id="ps-preview-right-box" class="space-y-4 flex-1"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════
+             Xbox（原 Xbox admin.html，深色主題限定在本區）
+        ════════════════════════════════════════════════ -->
+        <div id="brand-xbox" class="brand-pane">
+            <!-- Xbox 內部分頁 -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="xbSwitchTab('overview')">📋 總覽</button>
+                <button class="tab-btn" onclick="xbSwitchTab('banner')">🖼 Banner</button>
+                <button class="tab-btn" onclick="xbSwitchTab('controller')">🎮 控制器</button>
+                <button class="tab-btn" onclick="xbSwitchTab('gamepass')">💳 Game Pass</button>
+                <button class="tab-btn" onclick="xbSwitchTab('youtube')">🎬 YouTube</button>
+            </div>
+
+            <!-- ─────── TAB: 總覽 ─────── -->
+            <div class="tab-pane active" id="pane-overview">
+                <p style="color:#666;font-size:.82rem;margin-bottom:1rem">拖曳 <span style="color:#888">⠿</span> 調整順序・點 ✏ 跳到編輯・點 👁 切換顯示</p>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;align-items:start">
+
+                    <div class="ov-section" id="ov-sec-banner">
+                        <div class="ov-section-header" onclick="toggleSection('banner')">
+                            <div style="display:flex;align-items:center;gap:.5rem">
+                                <span>🖼 Banner</span>
+                                <span class="ov-count" id="ov-count-banner">0</span>
+                            </div>
+                            <button class="ov-add-btn" onclick="event.stopPropagation();xbSwitchTab('banner')">+ 新增</button>
+                        </div>
+                        <div class="ov-body" id="ov-list-banner" style="max-height:380px;overflow-y:auto"></div>
+                    </div>
+
+                    <div class="ov-section" id="ov-sec-controller">
+                        <div class="ov-section-header" onclick="toggleSection('controller')">
+                            <div style="display:flex;align-items:center;gap:.5rem">
+                                <span>🎮 控制器</span>
+                                <span class="ov-count" id="ov-count-controller">0</span>
+                            </div>
+                            <button class="ov-add-btn" onclick="event.stopPropagation();xbSwitchTab('controller')">+ 新增</button>
+                        </div>
+                        <div class="ov-body" id="ov-list-controller" style="max-height:380px;overflow-y:auto"></div>
+                    </div>
+
+                    <div class="ov-section" id="ov-sec-gamepass">
+                        <div class="ov-section-header" onclick="toggleSection('gamepass')">
+                            <div style="display:flex;align-items:center;gap:.5rem">
+                                <span>💳 Game Pass</span>
+                                <span class="ov-count" id="ov-count-gamepass">0</span>
+                            </div>
+                            <button class="ov-add-btn" onclick="event.stopPropagation();xbSwitchTab('gamepass')">+ 新增</button>
+                        </div>
+                        <div class="ov-body" id="ov-list-gamepass" style="max-height:380px;overflow-y:auto"></div>
+                    </div>
+
+                    <div class="ov-section" id="ov-sec-youtube">
+                        <div class="ov-section-header" onclick="toggleSection('youtube')">
+                            <div style="display:flex;align-items:center;gap:.5rem">
+                                <span>🎬 YouTube</span>
+                                <span class="ov-count" id="ov-count-youtube">0</span>
+                            </div>
+                            <button class="ov-add-btn" onclick="event.stopPropagation();xbSwitchTab('youtube')">+ 新增</button>
+                        </div>
+                        <div class="ov-body" id="ov-list-youtube" style="max-height:380px;overflow-y:auto"></div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ─────── TAB: Banner ─────── -->
+            <div class="tab-pane" id="pane-banner">
+                <div class="grid-2">
+                    <div>
+                        <div class="section-card">
+                            <h2>新增 / 編輯 Banner</h2>
+                            <input type="hidden" id="banner-edit-key" />
+                            <label>標題（備用說明）</label>
+                            <input type="text" id="banner-title" placeholder="2026 Xbox 新品上市" />
+                            <label>PC 圖片 URL（建議寬 1644px）</label>
+                            <input type="url" id="banner-img-pc" placeholder="https://a.ecimg.tw/img/sites/xbox/..." oninput="previewBannerImg()" />
+                            <label>行動版圖片 URL（建議寬 1200px，留空用 PC 圖）</label>
+                            <input type="url" id="banner-img-mobile" placeholder="https://a.ecimg.tw/img/sites/xbox/..." />
+                            <label>點擊連結（可空白）</label>
+                            <input type="url" id="banner-link" placeholder="https://24h.pchome.com.tw/..." />
+                            <div class="grid-2">
+                                <div>
+                                    <label>上架時間（留空=立即）</label>
+                                    <input type="datetime-local" id="banner-start" />
+                                </div>
+                                <div>
+                                    <label>下架時間（留空=永不）</label>
+                                    <input type="datetime-local" id="banner-end" />
+                                </div>
+                            </div>
+                            <label>排序（數字小的排前面）</label>
+                            <input type="number" id="banner-sort" value="0" style="width:100px" />
+                            <div style="margin-top:1rem;display:flex;gap:.5rem">
+                                <button class="btn-primary" onclick="saveXbBanner()">💾 儲存</button>
+                                <button class="btn-primary" onclick="clearBannerForm()" style="background:#555">清除</button>
+                            </div>
+                        </div>
+                        <div id="banner-img-preview" style="display:none;margin-bottom:1rem">
+                            <p style="font-size:.8rem;color:#888;margin-bottom:.5rem">圖片預覽</p>
+                            <img id="banner-preview-img" src="" style="width:100%;border-radius:.5rem;max-height:200px;object-fit:cover" />
+                        </div>
+                    </div>
+                    <div>
+                        <div class="section-card">
+                            <h2>現有 Banner <span style="font-weight:400;color:#666;font-size:.85rem">（點選可編輯）</span></h2>
+                            <div id="banner-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─────── TAB: Controller ─────── -->
+            <div class="tab-pane" id="pane-controller">
+                <div class="section-card">
+                    <h2>新增 / 編輯控制器</h2>
+                    <input type="hidden" id="ctrl-edit-key" />
+                    <div class="grid-3">
+                        <div>
+                            <label>顏色名稱</label>
+                            <input type="text" id="ctrl-name" placeholder="Xbox 無線控制器 - 星光白" />
+                        </div>
+                        <div>
+                            <label>PChome PID</label>
+                            <input type="text" id="ctrl-pid" placeholder="DGBJAH-A900J5QWB-000" oninput="fetchCtrlPreview()" />
+                        </div>
+                        <div>
+                            <label>建議售價</label>
+                            <input type="number" id="ctrl-price" placeholder="1890" />
+                        </div>
+                    </div>
+                    <label>🔀 候補PID序（逗號隔開、第 1 個最優先；每日 GAS 照序把有貨的切成上面的 PChome PID）</label>
+                    <input type="text" id="ctrl-pidlist" placeholder="DGBJAH-A900J5QWB-000,DGBJAH-A900J87CE-000" />
+                    <label>前台分群</label>
+                    <select id="ctrl-category" style="max-width:280px">
+                        <option value="standard">標準控制器（含特別版）</option>
+                        <option value="elite">Elite 菁英系列與配件</option>
+                    </select>
+                    <div class="grid-3" style="margin-top:.75rem;padding:.75rem;background:#111;border:1px solid #1f3a1f;border-radius:.5rem">
+                        <div>
+                            <label style="color:#52b043">🏷 優惠價（活動期間自動顯示）</label>
+                            <input type="number" id="ctrl-promo-price" placeholder="留空=不開啟" />
+                        </div>
+                        <div>
+                            <label style="color:#52b043">⏰ 優惠開始時間</label>
+                            <input type="datetime-local" id="ctrl-promo-start" />
+                        </div>
+                        <div>
+                            <label style="color:#52b043">⏰ 優惠結束時間</label>
+                            <input type="datetime-local" id="ctrl-promo-end" />
+                        </div>
+                    </div>
+                    <label>商品圖片 URL（上傳後可填相對路徑，如 <code style="color:#52b043">img/controllers/ctrl-white.png</code>）</label>
+                    <input type="url" id="ctrl-img" placeholder="img/controllers/ctrl-white.png" oninput="previewCtrlImg()" />
+                    <div id="ctrl-img-preview" style="display:none;margin-top:.5rem;align-items:center;gap:.75rem">
+                        <img id="ctrl-preview-img" src="" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:.5rem;background:#222;border:1px solid #333;display:block" />
+                        <span style="font-size:.75rem;color:#666">圖片預覽</span>
+                    </div>
+                    <div style="margin-top:.5rem;display:flex;gap:.75rem;align-items:center">
+                        <label style="margin:0;display:flex;gap:.4rem;align-items:center;cursor:pointer">
+                            <input type="checkbox" id="ctrl-featured" /> 標為特別版
+                        </label>
+                        <label style="margin:0;display:flex;gap:.4rem;align-items:center;cursor:pointer">
+                            <input type="checkbox" id="ctrl-visible" checked /> 顯示
+                        </label>
+                        <div style="flex:1"></div>
+                        <label>排序</label>
+                        <input type="number" id="ctrl-sort" value="0" style="width:70px" />
+                    </div>
+                    <div style="margin-top:1rem;display:flex;gap:.5rem">
+                        <button class="btn-primary" onclick="saveController()">💾 儲存</button>
+                        <button class="btn-primary" onclick="clearCtrlForm()" style="background:#555">清除</button>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <h2>控制器清單</h2>
+                    <div id="controller-table"></div>
+                </div>
+            </div>
+
+            <!-- ─────── TAB: Game Pass ─────── -->
+            <div class="tab-pane" id="pane-gamepass">
+                <div class="section-card">
+                    <h2>新增 / 編輯 Game Pass 方案</h2>
+                    <input type="hidden" id="gp-edit-key" />
+                    <div class="grid-3">
+                        <div>
+                            <label>方案名稱</label>
+                            <input type="text" id="gp-name" placeholder="Game Pass Ultimate" />
+                        </div>
+                        <div>
+                            <label>期間（顯示用）</label>
+                            <input type="text" id="gp-duration" placeholder="3個月" />
+                        </div>
+                        <div>
+                            <label>期間單位（小字）</label>
+                            <input type="text" id="gp-unit" placeholder="3 個月" value="個月" />
+                        </div>
+                    </div>
+                    <div class="grid-3">
+                        <div>
+                            <label>價格（NT$）</label>
+                            <input type="number" id="gp-price" placeholder="1949" />
+                        </div>
+                        <div>
+                            <label>PChome PID</label>
+                            <input type="text" id="gp-pid" placeholder="DGBJI3-D900JMYDM-000" />
+                        </div>
+                        <div>
+                            <label>排序</label>
+                            <input type="number" id="gp-sort" value="0" />
+                        </div>
+                    </div>
+                    <label>🔀 候補PID序（逗號隔開、第 1 個最優先；每日 GAS 照序切換）</label>
+                    <input type="text" id="gp-pidlist" placeholder="DGBJI3-D900JMY5J-000,DGBJI3-D900JMXZK-000" />
+                    <label>方案特色（每行一項）</label>
+                    <div id="gp-features-list" class="feature-list">
+                        <div class="feature-item"><input type="text" placeholder="EA Play 內含" /><button onclick="removeFeature(this)">✕</button></div>
+                    </div>
+                    <button onclick="addFeature()" style="margin-top:.5rem;background:none;border:1px dashed #444;color:#888;padding:.3rem .7rem;border-radius:.3rem;cursor:pointer;font-size:.82rem">+ 新增特色</button>
+                    <div style="margin-top:.75rem;display:flex;gap:.75rem;align-items:center">
+                        <label style="margin:0;display:flex;gap:.4rem;align-items:center;cursor:pointer">
+                            <input type="checkbox" id="gp-featured" /> 標為最推薦
+                        </label>
+                        <label style="margin:0;display:flex;gap:.4rem;align-items:center;cursor:pointer">
+                            <input type="checkbox" id="gp-visible" checked /> 顯示
+                        </label>
+                    </div>
+                    <div style="margin-top:1rem;display:flex;gap:.5rem">
+                        <button class="btn-primary" onclick="saveGamePass()">💾 儲存</button>
+                        <button class="btn-primary" onclick="clearGpForm()" style="background:#555">清除</button>
+                    </div>
+                </div>
+                <div class="section-card">
+                    <h2>方案清單</h2>
+                    <div id="gamepass-table"></div>
+                </div>
+            </div>
+
+            <!-- ─────── TAB: YouTube ─────── -->
+            <div class="tab-pane" id="pane-youtube">
+                <div class="section-card">
+                    <h2>新增 / 編輯 YouTube 影片</h2>
+                    <input type="hidden" id="yt-edit-key" />
+                    <div class="grid-2">
+                        <div>
+                            <label>YouTube 影片 ID</label>
+                            <input type="text" id="yt-video-id" placeholder="dQw4w9WgXcQ" oninput="previewYt()" />
+                            <p style="font-size:.75rem;color:#666;margin-top:.25rem">從 YouTube 網址取得：youtube.com/watch?v=<b style="color:#888">這個部分</b></p>
+                        </div>
+                        <div>
+                            <label>影片標題（顯示於縮圖下方）</label>
+                            <input type="text" id="yt-title" placeholder="Xbox Game Showcase 2026" />
+                            <label>排序</label>
+                            <input type="number" id="yt-sort" value="0" style="width:80px" />
+                        </div>
+                    </div>
+                    <label style="margin:0;display:flex;gap:.4rem;align-items:center;cursor:pointer;margin-top:.75rem">
+                        <input type="checkbox" id="yt-visible" checked /> 顯示
+                    </label>
+                    <div id="yt-preview-wrap" style="display:none;margin-top:.75rem">
+                        <p style="font-size:.8rem;color:#888;margin-bottom:.5rem">縮圖預覽</p>
+                        <img id="yt-thumb-preview" src="" style="width:320px;border-radius:.5rem" />
+                    </div>
+                    <div style="margin-top:1rem;display:flex;gap:.5rem">
+                        <button class="btn-primary" onclick="saveYoutube()">💾 儲存</button>
+                        <button class="btn-primary" onclick="clearYtForm()" style="background:#555">清除</button>
+                    </div>
+                </div>
+                <div class="section-card">
+                    <h2>影片清單</h2>
+                    <div id="youtube-table"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════
+             Nintendo（原任天堂 admin.html，ID 加 nn- 前綴）
+        ════════════════════════════════════════════════ -->
+        <div id="brand-nintendo" class="brand-pane">
+            <div class="w-full p-4 md:p-6 pb-20">
+                <div class="max-w-[1600px] mx-auto space-y-6">
+                    <header class="bg-slate-900 text-white p-5 rounded-2xl shadow-lg border-b-4 border-red-600 flex justify-between items-center">
+                        <div>
+                            <h1 class="text-xl font-black tracking-wide">🎮 任天堂旗艦館 中央主控台</h1>
+                            <p class="text-[11px] text-slate-400 mt-1">改完按各區「儲存」即生效，前台不用重新上傳</p>
+                        </div>
+                    </header>
+
+                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h2 class="text-sm font-black text-slate-800">🖼️ 版頭大輪播與檔期排程（上下架時間留空＝長期顯示）</h2>
+                            <button onclick="NN.saveBanners()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">⚡ 同步儲存輪播 (含刪除)</button>
+                        </div>
+                        <div class="resizable-container">
+                            <div id="nn-banner-spreadsheet"></div>
+                        </div>
+                        <div class="text-[10px] text-slate-500 flex justify-between">
+                            <button onclick="NN.bannerTable.insertRow()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-extrabold px-3 py-1 rounded transition">➕ 追加輪播列</button>
+                            <span>💡 圖片填相對路徑（img/banner/xxx.jpg）或完整網址；右鍵可刪除列，刪後記得按儲存。</span>
+                        </div>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h2 class="text-sm font-black text-red-600">💿 A. 【遊戲庫 NS2＋NS】全量清單表（雙擊格子直接改）</h2>
+                            <button onclick="NN.syncGames()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-5 py-1.5 rounded-lg shadow-sm">⚡ 同步儲存修改 (含刪除)</button>
+                        </div>
+                        <div class="resizable-container" style="height: 340px;">
+                            <div id="nn-games-spreadsheet"></div>
+                        </div>
+                        <div class="text-[10px] text-slate-500 flex justify-between">
+                            <button onclick="NN.gamesTable.insertRow()" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-extrabold px-3 py-1 rounded transition">➕ 插入新遊戲</button>
+                            <span>💡 平台 NS2＝上格、NS＝下格；「連結覆蓋」有填就用它，沒填用 PID 組商品頁連結。</span>
+                        </div>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h2 class="text-sm font-black text-emerald-600">🕹️ B. 【周邊庫】全量清單表（雙擊格子直接改）</h2>
+                            <button onclick="NN.syncHardware()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-5 py-1.5 rounded-lg shadow-sm">⚡ 同步儲存修改 (含刪除)</button>
+                        </div>
+                        <div class="resizable-container" style="height: 340px;">
+                            <div id="nn-hw-spreadsheet"></div>
+                        </div>
+                        <div class="text-[10px] text-slate-500 flex justify-between">
+                            <button onclick="NN.hwTable.insertRow()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-extrabold px-3 py-1 rounded transition">➕ 插入新周邊</button>
+                            <span>💡 周邊卡目前多連 store 頁 → 填「連結覆蓋」；連單品就填 PID。</span>
+                        </div>
+                    </section>
+
+                    <div class="p-4 bg-slate-800 text-white rounded-xl font-bold text-sm tracking-wide shadow">
+                        📺 前台實際展示順序 • 實時模擬視圖（純顯示，用來調整排序權重：數字小在前）
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white p-4 rounded-xl border shadow-inner flex flex-col">
+                            <h3 class="font-black text-slate-800 border-b pb-2 mb-3 text-xs">🖼️ 版頭輪播（含檔期狀態）</h3>
+                            <div id="nn-preview-banner-box" class="space-y-3 flex-1"></div>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border shadow-inner flex flex-col">
+                            <h3 class="font-black text-slate-800 border-b pb-2 mb-3 text-xs">💿 首頁分組（⭐主打→🔥預購→🎮熱賣→⭐經典）</h3>
+                            <div id="nn-preview-games-box" class="space-y-3 flex-1"></div>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border shadow-inner flex flex-col">
+                            <h3 class="font-black text-slate-800 border-b pb-2 mb-3 text-xs">🕹️ NS2 周邊設備</h3>
+                            <div id="nn-preview-hw-box" class="space-y-3 flex-1"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 共用：PChome 透視鏡（PS／任天堂試算表點格子時顯示） -->
+    <div id="pchome-lens-popup" class="pchome-preview-lens">
+        <div class="flex justify-between items-center border-b pb-1.5 mb-2 select-none">
+            <div class="font-black text-slate-800 flex items-center gap-1">🔍 <span id="lens-pid-title" class="font-mono text-blue-600"></span> 實時對照透視</div>
+            <div class="text-[9px] text-gray-400 font-medium">*自適應智慧預載視窗</div>
+        </div>
+        <div class="lens-iframe-container shadow-inner">
+            <iframe id="pchome-lens-frame" src="" scrolling="yes"></iframe>
+        </div>
+    </div>
+
+    <!-- Xbox 狀態列 -->
+    <div id="status-bar"></div>
+
+    <script>
+        // ════════════════════════════════════════════════
+        // 共用：Firebase（三館同一專案）＋登入
+        // ════════════════════════════════════════════════
+        firebase.initializeApp({
+            apiKey: "AIzaSyD-YTwX9fupqFxifRCzMGfIJHwi82nss14",
+            authDomain: "game-release-schedule.firebaseapp.com",
+            databaseURL: "https://game-release-schedule-default-rtdb.firebaseio.com",
+            projectId: "game-release-schedule",
+            storageBucket: "game-release-schedule.firebasestorage.app",
+            messagingSenderId: "532722105593",
+            appId: "1:532722105593:web:18cf58b50047450f9e3628",
+            measurementId: "G-VHHNYSEP7Y"
+        });
+
+        var database = firebase.database();
+        var auth = firebase.auth();
+
+        auth.onAuthStateChanged(function(user) {
+            var loginWrap = document.getElementById('login-wrap');
+            var app = document.getElementById('app');
+            if (user) {
+                loginWrap.classList.add('hidden');
+                app.classList.remove('hidden');
+                document.getElementById('user-email-display').innerText = user.email;
+                PS.start();
+                NN.start();
+                XB.loadAll();
+            } else {
+                loginWrap.classList.remove('hidden');
+                app.classList.add('hidden');
+            }
+        });
+
+        function handleLogin(e) {
+            e.preventDefault();
+            var email = document.getElementById('login-email').value;
+            var password = document.getElementById('login-password').value;
+            var errBox = document.getElementById('login-error');
+            auth.signInWithEmailAndPassword(email, password)
+                .then(function() {
+                    errBox.classList.add('hidden');
+                })
+                .catch(function(error) {
+                    errBox.classList.remove('hidden');
+                    errBox.innerText = "登入失敗：" + error.message;
+                });
+        }
+
+        function handleLogout() {
+            auth.signOut().then(function() {
+                alert("您已安全登出系統。");
+            });
+        }
+
+        // ════════════════════════════════════════════════
+        // 共用：館別切換（記住上次停留的館）
+        // ════════════════════════════════════════════════
+        var FRONT_LINKS = {
+            ps: 'https://24h.pchome.com.tw/sites/playstation',
+            xb: 'https://24h.pchome.com.tw/sites/xbox',
+            nn: 'https://24h.pchome.com.tw/sites/nintendo'
+        };
+        var BRAND_PANES = { ps: 'brand-ps', xb: 'brand-xbox', nn: 'brand-nintendo' };
+        var BRAND_ACTIVE_CLASS = { ps: 'active-ps', xb: 'active-xb', nn: 'active-nn' };
+
+        function switchBrand(brand) {
+            Object.keys(BRAND_PANES).forEach(function(b) {
+                document.getElementById(BRAND_PANES[b]).classList.toggle('active', b === brand);
+                var btn = document.getElementById('brand-btn-' + b);
+                btn.classList.remove('active-ps', 'active-xb', 'active-nn');
+                if (b === brand) btn.classList.add(BRAND_ACTIVE_CLASS[b]);
+            });
+            document.getElementById('front-link').href = FRONT_LINKS[brand];
+            closePChomeLens();
+            try { localStorage.setItem('unified-admin-brand', brand); } catch (e) {}
+        }
+        switchBrand((function() {
+            try { return localStorage.getItem('unified-admin-brand') || 'ps'; } catch (e) { return 'ps'; }
+        })());
+
+        // ════════════════════════════════════════════════
+        // 共用：試算表小工具（PS／任天堂）
+        // ════════════════════════════════════════════════
+        var taiwaneseContextMenu = function(obj, x, y, e) {
+            var items = [];
+            if (y !== null) {
+                items.push({
+                    title: '⬆️ 在上方插入一列',
+                    onclick: function() { obj.insertRow(1, parseInt(y), 1); }
+                });
+                items.push({
+                    title: '⬇️ 在下方插入一列',
+                    onclick: function() { obj.insertRow(1, parseInt(y), 0); }
+                });
+                items.push({ type: 'line' });
+                items.push({
+                    title: '🗑️ 刪除此列 (請記得按右上角儲存)',
+                    onclick: function() {
+                        if (confirm("確定要從表格中移除此列嗎？移除後請務必點擊右上角「儲存」按鈕來同步雲端。")) {
+                            obj.deleteRow(parseInt(y), 1);
+                        }
+                    }
+                });
+            }
+            return items;
+        };
+
+        // siteBase：'playstation' 或 'nintendo'（相對路徑圖檔預覽用）
+        function triggerPChomeLens(siteBase, cellValue, isImageDirect) {
+            var popup = document.getElementById("pchome-lens-popup");
+            var frame = document.getElementById("pchome-lens-frame");
+            var titleText = document.getElementById("lens-pid-title");
+            if (cellValue && cellValue.trim() !== "") {
+                var rawStr = cellValue.trim();
+                if (isImageDirect || rawStr.toLowerCase().endsWith(".jpg") || rawStr.toLowerCase().endsWith(".png") || rawStr.toLowerCase().endsWith(".svg")) {
+                    titleText.innerText = "實體圖片預覽";
+                    if (!rawStr.toLowerCase().startsWith("http") && !rawStr.toLowerCase().startsWith("//")) {
+                        frame.src = "https://24h.pchome.com.tw/sites/" + siteBase + "/" + rawStr;
+                    } else {
+                        frame.src = rawStr;
+                    }
+                    popup.style.display = "block";
+                    return;
+                }
+                var cleanId = "";
+                if (rawStr.toLowerCase().includes("pchome.com.tw")) {
+                    var parts = rawStr.split('/');
+                    var lastPart = parts[parts.length - 1];
+                    if (lastPart.includes('?')) lastPart = lastPart.split('?')[0];
+                    cleanId = lastPart;
+                } else {
+                    cleanId = rawStr;
+                }
+
+                if (cleanId && cleanId.length > 3) {
+                    titleText.innerText = cleanId;
+                    frame.src = "https://24h.m.pchome.com.tw/prod/" + cleanId;
+                    popup.style.display = "block";
+                } else {
+                    popup.style.display = "none";
+                    frame.src = "";
+                }
+            } else {
+                popup.style.display = "none";
+                frame.src = "";
+            }
+        }
+
+        function closePChomeLens() {
+            var popup = document.getElementById("pchome-lens-popup");
+            if (popup) popup.style.display = "none";
+        }
+
+        // 自適應欄寬：量測表頭+每格文字實際寬度後設定欄寬（checkbox/hidden 欄不動）
+        function autoFitColumns(tbl, minW, maxW) {
+            if (!tbl || !tbl.options || !tbl.setWidth) return;
+            var canvas = autoFitColumns._c || (autoFitColumns._c = document.createElement('canvas'));
+            var ctx = canvas.getContext('2d');
+            ctx.font = '12px Arial, "Microsoft JhengHei", sans-serif';
+            var data = tbl.getData();
+            tbl.options.columns.forEach(function(col, c) {
+                if (col.type === 'checkbox' || col.type === 'hidden') return;
+                var w = ctx.measureText(String(col.title || '')).width + 28;
+                for (var r = 0; r < data.length; r++) {
+                    var v = data[r][c];
+                    if (v === null || v === undefined || v === true || v === false) continue;
+                    var tw = ctx.measureText(String(v)).width + 20;
+                    if (tw > w) w = tw;
+                }
+                tbl.setWidth(c, Math.max(minW || 60, Math.min(maxW || 420, Math.ceil(w))));
+            });
+        }
+
+        function esc(s) {
+            return String(s || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // ════════════════════════════════════════════════
+        // PlayStation（原 PS admin.html 邏輯，Firebase 路徑不變：
+        // site_banners / pchome_games / pchome_hardware）
+        // ════════════════════════════════════════════════
+        var PS = (function() {
+            var ns = {};
+            var isDbListenersStarted = false;
+
+            var gameKeysMap = [];
+            var hardwareKeysMap = [];
+            var rawGamesCache = [];
+            var rawHardwareCache = [];
+            var PS_SYMBOLS = ['▵', '◯', '✕', '□'];
+
+            function lens(v, isImg) { triggerPChomeLens('playstation', v, isImg); }
+
+            ns.start = function() {
+                initGameExcel();
+                initHwExcel();
+                if (!isDbListenersStarted) {
+                    startDatabaseListeners();
+                    isDbListenersStarted = true;
+                }
+            };
+
+            // 💡 使用 destroy() 確保表格重建清空
+            function initGameExcel() {
+                if (ns.gTable) {
+                    ns.gTable.destroy();
+                }
+                var d = [];
+                for (var i = 0; i < 4; i++) d.push(["", "", 0, "", "", "", false, false, false, ""]);
+                ns.gTable = jspreadsheet(document.getElementById('ps-game-spreadsheet'), {
+                    data: d,
+                    columns: [{
+                        type: 'calendar',
+                        title: '發售日期 (未定請留空)',
+                        width: 130,
+                        options: { format: 'YYYY-MM-DD' }
+                    }, {
+                        type: 'text',
+                        title: '品名 (前台秀字)',
+                        width: 220
+                    }, {
+                        type: 'numeric',
+                        title: '手動排序權重',
+                        width: 90
+                    }, {
+                        type: 'text',
+                        title: 'PChome PID',
+                        width: 120
+                    }, {
+                        type: 'text',
+                        title: '自訂圖片(方案B)',
+                        width: 140
+                    }, {
+                        type: 'checkbox',
+                        title: '舊遊戲',
+                        width: 55
+                    }, {
+                        type: 'checkbox',
+                        title: '轉單',
+                        width: 55
+                    }, {
+                        type: 'checkbox',
+                        title: '寄倉',
+                        width: 55
+                    }, {
+                        type: 'text',
+                        title: '內部私密備註',
+                        width: 120
+                    }],
+                    contextMenu: taiwaneseContextMenu
+                });
+            }
+
+            function initHwExcel() {
+                if (ns.hTable) {
+                    ns.hTable.destroy();
+                }
+                var d = [];
+                for (var i = 0; i < 4; i++) d.push(["", "", 0, "主機類", "", "", false, false, false, ""]);
+                ns.hTable = jspreadsheet(document.getElementById('ps-hw-spreadsheet'), {
+                    data: d,
+                    columns: [{
+                        type: 'calendar',
+                        title: '發售日期 (未定請留空)',
+                        width: 130,
+                        options: { format: 'YYYY-MM-DD' }
+                    }, {
+                        type: 'text',
+                        title: '品名 (前台秀字)',
+                        width: 220
+                    }, {
+                        type: 'numeric',
+                        title: '手動排序權重',
+                        width: 90
+                    }, {
+                        type: 'dropdown',
+                        title: '呈現類別',
+                        width: 90,
+                        source: ['主機類', '手把類', '其他'],
+                        autocomplete: true
+                    }, {
+                        type: 'text',
+                        title: 'PChome PID',
+                        width: 120
+                    }, {
+                        type: 'text',
+                        title: '自訂圖片(方案B)',
+                        width: 140
+                    }, {
+                        type: 'checkbox',
+                        title: '舊設備',
+                        width: 55
+                    }, {
+                        type: 'checkbox',
+                        title: '轉單',
+                        width: 55
+                    }, {
+                        type: 'checkbox',
+                        title: '寄倉',
+                        width: 55
+                    }, {
+                        type: 'text',
+                        title: '內部私密備註',
+                        width: 125
+                    }],
+                    contextMenu: taiwaneseContextMenu
+                });
+            }
+
+            function startDatabaseListeners() {
+                database.ref('site_banners').on('value', function(snap) {
+                    var d = [];
+                    if (snap.exists()) {
+                        snap.forEach(function(c) {
+                            var v = c.val();
+                            d.push([v.title || "", v.img_url || "", v.img_mobile_url || "", v.link_url || "", v.start_time || "", v.end_time || ""]);
+                        });
+                    }
+                    while (d.length < 4) d.push(["", "", "", "", "", ""]);
+                    if (ns.bannerTable) ns.bannerTable.destroy();
+                    ns.bannerTable = jspreadsheet(document.getElementById('ps-banner-spreadsheet'), {
+                        data: d,
+                        columns: [{
+                            type: 'text',
+                            title: '輪播名稱描述',
+                            width: 130
+                        }, {
+                            type: 'text',
+                            title: '電腦版圖片網址',
+                            width: 220
+                        }, {
+                            type: 'text',
+                            title: '手機版圖片網址',
+                            width: 130
+                        }, {
+                            type: 'text',
+                            title: '導購連結',
+                            width: 220
+                        }, {
+                            type: 'calendar',
+                            title: '上架時間',
+                            width: 130,
+                            options: { time: 1, format: 'YYYY-MM-DD HH:mm' }
+                        }, {
+                            type: 'calendar',
+                            title: '下架時間',
+                            width: 130,
+                            options: { time: 1, format: 'YYYY-MM-DD HH:mm' }
+                        }],
+                        contextMenu: taiwaneseContextMenu,
+                        ononblur: closePChomeLens,
+                        onselection: function(obj, col, row) {
+                            if (col == 1) lens(obj.jexcel.getValueFromCoords(col, row), true);
+                            else if (col == 3) lens(obj.jexcel.getValueFromCoords(col, row), false);
+                            else closePChomeLens();
+                        }
+                    });
+                });
+
+                database.ref('pchome_games').on('value', function(snapshot) {
+                    var excelData = [];
+                    gameKeysMap = [];
+                    rawGamesCache = [];
+                    if (snapshot.exists()) {
+                        snapshot.forEach(function(c) {
+                            var v = c.val();
+                            if (v) {
+                                v.id = c.key;
+                                rawGamesCache.push(v);
+                            }
+                        });
+                        rawGamesCache.sort(function(a, b) {
+                            return (a.release_date || "9999-99-99") > (b.release_date || "9999-99-99") ? 1 : -1;
+                        });
+                        rawGamesCache.forEach(function(item) {
+                            gameKeysMap.push(item.id);
+                            var cs = item.check_status || "";
+                            excelData.push([item.release_date || "", item.title || "", item.sort_order || 0, item.pchome_pid || "", item.img_url || "", cs.includes("舊遊戲"), cs.includes("轉單"), cs.includes("寄倉"), item.internal_note || "", item.pid_list || ""]);
+                        });
+                    }
+                    if (ns.liveGamesTable) ns.liveGamesTable.destroy();
+                    ns.liveGamesTable = jspreadsheet(document.getElementById('ps-live-games-spreadsheet'), {
+                        data: excelData,
+                        columns: [{
+                            type: 'calendar',
+                            title: '發售日期 (未定請留空)',
+                            width: 130,
+                            options: { format: 'YYYY-MM-DD' }
+                        }, {
+                            type: 'text',
+                            title: '品名 (雙擊直接改)',
+                            width: 220
+                        }, {
+                            type: 'numeric',
+                            title: '排序權重',
+                            width: 65
+                        }, {
+                            type: 'text',
+                            title: 'PChome PID',
+                            width: 110
+                        }, {
+                            type: 'text',
+                            title: '📷 自訂圖片路徑',
+                            width: 180
+                        }, {
+                            type: 'checkbox',
+                            title: '舊',
+                            width: 35
+                        }, {
+                            type: 'checkbox',
+                            title: '轉',
+                            width: 35
+                        }, {
+                            type: 'checkbox',
+                            title: '寄',
+                            width: 35
+                        }, {
+                            type: 'text',
+                            title: '內部備註文案',
+                            width: 240
+                        }, {
+                            type: 'text',
+                            title: '🔀 候補PID序(逗號隔開,第1=最優先)',
+                            width: 220
+                        }],
+                        columnResize: true,
+                        contextMenu: taiwaneseContextMenu,
+                        ononblur: closePChomeLens,
+                        onselection: function(obj, col, row) {
+                            var cellValue = obj.jexcel.getValueFromCoords(col, row);
+                            if (col == 3) lens(cellValue, false);
+                            else if (col == 4) lens(cellValue, true);
+                            else closePChomeLens();
+                        }
+                    });
+                    autoFitColumns(ns.liveGamesTable, 60, 420);
+                    calculateAndRenderMockPreview();
+                });
+
+                database.ref('pchome_hardware').on('value', function(snapshot) {
+                    var excelData = [];
+                    hardwareKeysMap = [];
+                    rawHardwareCache = [];
+                    if (snapshot.exists()) {
+                        snapshot.forEach(function(c) {
+                            var v = c.val();
+                            if (v) {
+                                v.id = c.key;
+                                rawHardwareCache.push(v);
+                            }
+                        });
+                        rawHardwareCache.sort(function(a, b) {
+                            return (a.release_date || "9999-99-99") > (b.release_date || "9999-99-99") ? 1 : -1;
+                        });
+                        rawHardwareCache.forEach(function(item) {
+                            hardwareKeysMap.push(item.id);
+                            var cs = item.check_status || "";
+                            excelData.push([item.release_date || "", item.title || "", item.sort_order || 0, item.hardware_category || "主機類", item.pchome_pid || "", item.img_url || "", cs.includes("舊遊戲"), cs.includes("轉單"), cs.includes("寄倉"), item.internal_note || "", item.pid_list || ""]);
+                        });
+                    }
+                    if (ns.liveHwTable) ns.liveHwTable.destroy();
+                    ns.liveHwTable = jspreadsheet(document.getElementById('ps-live-hardware-spreadsheet'), {
+                        data: excelData,
+                        columns: [{
+                            type: 'calendar',
+                            title: '發售日期 (未定請留空)',
+                            width: 130,
+                            options: { format: 'YYYY-MM-DD' }
+                        }, {
+                            type: 'text',
+                            title: '品名 (雙擊直接改)',
+                            width: 220
+                        }, {
+                            type: 'numeric',
+                            title: '排序權重',
+                            width: 65
+                        }, {
+                            type: 'dropdown',
+                            title: '呈現類別',
+                            width: 90,
+                            source: ['主機類', '手把類', '其他'],
+                            autocomplete: true
+                        }, {
+                            type: 'text',
+                            title: 'PChome PID',
+                            width: 110
+                        }, {
+                            type: 'text',
+                            title: '📷 自訂圖片路徑',
+                            width: 160
+                        }, {
+                            type: 'checkbox',
+                            title: '舊',
+                            width: 35
+                        }, {
+                            type: 'checkbox',
+                            title: '轉',
+                            width: 35
+                        }, {
+                            type: 'checkbox',
+                            title: '寄',
+                            width: 35
+                        }, {
+                            type: 'text',
+                            title: '內部備註文案',
+                            width: 220
+                        }, {
+                            type: 'text',
+                            title: '🔀 候補PID序(逗號隔開,第1=最優先)',
+                            width: 220
+                        }],
+                        columnResize: true,
+                        contextMenu: taiwaneseContextMenu,
+                        ononblur: closePChomeLens,
+                        onselection: function(obj, col, row) {
+                            var cellValue = obj.jexcel.getValueFromCoords(col, row);
+                            if (col == 4) lens(cellValue, false);
+                            else if (col == 5) lens(cellValue, true);
+                            else closePChomeLens();
+                        }
+                    });
+                    autoFitColumns(ns.liveHwTable, 60, 420);
+                    calculateAndRenderMockPreview();
+                });
+            }
+
+            ns.saveBanners = function() {
+                var rows = ns.bannerTable.getData();
+                var up = {};
+                rows.forEach(function(r, i) {
+                    if (!r[1]) return;
+                    var k = "b_" + String(i).padStart(3, '0');
+                    up[k] = {
+                        title: r[0] || "",
+                        img_url: r[1],
+                        img_mobile_url: r[2] || "",
+                        link_url: r[3] || "",
+                        start_time: r[4] || "",
+                        end_time: r[5] || ""
+                    };
+                });
+                database.ref('site_banners').set(up).then(function() {
+                    alert("大輪播路徑儲存同步成功！");
+                }).catch(err => alert("儲存失敗：您可能沒有權限"));
+            };
+
+            ns.saveBulkGames = function() {
+                var rows = ns.gTable.getData();
+                var up = {};
+                var has = false;
+                rows.forEach(function(r, i) {
+                    if (!r[1]) return;
+                    var d = (r[0] ? r[0].split(" ")[0] : "").replace(/\//g, "-"); // 斜線日期會讓 Firebase key 變巢狀路徑，一律轉連字號
+                    var k = (d ? d : "TBA") + "_" + Date.now() + "_" + i;
+                    var statusArr = [];
+                    if (r[5] === true || r[5] === 1) statusArr.push("舊遊戲");
+                    if (r[6] === true || r[6] === 1) statusArr.push("轉單");
+                    if (r[7] === true || r[7] === 1) statusArr.push("寄倉");
+                    up[k] = {
+                        release_date: d,
+                        title: r[1],
+                        sort_order: parseInt(r[2]) || 0,
+                        pchome_pid: r[3] || "",
+                        img_url: r[4] || "",
+                        check_status: statusArr.join(", "),
+                        internal_note: r[8] || "",
+                        updated_at: Date.now()
+                    };
+                    has = true;
+                });
+                if (!has) return;
+                database.ref('pchome_games').update(up).then(function() {
+                    alert("遊戲附加成功！");
+                    initGameExcel();
+                }).catch(err => alert("儲存失敗：權限不足"));
+            };
+
+            ns.saveBulkHw = function() {
+                var rows = ns.hTable.getData();
+                var up = {};
+                var has = false;
+                rows.forEach(function(r, i) {
+                    if (!r[1]) return;
+                    var d = (r[0] ? r[0].split(" ")[0] : "").replace(/\//g, "-"); // 斜線日期會讓 Firebase key 變巢狀路徑，一律轉連字號
+                    var k = (d ? d : "HARDWARE") + "_" + Date.now() + "_" + i;
+                    var statusArr = [];
+                    if (r[6] === true || r[6] === 1) statusArr.push("舊遊戲");
+                    if (r[7] === true || r[7] === 1) statusArr.push("轉單");
+                    if (r[8] === true || r[8] === 1) statusArr.push("寄倉");
+                    up[k] = {
+                        release_date: d,
+                        title: r[1],
+                        sort_order: parseInt(r[2]) || 0,
+                        hardware_category: r[3] || "主機類",
+                        pchome_pid: r[4] || "",
+                        img_url: r[5] || "",
+                        check_status: statusArr.join(", "),
+                        internal_note: r[9] || "",
+                        updated_at: Date.now()
+                    };
+                    has = true;
+                });
+                if (!has) return;
+                database.ref('pchome_hardware').update(up).then(function() {
+                    alert("周邊配件追加成功！");
+                    initHwExcel();
+                }).catch(err => alert("儲存失敗：權限不足"));
+            };
+
+            ns.syncAllLiveGames = function() {
+                var data = ns.liveGamesTable.getData();
+                var up = {};
+                data.forEach(function(r, i) {
+                    var key = gameKeysMap[i];
+                    if (!key) {
+                        key = (r[0] ? r[0].split(" ")[0] : "TBA").replace(/\//g, "-") + "_LIVE_" + Date.now() + "_" + i;
+                    }
+                    if (!r[1]) return;
+                    var statusArr = [];
+                    if (r[5] === true || r[5] === 1) statusArr.push("舊遊戲");
+                    if (r[6] === true || r[6] === 1) statusArr.push("轉單");
+                    if (r[7] === true || r[7] === 1) statusArr.push("寄倉");
+                    up[key] = {
+                        release_date: (r[0] ? r[0].split(" ")[0] : "").replace(/\//g, "-"),
+                        title: r[1],
+                        sort_order: parseInt(r[2]) || 0,
+                        pchome_pid: r[3] || "",
+                        img_url: r[4] || "",
+                        check_status: statusArr.join(", "),
+                        internal_note: r[8] || "",
+                        pid_list: (r[9] || "").trim(),
+                        updated_at: Date.now()
+                    };
+                });
+                database.ref('pchome_games').set(up).then(function() {
+                    alert("🕹️ 遊戲庫同步成功！");
+                }).catch(err => alert("儲存失敗"));
+            };
+
+            ns.syncAllLiveHardware = function() {
+                var data = ns.liveHwTable.getData();
+                var up = {};
+                data.forEach(function(r, i) {
+                    var key = hardwareKeysMap[i];
+                    if (!key) {
+                        key = (r[0] ? r[0].split(" ")[0] : "HARDWARE").replace(/\//g, "-") + "_LIVE_" + Date.now() + "_" + i;
+                    }
+                    if (!r[1]) return;
+                    var statusArr = [];
+                    if (r[6] === true || r[6] === 1) statusArr.push("舊遊戲");
+                    if (r[7] === true || r[7] === 1) statusArr.push("轉單");
+                    if (r[8] === true || r[8] === 1) statusArr.push("寄倉");
+                    up[key] = {
+                        release_date: (r[0] ? r[0].split(" ")[0] : "").replace(/\//g, "-"),
+                        title: r[1],
+                        sort_order: parseInt(r[2]) || 0,
+                        hardware_category: r[3] || "主機類",
+                        pchome_pid: r[4] || "",
+                        img_url: r[5] || "",
+                        check_status: statusArr.join(", "),
+                        internal_note: r[9] || "",
+                        pid_list: (r[10] || "").trim(),
+                        updated_at: Date.now()
+                    };
+                });
+                database.ref('pchome_hardware').set(up).then(function() {
+                    alert("🎮 周邊同步成功！");
+                }).catch(err => alert("儲存失敗"));
+            };
+
+            function parseCustomImageUrl(rawUrl) {
+                var fallback = 'https://www.pchomeec.tw/cdn/sites/playstation/logo-playstation.svg';
+                if (!rawUrl || rawUrl.trim() === "") return fallback;
+                var cleanUrl = rawUrl.trim();
+                if (!cleanUrl.toLowerCase().startsWith("http") && !cleanUrl.toLowerCase().startsWith("//")) {
+                    return "https://24h.pchome.com.tw/sites/playstation/" + cleanUrl;
+                }
+                return cleanUrl;
+            }
+
+            function calculateAndRenderMockPreview() {
+                var pLeft = document.getElementById("ps-preview-left-box");
+                var pMid = document.getElementById("ps-preview-middle-box");
+                var pRight = document.getElementById("ps-preview-right-box");
+                if (!pLeft || !pMid || !pRight) return;
+                pLeft.innerHTML = "";
+                pMid.innerHTML = "";
+                pRight.innerHTML = "";
+                var todayStr = new Date().toISOString().split('T')[0];
+
+                try {
+                    // 1. 左欄：已發售遊戲
+                    var leftList = [];
+                    rawGamesCache.forEach(function(g) {
+                        var d = g.release_date || "";
+                        var isOld = !!(g.check_status && g.check_status.includes("舊遊戲"));
+                        var isTBA = d === "";
+                        if (!((d >= todayStr || isTBA) && !isOld)) leftList.push(g);
+                    });
+                    // 排序規則（與 index.html 一致）：有發售日的照日期新→舊排最前；沒日期的維持手動權重 sort_order
+                    leftList.sort(function(a, b) {
+                        var da = a.release_date || "";
+                        var db = b.release_date || "";
+                        if (da && db) {
+                            if (da !== db) return da < db ? 1 : -1;
+                            return (a.sort_order || 0) - (b.sort_order || 0);
+                        }
+                        if (da) return -1;
+                        if (db) return 1;
+                        return (a.sort_order || 0) - (b.sort_order || 0);
+                    });
+                    if (leftList.length === 0) {
+                        pLeft.innerHTML = '<div class="text-slate-400 text-center py-4 text-[11px]">暫無已發售遊戲</div>';
+                    } else {
+                        leftList.forEach(function(item, idx) {
+                            var isOver = (idx >= 12);
+                            var bg = isOver ? "opacity-30 bg-red-50 border-dashed" : "bg-blue-50/70 border-blue-100";
+                            var badge = isOver ? `[隱藏]` : `權重:${item.sort_order||0}`;
+                            var finalImg = parseCustomImageUrl(item.img_url);
+                            var cleanTitle = (item.title || "無標題").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                            pLeft.innerHTML += `<div class="p-2 border rounded-xl flex items-center gap-3 ${bg}"><span class="font-mono text-blue-600 font-bold">#${idx+1}</span><img src="${finalImg}" class="mock-prod-img"><div class="min-w-0 flex-1"><div class="font-bold text-slate-800 truncate text-[11px]">${cleanTitle}</div><div class="text-[9px] text-slate-400 font-mono truncate">${item.img_url || '預設圖'}</div></div><span class="text-[10px] font-bold text-blue-500 ml-auto">${badge}</span></div>`;
+                        });
+                    }
+
+                    // 2. 中欄：預購新品專區
+                    var upcomingList = [];
+                    rawGamesCache.forEach(function(g) {
+                        var d = g.release_date || "";
+                        var isOld = !!(g.check_status && g.check_status.includes("舊遊戲"));
+                        var isTBA = d === "";
+                        if ((d >= todayStr || isTBA) && !isOld) upcomingList.push(g);
+                    });
+                    rawHardwareCache.forEach(function(h) {
+                        var d = h.release_date || "";
+                        var isOld = !!(h.check_status && h.check_status.includes("舊遊戲"));
+                        var isTBA = d === "";
+                        if ((d >= todayStr || isTBA) && !isOld) upcomingList.push(h);
+                    });
+                    upcomingList.sort(function(a, b) {
+                        return (a.release_date || "9999-99-99") > (b.release_date || "9999-99-99") ? 1 : -1;
+                    });
+
+                    var upGroups = {};
+                    upcomingList.forEach(function(item) {
+                        var dStr = String(item.release_date || "").trim();
+                        var mKey = dStr.length >= 7 ? dStr.substring(0, 7) : "9999-99";
+                        if (!upGroups[mKey]) upGroups[mKey] = [];
+                        upGroups[mKey].push(item);
+                    });
+
+                    var mKeys = Object.keys(upGroups).sort();
+                    if (mKeys.length === 0) {
+                        pMid.innerHTML = '<div class="text-slate-400 text-center py-4 text-[11px]">目前無任何未來預購商品</div>';
+                    } else {
+                        var symIdx = 0;
+                        mKeys.forEach(function(mKey) {
+                            var monthItems = upGroups[mKey];
+                            var mTitle = mKey === "9999-99" ? "✨ 即將推出 ‧ 敬請期待" : mKey.split("-")[0] + "年" + mKey.split("-")[1] + "月";
+                            var mHTML = `<div class="bg-amber-50/50 p-2.5 rounded-xl border border-amber-100/60"><div class="font-black text-amber-700 font-mono mb-2 text-[11px]">📅 ${mTitle}</div><div class="ps-timeline-line space-y-3 pl-4">`;
+                            monthItems.forEach(function(mi) {
+                                var sym = PS_SYMBOLS[symIdx % 4];
+                                symIdx++;
+                                var finalImg = parseCustomImageUrl(mi.img_url);
+                                var cleanTitle = (mi.title || "無標題").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                                mHTML += `<div class="relative pl-6 flex items-center gap-2"><div class="ps-node-symbol">${sym}</div><img src="${finalImg}" class="w-8 h-8 object-contain bg-white rounded border p-0.5"><div class="min-w-0 flex-1"><div class="font-bold text-slate-800 text-[11px] truncate">${cleanTitle}</div><div class="text-[9px] text-amber-600 font-bold font-mono">發售日: ${mi.release_date||"未定"}</div></div></div>`;
+                            });
+                            mHTML += `</div></div>`;
+                            pMid.innerHTML += mHTML;
+                        });
+                    }
+
+                    // 3. 右欄：主機配件
+                    var rightList = [];
+                    rawHardwareCache.forEach(function(h) {
+                        var d = h.release_date || "";
+                        var isOld = !!(h.check_status && h.check_status.includes("舊遊戲"));
+                        var isTBA = d === "";
+                        if (!((d >= todayStr || isTBA) && !isOld)) rightList.push(h);
+                    });
+                    rightList.sort(function(a, b) {
+                        return (a.sort_order || 0) - (b.sort_order || 0);
+                    });
+
+                    var hwSubGroups = {
+                        "主機類": [],
+                        "手把類": [],
+                        "其他": []
+                    };
+                    rightList.forEach(function(item) {
+                        var cat = item.hardware_category || "主機類";
+                        if (!hwSubGroups[cat]) hwSubGroups[cat] = [];
+                        hwSubGroups[cat].push(item);
+                    });
+
+                    var catMeta = [{
+                        k: "主機類",
+                        t: "⚡ 核心主機類"
+                    }, {
+                        k: "手把類",
+                        t: "🎨 原廠手把類"
+                    }, {
+                        k: "其他",
+                        t: "📦 精選配件"
+                    }];
+                    catMeta.forEach(function(meta) {
+                        var items = hwSubGroups[meta.k] || [];
+                        var subHTML = `<div class="border rounded-xl p-2.5 bg-slate-50/60"><div class="font-black text-slate-400 mb-2 uppercase text-[10px] tracking-wider">${meta.t}</div><div class="space-y-2">`;
+                        if (items.length === 0) {
+                            subHTML += `<div class="text-slate-400 italic text-[10px] p-1">補貨中 / 空</div>`;
+                        } else {
+                            items.forEach(function(item, idx) {
+                                var bgClass = "bg-white border-slate-200/60";
+                                var alertText = `權重:${item.sort_order||0}`;
+                                var finalImg = parseCustomImageUrl(item.img_url);
+                                var cleanTitle = (item.title || "無標題").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                                subHTML += `<div class="p-1.5 border rounded-lg flex items-center gap-2 ${bgClass}"><span class="font-mono text-slate-400 mr-1.5">#${idx+1}</span><img src="${finalImg}" class="w-8 h-8 object-contain bg-white rounded border p-0.5"><div class="font-bold text-slate-700 truncate max-w-[150px] text-[11px]">${cleanTitle}</div><span class="text-emerald-600 font-bold text-[9px] ml-auto">${alertText}</span></div>`;
+                            });
+                        }
+                        subHTML += `</div></div>`;
+                        pRight.innerHTML += subHTML;
+                    });
+                } catch (e) {
+                    console.error("PS Preview Render Error", e);
+                    pMid.innerHTML = `<div class="text-red-500 font-bold p-4 text-xs">⚠️ 預覽視圖渲染異常，請檢查資料發售日期格式是否正確。</div>`;
+                }
+            }
+
+            return ns;
+        })();
+
+        // ════════════════════════════════════════════════
+        // Nintendo（原任天堂 admin.html 邏輯，Firebase 路徑不變：
+        // nintendo_banners / nintendo_games / nintendo_hardware）
+        // ════════════════════════════════════════════════
+        var NN = (function() {
+            var ns = {};
+            var isDbListenersStarted = false;
+
+            // 各節點：顯示順序 key 對照表 + 原始資料快取（同步時「合併寫回」，未顯示的欄位不會被洗掉）
+            var bannerKeys = [], bannerRaw = {};
+            var gameKeys = [], gameRaw = {};
+            var hwKeys = [], hwRaw = {};
+
+            // 標籤固定字彙（與前台 index.html 同步）；ip_tag 存逗號串，表格用 IP/類型 兩欄多選下拉（分號分隔）
+            var IP_VOCAB = ['瑪利歐', '薩爾達', '寶可夢', '卡比', '密特羅德', '斯普拉遁', '咚奇剛', '動物森友會', '三麗鷗'];
+            var TYPE_VOCAB = ['多人同樂', 'RPG', '運動健身', '兒童同樂', '動作冒險', '射擊', '策略模擬', '音樂節奏', '即將推出'];
+
+            function lens(v, isImg) { triggerPChomeLens('nintendo', v, isImg); }
+
+            function splitTags(ipTagStr) {
+                var all = String(ipTagStr || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+                var ips = all.filter(function(x) { return IP_VOCAB.indexOf(x) >= 0; });
+                var rest = all.filter(function(x) { return IP_VOCAB.indexOf(x) < 0; });
+                return [ips.join(';'), rest.join(';')];
+            }
+
+            function joinTags(ipCol, typeCol) {
+                var a = String(ipCol || '').split(';').concat(String(typeCol || '').split(';'));
+                return a.map(function(s) { return s.trim(); }).filter(Boolean).join(',');
+            }
+
+            function cleanDate(v) {
+                // 斜線日期會讓 Firebase key/資料出問題，一律轉連字號；calendar 可能帶時間，日期欄只留日期
+                return (v ? String(v).trim() : "").replace(/\//g, "-");
+            }
+
+            ns.start = function() {
+                if (!isDbListenersStarted) {
+                    startDatabaseListeners();
+                    isDbListenersStarted = true;
+                }
+            };
+
+            function startDatabaseListeners() {
+
+                // ---------- 版頭輪播 ----------
+                database.ref('nintendo_banners').on('value', function(snap) {
+                    var d = [];
+                    bannerKeys = []; bannerRaw = {};
+                    var list = [];
+                    if (snap.exists()) {
+                        snap.forEach(function(c) {
+                            var v = c.val();
+                            if (v) { v._key = c.key; list.push(v); }
+                        });
+                    }
+                    list.sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+                    list.forEach(function(v) {
+                        bannerKeys.push(v._key);
+                        bannerRaw[v._key] = v;
+                        d.push([v._key, v.sort_order || 0, v.internal_note || "", v.img_url || "", v.img_url_mb || "", v.link_url || "", v.start_time || "", v.end_time || ""]);
+                    });
+                    while (d.length < 3) d.push(["", 0, "", "", "", "", "", ""]);
+                    if (ns.bannerTable) ns.bannerTable.destroy();
+                    ns.bannerTable = jspreadsheet(document.getElementById('nn-banner-spreadsheet'), {
+                        data: d,
+                        columns: [
+                            { type: 'hidden', title: 'key' },
+                            { type: 'numeric', title: '排序權重', width: 70 },
+                            { type: 'text', title: '名稱備註', width: 140 },
+                            { type: 'text', title: '電腦版圖片', width: 240 },
+                            { type: 'text', title: '手機版圖片', width: 240 },
+                            { type: 'text', title: '導購連結', width: 260 },
+                            { type: 'calendar', title: '上架時間', width: 130, options: { time: 1, format: 'YYYY-MM-DD HH:mm' } },
+                            { type: 'calendar', title: '下架時間', width: 130, options: { time: 1, format: 'YYYY-MM-DD HH:mm' } }
+                        ],
+                        columnResize: true,
+                        contextMenu: taiwaneseContextMenu,
+                        ononblur: closePChomeLens,
+                        onselection: function(obj, col, row) {
+                            var v = obj.jexcel.getValueFromCoords(col, row);
+                            if (col == 3 || col == 4) lens(v, true);
+                            else if (col == 5) lens(v, false);
+                            else closePChomeLens();
+                        }
+                    });
+                    autoFitColumns(ns.bannerTable, 60, 420);
+                    renderPreview();
+                });
+                // （介紹卡已於 2026-07-15 併入遊戲庫：video_id / img_wide / text 欄位；nintendo_showcase 節點保留備援不再讀寫）
+
+                // ---------- 遊戲庫 ----------
+                database.ref('nintendo_games').on('value', function(snap) {
+                    var d = [];
+                    gameKeys = []; gameRaw = {};
+                    var list = [];
+                    if (snap.exists()) {
+                        snap.forEach(function(c) {
+                            var v = c.val();
+                            if (v) { v._key = c.key; list.push(v); }
+                        });
+                    }
+                    list.sort(function(a, b) {
+                        if ((a.platform || "") !== (b.platform || "")) return (a.platform || "") < (b.platform || "") ? 1 : -1; // NS2 在前
+                        return (a.sort_order || 0) - (b.sort_order || 0);
+                    });
+                    list.forEach(function(v) {
+                        gameKeys.push(v._key);
+                        gameRaw[v._key] = v;
+                        var cs = v.check_status || "";
+                        d.push([v._key, v.platform || "NS2", v.sort_order || 0, v.title || "", v.img_url || "", v.pchome_pid || "", v.link_url || "", v.release_date || "", cs.includes("舊遊戲"), cs.includes("轉單"), cs.includes("寄倉"), splitTags(v.ip_tag)[0], splitTags(v.ip_tag)[1], v.internal_note || "", v.pid_list || "", v.video_id || "", v.img_wide || "", v.text || "", !!v.featured]);
+                    });
+                    if (ns.gamesTable) ns.gamesTable.destroy();
+                    ns.gamesTable = jspreadsheet(document.getElementById('nn-games-spreadsheet'), {
+                        data: d,
+                        columns: [
+                            { type: 'hidden', title: 'key' },
+                            { type: 'dropdown', title: '平台', width: 70, source: ['NS2', 'NS'], autocomplete: true },
+                            { type: 'numeric', title: '排序權重', width: 70 },
+                            { type: 'text', title: '品名', width: 240 },
+                            { type: 'text', title: '📷 圖片路徑', width: 160 },
+                            { type: 'text', title: 'PChome PID', width: 130 },
+                            { type: 'text', title: '連結覆蓋(選填)', width: 160 },
+                            { type: 'calendar', title: '發售日期', width: 110, options: { format: 'YYYY-MM-DD' } },
+                            { type: 'checkbox', title: '舊', width: 35 },
+                            { type: 'checkbox', title: '轉', width: 35 },
+                            { type: 'checkbox', title: '寄', width: 35 },
+                            { type: 'dropdown', title: '🏷 IP標籤(勾選)', width: 130, source: IP_VOCAB, multiple: true },
+                            { type: 'dropdown', title: '🎯 類型(勾選)', width: 150, source: TYPE_VOCAB, multiple: true },
+                            { type: 'text', title: '內部備註', width: 160 },
+                            { type: 'text', title: '🔀 候補PID序(逗號,第1優先)', width: 200 },
+                            { type: 'text', title: '▶ YT影片ID', width: 110 },
+                            { type: 'text', title: '🖼 寬圖(彈窗大圖)', width: 160 },
+                            { type: 'text', title: '📝 介紹文案(彈窗)', width: 320 },
+                            { type: 'checkbox', title: '⭐主打(首頁Hero)', width: 70 }
+                        ],
+                        columnResize: true,
+                        contextMenu: taiwaneseContextMenu,
+                        ononblur: closePChomeLens,
+                        onselection: function(obj, col, row) {
+                            var v = obj.jexcel.getValueFromCoords(col, row);
+                            if (col == 4 || col == 16) lens(v, true);
+                            else if (col == 5 || col == 6) lens(v, false);
+                            else closePChomeLens();
+                        }
+                    });
+                    autoFitColumns(ns.gamesTable, 60, 420);
+                    renderPreview();
+                });
+
+                // ---------- 周邊庫 ----------
+                database.ref('nintendo_hardware').on('value', function(snap) {
+                    var d = [];
+                    hwKeys = []; hwRaw = {};
+                    var list = [];
+                    if (snap.exists()) {
+                        snap.forEach(function(c) {
+                            var v = c.val();
+                            if (v) { v._key = c.key; list.push(v); }
+                        });
+                    }
+                    list.sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+                    list.forEach(function(v) {
+                        hwKeys.push(v._key);
+                        hwRaw[v._key] = v;
+                        var cs = v.check_status || "";
+                        d.push([v._key, v.sort_order || 0, v.title || "", v.img_url || "", v.pchome_pid || "", v.link_url || "", v.release_date || "", cs.includes("舊遊戲"), cs.includes("轉單"), cs.includes("寄倉"), splitTags(v.ip_tag)[0], v.internal_note || "", v.pid_list || "", v.hardware_category || "週邊配件"]);
+                    });
+                    if (ns.hwTable) ns.hwTable.destroy();
+                    ns.hwTable = jspreadsheet(document.getElementById('nn-hw-spreadsheet'), {
+                        data: d,
+                        columns: [
+                            { type: 'hidden', title: 'key' },
+                            { type: 'numeric', title: '排序權重', width: 70 },
+                            { type: 'text', title: '品名', width: 240 },
+                            { type: 'text', title: '📷 圖片路徑', width: 160 },
+                            { type: 'text', title: 'PChome PID', width: 130 },
+                            { type: 'text', title: '連結覆蓋(選填)', width: 200 },
+                            { type: 'calendar', title: '發售日期', width: 110, options: { format: 'YYYY-MM-DD' } },
+                            { type: 'checkbox', title: '舊', width: 35 },
+                            { type: 'checkbox', title: '轉', width: 35 },
+                            { type: 'checkbox', title: '寄', width: 35 },
+                            { type: 'dropdown', title: '🏷 IP標籤(勾選)', width: 130, source: IP_VOCAB, multiple: true },
+                            { type: 'text', title: '內部備註', width: 160 },
+                            { type: 'text', title: '🔀 候補PID序(逗號,第1優先)', width: 200 },
+                            { type: 'dropdown', title: '📦 分類', width: 95, source: ['主機', '操控', '收納保護', 'amiibo', '週邊配件', '其他'] }
+                        ],
+                        columnResize: true,
+                        contextMenu: taiwaneseContextMenu,
+                        ononblur: closePChomeLens,
+                        onselection: function(obj, col, row) {
+                            var v = obj.jexcel.getValueFromCoords(col, row);
+                            if (col == 3) lens(v, true);
+                            else if (col == 4 || col == 5) lens(v, false);
+                            else closePChomeLens();
+                        }
+                    });
+                    autoFitColumns(ns.hwTable, 60, 420);
+                    renderPreview();
+                });
+            }
+
+            function checkStatusFrom(oldFlag, transferFlag, warehouseFlag) {
+                var statusArr = [];
+                if (oldFlag === true || oldFlag === 1) statusArr.push("舊遊戲");
+                if (transferFlag === true || transferFlag === 1) statusArr.push("轉單");
+                if (warehouseFlag === true || warehouseFlag === 1) statusArr.push("寄倉");
+                return statusArr.join(", ");
+            }
+
+            // 合併寫回：以原始資料為底、只覆蓋表格顯示的欄位（新加欄位不會被洗掉）
+            function mergeRow(baseRaw, edited) {
+                var out = {};
+                if (baseRaw) {
+                    Object.keys(baseRaw).forEach(function(k) {
+                        if (k !== "_key") out[k] = baseRaw[k];
+                    });
+                }
+                Object.keys(edited).forEach(function(k) { out[k] = edited[k]; });
+                out.updated_at = Date.now();
+                return out;
+            }
+
+            ns.saveBanners = function() {
+                var rows = ns.bannerTable.getData();
+                var up = {};
+                rows.forEach(function(r, i) {
+                    if (!r[3]) return; // 沒電腦圖 = 空列/刪除
+                    var key = r[0] || ("b_" + Date.now() + "_" + i);
+                    up[key] = mergeRow(bannerRaw[key], {
+                        sort_order: parseInt(r[1]) || 0,
+                        internal_note: r[2] || "",
+                        img_url: (r[3] || "").trim(),
+                        img_url_mb: (r[4] || "").trim(),
+                        link_url: (r[5] || "").trim(),
+                        start_time: cleanDate(r[6]),
+                        end_time: cleanDate(r[7])
+                    });
+                });
+                database.ref('nintendo_banners').set(up).then(function() {
+                    alert("🖼️ 輪播同步成功！前台重新整理即可看到。");
+                }).catch(function(err) { alert("儲存失敗：" + err.message); });
+            };
+
+            ns.syncGames = function() {
+                var rows = ns.gamesTable.getData();
+                var up = {};
+                rows.forEach(function(r, i) {
+                    if (!r[3]) return; // 沒品名 = 空列/刪除
+                    var key = r[0] || ("g_" + Date.now() + "_" + i);
+                    up[key] = mergeRow(gameRaw[key], {
+                        platform: r[1] || "NS2",
+                        sort_order: parseInt(r[2]) || 0,
+                        title: r[3],
+                        img_url: (r[4] || "").trim(),
+                        pchome_pid: (r[5] || "").trim(),
+                        link_url: (r[6] || "").trim(),
+                        release_date: cleanDate(r[7]).split(" ")[0],
+                        check_status: checkStatusFrom(r[8], r[9], r[10]),
+                        ip_tag: joinTags(r[11], r[12]),
+                        internal_note: r[13] || "",
+                        pid_list: (r[14] || "").trim(),
+                        video_id: (r[15] || "").trim(),
+                        img_wide: (r[16] || "").trim(),
+                        text: r[17] || "",
+                        featured: (r[18] === true || r[18] === 1)
+                    });
+                });
+                database.ref('nintendo_games').set(up).then(function() {
+                    alert("💿 遊戲庫同步成功！");
+                }).catch(function(err) { alert("儲存失敗：" + err.message); });
+            };
+
+            ns.syncHardware = function() {
+                var rows = ns.hwTable.getData();
+                var up = {};
+                rows.forEach(function(r, i) {
+                    if (!r[2]) return; // 沒品名 = 空列/刪除
+                    var key = r[0] || ("h_" + Date.now() + "_" + i);
+                    up[key] = mergeRow(hwRaw[key], {
+                        sort_order: parseInt(r[1]) || 0,
+                        title: r[2],
+                        img_url: (r[3] || "").trim(),
+                        pchome_pid: (r[4] || "").trim(),
+                        link_url: (r[5] || "").trim(),
+                        release_date: cleanDate(r[6]).split(" ")[0],
+                        check_status: checkStatusFrom(r[7], r[8], r[9]),
+                        ip_tag: joinTags(r[10], splitTags((hwRaw[key] || {}).ip_tag)[1]),
+                        internal_note: r[11] || "",
+                        pid_list: (r[12] || "").trim(),
+                        hardware_category: r[13] || "週邊配件"
+                    });
+                });
+                database.ref('nintendo_hardware').set(up).then(function() {
+                    alert("🕹️ 周邊庫同步成功！");
+                }).catch(function(err) { alert("儲存失敗：" + err.message); });
+            };
+
+            function parseCustomImageUrl(rawUrl) {
+                var fallback = 'https://24h.pchome.com.tw/sites/nintendo/img/logo/logo-nintendo.svg';
+                if (!rawUrl || rawUrl.trim() === "") return fallback;
+                var cleanUrl = rawUrl.trim();
+                if (!cleanUrl.toLowerCase().startsWith("http") && !cleanUrl.toLowerCase().startsWith("//")) {
+                    return "https://24h.pchome.com.tw/sites/nintendo/" + cleanUrl;
+                }
+                return cleanUrl;
+            }
+
+            function bannerStatus(v) {
+                var now = Date.now();
+                if (v.start_time) {
+                    var st = new Date(String(v.start_time).replace(/-/g, '/')).getTime();
+                    if (st && now < st) return { t: "⏳ 未上檔", c: "text-amber-600 bg-amber-50" };
+                }
+                if (v.end_time) {
+                    var et = new Date(String(v.end_time).replace(/-/g, '/')).getTime();
+                    if (et && now > et) return { t: "⛔ 已下檔", c: "text-red-500 bg-red-50" };
+                }
+                return { t: "✅ 顯示中", c: "text-emerald-600 bg-emerald-50" };
+            }
+
+            function renderPreview() {
+                var pB = document.getElementById("nn-preview-banner-box");
+                var pG = document.getElementById("nn-preview-games-box");
+                var pH = document.getElementById("nn-preview-hw-box");
+                if (!pB || !pG || !pH) return;
+
+                try {
+                    // 輪播
+                    pB.innerHTML = "";
+                    var bList = Object.keys(bannerRaw).map(function(k) { return bannerRaw[k]; })
+                        .sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+                    if (!bList.length) pB.innerHTML = '<div class="text-slate-400 text-center py-4 text-[11px]">暫無輪播</div>';
+                    bList.forEach(function(v, idx) {
+                        var s = bannerStatus(v);
+                        pB.innerHTML += '<div class="p-2 border rounded-xl bg-slate-50/70"><div class="flex items-center gap-2"><span class="font-mono text-red-600 font-bold">#' + (idx + 1) + '</span><img src="' + parseCustomImageUrl(v.img_url) + '" class="w-20 h-9 object-cover rounded border bg-white"><div class="min-w-0 flex-1"><div class="font-bold truncate text-[11px]">' + esc(v.internal_note || v.link_url || "(未命名)") + '</div><div class="text-[9px] text-slate-400">權重:' + (v.sort_order || 0) + '</div></div><span class="text-[9px] font-bold px-1.5 py-0.5 rounded ' + s.c + '">' + s.t + '</span></div></div>';
+                    });
+
+                    // 遊戲：同步前台分組（2026-07-16）
+                    pG.innerHTML = "";
+                    var gList = Object.keys(gameRaw).map(function(k) { return gameRaw[k]; });
+                    var todayStr = new Date().toISOString().split('T')[0];
+                    function tagsArr(v) { return String(v.ip_tag || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean); }
+                    function isUp(v) {
+                        var d = v.release_date || '';
+                        if (d && d >= todayStr) return true;
+                        if (tagsArr(v).indexOf('即將推出') >= 0) return true;
+                        if (!d && !v.pchome_pid && !v.link_url) return true;
+                        return false;
+                    }
+                    function isOld(v) {
+                        if ((v.check_status || '').indexOf('舊遊戲') >= 0) return true;
+                        var d = v.release_date || '';
+                        if (!d) return false;
+                        return (Date.now() - new Date(d.replace(/-/g, '/')).getTime()) / 86400000 > 365;
+                    }
+                    var featured = gList.filter(function(v) { return v.featured; });
+                    var groupsG = [
+                        { t: '⭐ 主打（Hero；沒勾＝前台自動選）', items: featured },
+                        { t: '🔥 預購中・即將推出', items: gList.filter(function(v) { return isUp(v) && !isOld(v); }) },
+                        { t: '🎮 熱賣中', items: gList.filter(function(v) { return !isUp(v) && !isOld(v); }) },
+                        { t: '⭐ 經典作品', items: gList.filter(isOld) }
+                    ];
+                    groupsG.forEach(function(meta) {
+                        var items = meta.items.sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+                        var html = '<div class="border rounded-xl p-2.5 bg-slate-50/60"><div class="font-black text-slate-400 mb-2 text-[10px] tracking-wider">' + meta.t + '（' + items.length + '）</div><div class="space-y-2">';
+                        if (!items.length) html += '<div class="text-slate-400 italic text-[10px] p-1">空</div>';
+                        items.forEach(function(v, idx) {
+                            html += '<div class="p-1.5 border rounded-lg flex items-center gap-2 bg-white border-slate-200/60"><span class="font-mono text-slate-400">#' + (idx + 1) + '</span><img src="' + parseCustomImageUrl(v.img_url) + '" class="mock-prod-img"><div class="font-bold text-slate-700 truncate text-[11px] flex-1">' + esc(v.title) + '</div><span class="text-red-600 font-bold text-[9px] ml-auto">' + (v.release_date || '未定') + '</span></div>';
+                        });
+                        html += '</div></div>';
+                        pG.innerHTML += html;
+                    });
+
+                    // 周邊
+                    pH.innerHTML = "";
+                    var hList = Object.keys(hwRaw).map(function(k) { return hwRaw[k]; })
+                        .sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+                    if (!hList.length) pH.innerHTML = '<div class="text-slate-400 text-center py-4 text-[11px]">空（前台整區隱藏）</div>';
+                    hList.forEach(function(v, idx) {
+                        pH.innerHTML += '<div class="p-1.5 border rounded-lg flex items-center gap-2 bg-white border-slate-200/60"><span class="font-mono text-slate-400">#' + (idx + 1) + '</span><img src="' + parseCustomImageUrl(v.img_url) + '" class="mock-prod-img"><div class="font-bold text-slate-700 truncate text-[11px] flex-1">' + esc(v.title) + '</div><span class="text-emerald-600 font-bold text-[9px] ml-auto">權重:' + (v.sort_order || 0) + '</span></div>';
+                    });
+                } catch (e) {
+                    console.error("NN Preview Render Error", e);
+                }
+            }
+
+            return ns;
+        })();
+
+        // ════════════════════════════════════════════════
+        // Xbox（原 Xbox admin.html 邏輯改用 compat SDK，Firebase 路徑不變：
+        // xbox_site_banners / xbox_controllers / xbox_gamepass / xbox_youtube）
+        // ════════════════════════════════════════════════
+        var XB = {};
+
+        function showStatus(msg, isError) {
+            var bar = document.getElementById('status-bar');
+            bar.textContent = msg;
+            bar.style.background = isError ? '#7f1d1d' : '#0a5a0a';
+            bar.classList.add('show');
+            setTimeout(function() { bar.classList.remove('show'); }, 3000);
+        }
+
+        // ── Xbox 內部分頁 ──
+        function xbSwitchTab(tab) {
+            document.querySelectorAll('#brand-xbox .tab-btn').forEach(function(b) { b.classList.remove('active'); });
+            document.querySelectorAll('#brand-xbox .tab-pane').forEach(function(p) { p.classList.remove('active'); });
+            document.getElementById('pane-' + tab).classList.add('active');
+            document.querySelector('#brand-xbox [onclick="xbSwitchTab(\'' + tab + '\')"]').classList.add('active');
+        }
+
+        function toggleSection(name) {
+            document.getElementById('ov-sec-' + name).classList.toggle('ov-collapsed');
+        }
+
+        function renderOverview() {
+            renderOvSection('banner', bannersData, renderOvBanner);
+            renderOvSection('controller', ctrlData, renderOvCtrl);
+            renderOvSection('gamepass', gpData, renderOvGp);
+            renderOvSection('youtube', ytData, renderOvYt);
+        }
+
+        function renderOvSection(name, data, renderFn) {
+            var items = Object.entries(data).sort(function(a, b) { return (a[1].sort_order || 0) - (b[1].sort_order || 0); });
+            document.getElementById('ov-count-' + name).textContent = items.length;
+            var list = document.getElementById('ov-list-' + name);
+            list.innerHTML = '';
+            items.forEach(function(entry) {
+                var key = entry[0], item = entry[1];
+                var row = document.createElement('div');
+                row.className = 'ov-row';
+                row.dataset.key = key;
+                row.draggable = true;
+                row.innerHTML = renderFn(key, item);
+                addDragEvents(row, name, data);
+                list.appendChild(row);
+            });
+        }
+
+        function addDragEvents(row, sectionName, data) {
+            var dragSrc = null;
+            row.addEventListener('dragstart', function(e) {
+                dragSrc = row;
+                e.dataTransfer.effectAllowed = 'move';
+                row.style.opacity = '.4';
+            });
+            row.addEventListener('dragend', function() { row.style.opacity = '1'; });
+            row.addEventListener('dragover', function(e) { e.preventDefault(); row.classList.add('drag-over'); });
+            row.addEventListener('dragleave', function() { row.classList.remove('drag-over'); });
+            row.addEventListener('drop', async function(e) {
+                e.preventDefault();
+                row.classList.remove('drag-over');
+                if (!dragSrc || dragSrc === row) return;
+                var list = row.parentElement;
+                var rows = Array.prototype.slice.call(list.querySelectorAll('.ov-row'));
+                var srcIdx = rows.indexOf(dragSrc);
+                var dstIdx = rows.indexOf(row);
+                var reordered = srcIdx < dstIdx ?
+                    rows.slice(0, srcIdx).concat(rows.slice(srcIdx + 1, dstIdx + 1), [dragSrc], rows.slice(dstIdx + 1)) :
+                    rows.slice(0, dstIdx).concat([dragSrc], rows.slice(dstIdx, srcIdx), rows.slice(srcIdx + 1));
+                var collMap = { banner: 'xbox_site_banners', controller: 'xbox_controllers', gamepass: 'xbox_gamepass', youtube: 'xbox_youtube' };
+                var coll = collMap[sectionName];
+                for (var i = 0; i < reordered.length; i++) {
+                    var k = reordered[i].dataset.key;
+                    await database.ref(coll + '/' + k).update({ sort_order: i });
+                    data[k].sort_order = i;
+                }
+                showStatus('✅ 順序已儲存');
+                renderOverview();
+            });
+        }
+
+        function renderOvBanner(key, b) {
+            var vis = b.title || '（無標題）';
+            return '<span class="drag-handle">⠿</span>' +
+                '<img class="ov-banner-thumb" src="' + (b.img_pc || '') + '" onerror="this.style.display=\'none\'" />' +
+                '<div class="ov-info"><div class="ov-name">' + vis + '</div><div class="ov-meta">排序 ' + (b.sort_order || 0) + ' ' + (b.start_time ? '🕐' + b.start_time : '') + '</div></div>' +
+                '<div class="ov-actions">' +
+                '<button class="ov-edit-btn" onclick="editBanner(\'' + key + '\');xbSwitchTab(\'banner\')">✏ 編輯</button>' +
+                '<button class="ov-del-btn" onclick="deleteBanner(\'' + key + '\')">✕</button>' +
+                '</div>';
+        }
+
+        function renderOvCtrl(key, c) {
+            return '<span class="drag-handle">⠿</span>' +
+                '<img class="ov-thumb" src="' + (c.img_url || '') + '" onerror="this.style.background=\'#222\';this.style.display=\'block\'" />' +
+                '<div class="ov-info">' +
+                '<div class="ov-name">' + (c.color_name || '') + ' ' + (c.is_featured ? '⭐' : '') + '</div>' +
+                '<div class="ov-meta">' + (c.price ? 'NT$' + Number(c.price).toLocaleString() : '') + ' ' + (c.is_visible === false ? '❌隱藏' : '') + '</div>' +
+                '</div>' +
+                '<div class="ov-actions">' +
+                '<button class="ov-edit-btn" onclick="editController(\'' + key + '\');xbSwitchTab(\'controller\')">✏ 編輯</button>' +
+                '<button class="ov-del-btn" onclick="deleteController(\'' + key + '\')">✕</button>' +
+                '</div>';
+        }
+
+        function renderOvGp(key, p) {
+            return '<span class="drag-handle">⠿</span>' +
+                '<div class="ov-info">' +
+                '<div class="ov-name">' + (p.plan_name || '') + ' ' + (p.duration || '') + ' ' + (p.is_featured ? '⭐' : '') + '</div>' +
+                '<div class="ov-meta">' + (p.price ? 'NT$' + Number(p.price).toLocaleString() : '') + ' ' + (p.is_visible === false ? '❌隱藏' : '') + '</div>' +
+                '</div>' +
+                '<div class="ov-actions">' +
+                '<button class="ov-edit-btn" onclick="editGp(\'' + key + '\');xbSwitchTab(\'gamepass\')">✏ 編輯</button>' +
+                '<button class="ov-del-btn" onclick="deleteGp(\'' + key + '\')">✕</button>' +
+                '</div>';
+        }
+
+        function renderOvYt(key, v) {
+            return '<span class="drag-handle">⠿</span>' +
+                '<img class="ov-yt-thumb" src="https://img.youtube.com/vi/' + (v.video_id || '') + '/default.jpg" />' +
+                '<div class="ov-info">' +
+                '<div class="ov-name">' + (v.title || v.video_id || '') + '</div>' +
+                '<div class="ov-meta">排序 ' + (v.sort_order || 0) + ' ' + (v.is_visible === false ? '❌隱藏' : '') + '</div>' +
+                '</div>' +
+                '<div class="ov-actions">' +
+                '<button class="ov-edit-btn" onclick="editYt(\'' + key + '\');xbSwitchTab(\'youtube\')">✏ 編輯</button>' +
+                '<button class="ov-del-btn" onclick="deleteYt(\'' + key + '\')">✕</button>' +
+                '</div>';
+        }
+
+        // ════ Xbox BANNERS ════
+        var bannersData = {};
+
+        function previewBannerImg() {
+            var url = document.getElementById('banner-img-pc').value.trim();
+            var wrap = document.getElementById('banner-img-preview');
+            var img = document.getElementById('banner-preview-img');
+            if (url) { img.src = url; wrap.style.display = 'block'; } else { wrap.style.display = 'none'; }
+        }
+
+        async function loadXbBanners() {
+            var snap = await database.ref('xbox_site_banners').once('value');
+            bannersData = snap.exists() ? snap.val() : {};
+            renderBannerList();
+        }
+
+        function renderBannerList() {
+            var el = document.getElementById('banner-list');
+            var items = Object.entries(bannersData).sort(function(a, b) { return (a[1].sort_order || 0) - (b[1].sort_order || 0); });
+            if (!items.length) { el.innerHTML = '<p style="color:#666;font-size:.85rem">尚無 Banner</p>'; return; }
+            el.innerHTML = items.map(function(entry) {
+                var key = entry[0], b = entry[1];
+                return '<div class="banner-row">' +
+                    '<img src="' + (b.img_pc || '') + '" onerror="this.style.display=\'none\'" />' +
+                    '<div class="banner-info">' +
+                    '<div class="banner-title">' + (b.title || '（無標題）') + '</div>' +
+                    '<div class="banner-meta">排序 ' + (b.sort_order || 0) + ' ｜ ' + (b.start_time ? '🕐 ' + b.start_time : '立即') + (b.end_time ? ' → ' + b.end_time : '') + '</div>' +
+                    '</div>' +
+                    '<button class="btn-primary" style="font-size:.78rem;padding:.3rem .6rem" onclick="editBanner(\'' + key + '\')">編輯</button>' +
+                    '<button class="btn-danger" onclick="deleteBanner(\'' + key + '\')">刪除</button>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function editBanner(key) {
+            var b = bannersData[key];
+            if (!b) return;
+            document.getElementById('banner-edit-key').value = key;
+            document.getElementById('banner-title').value = b.title || '';
+            document.getElementById('banner-img-pc').value = b.img_pc || '';
+            document.getElementById('banner-img-mobile').value = b.img_mobile || '';
+            document.getElementById('banner-link').value = b.link || '';
+            document.getElementById('banner-start').value = b.start_time || '';
+            document.getElementById('banner-end').value = b.end_time || '';
+            document.getElementById('banner-sort').value = b.sort_order || 0;
+            previewBannerImg();
+            document.getElementById('pane-banner').scrollTo(0, 0);
+        }
+
+        async function saveXbBanner() {
+            var key = document.getElementById('banner-edit-key').value;
+            var data = {
+                title: document.getElementById('banner-title').value.trim(),
+                img_pc: document.getElementById('banner-img-pc').value.trim(),
+                img_mobile: document.getElementById('banner-img-mobile').value.trim(),
+                link: document.getElementById('banner-link').value.trim(),
+                start_time: document.getElementById('banner-start').value || null,
+                end_time: document.getElementById('banner-end').value || null,
+                sort_order: parseInt(document.getElementById('banner-sort').value) || 0,
+            };
+            if (!data.img_pc) { showStatus('請填入 PC 圖片 URL', true); return; }
+            try {
+                if (key) { await database.ref('xbox_site_banners/' + key).update(data); }
+                else { await database.ref('xbox_site_banners').push(data); }
+                showStatus('✅ Banner 已儲存');
+                clearBannerForm();
+                loadXbBanners().then(renderOverview);
+            } catch (e) { showStatus('❌ 儲存失敗：' + e.message, true); }
+        }
+
+        async function deleteBanner(key) {
+            if (!confirm('確定刪除此 Banner？')) return;
+            await database.ref('xbox_site_banners/' + key).remove();
+            showStatus('🗑 Banner 已刪除');
+            loadXbBanners().then(renderOverview);
+        }
+
+        function clearBannerForm() {
+            ['banner-edit-key', 'banner-title', 'banner-img-pc', 'banner-img-mobile', 'banner-link', 'banner-start', 'banner-end'].forEach(function(id) { document.getElementById(id).value = ''; });
+            document.getElementById('banner-sort').value = 0;
+            document.getElementById('banner-img-preview').style.display = 'none';
+        }
+
+        // ════ Xbox CONTROLLERS ════
+        var ctrlData = {};
+
+        function previewCtrlImg() {
+            var url = document.getElementById('ctrl-img').value.trim();
+            var wrap = document.getElementById('ctrl-img-preview');
+            var img = document.getElementById('ctrl-preview-img');
+            if (url) { img.src = url; wrap.style.display = 'flex'; } else { wrap.style.display = 'none'; }
+        }
+
+        async function fetchCtrlPreview() {
+            var pid = document.getElementById('ctrl-pid').value.trim();
+            if (!pid) return;
+            try {
+                var res = await fetch('https://ecapi.pchome.com.tw/ecshop/prod/v2/prod/spec&id=' + pid);
+                if (!res.ok) return;
+                var data = await res.json();
+                if (data && data.Price && data.Price.P && !document.getElementById('ctrl-price').value) {
+                    document.getElementById('ctrl-price').value = data.Price.P;
+                }
+                if (data && data.Pic && data.Pic.B && !document.getElementById('ctrl-img').value) {
+                    document.getElementById('ctrl-img').value = 'https://fs-a.ecimg.tw' + data.Pic.B;
+                }
+            } catch (_) {}
+        }
+
+        async function loadControllers() {
+            var snap = await database.ref('xbox_controllers').once('value');
+            ctrlData = snap.exists() ? snap.val() : {};
+            renderControllerTable();
+        }
+
+        function renderControllerTable() {
+            var el = document.getElementById('controller-table');
+            var items = Object.entries(ctrlData).sort(function(a, b) { return (a[1].sort_order || 0) - (b[1].sort_order || 0); });
+            if (!items.length) { el.innerHTML = '<p style="color:#666;font-size:.85rem">尚無控制器資料</p>'; return; }
+            var now = Date.now();
+            el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:.82rem">' +
+                '<thead><tr style="color:#52b043;border-bottom:1px solid #333">' +
+                '<th style="text-align:left;padding:.4rem .5rem">顏色名稱</th>' +
+                '<th>PID</th><th>售價 / 優惠價</th><th>優惠區間</th><th>顯示</th><th></th>' +
+                '</tr></thead>' +
+                '<tbody>' + items.map(function(entry) {
+                    var key = entry[0], c = entry[1];
+                    var promoActive = c.promo_price && (!c.promo_start || new Date(c.promo_start).getTime() <= now) && (!c.promo_end || new Date(c.promo_end).getTime() >= now);
+                    var priceCell = c.price ? (
+                        promoActive ?
+                        '<span style="color:#ef4444;font-weight:700">NT$' + Number(c.promo_price).toLocaleString() + '</span> <span style="text-decoration:line-through;color:#555;font-size:.75rem">NT$' + Number(c.price).toLocaleString() + '</span>' :
+                        'NT$' + Number(c.price).toLocaleString() + (c.promo_price ? ' <span style="color:#777;font-size:.75rem">（優惠NT$' + Number(c.promo_price).toLocaleString() + '）</span>' : '')
+                    ) : '-';
+                    var promoRange = c.promo_price && (c.promo_start || c.promo_end) ?
+                        '<span style="font-size:.75rem;color:#666">' + (c.promo_start || '即刻') + ' → ' + (c.promo_end || '不限') + '</span>' :
+                        '-';
+                    return '<tr style="border-bottom:1px solid #222' + (promoActive ? ';background:#0f1f0f' : '') + '">' +
+                        '<td style="padding:.4rem .5rem">' + (c.color_name || '') + ' ' + (c.is_featured ? '⭐' : '') + '</td>' +
+                        '<td style="color:#666;font-size:.75rem">' + (c.pchome_pid || '') + '</td>' +
+                        '<td>' + priceCell + '</td>' +
+                        '<td>' + promoRange + '</td>' +
+                        '<td>' + (c.is_visible !== false ? '✅' : '❌') + '</td>' +
+                        '<td style="display:flex;gap:.4rem;padding:.4rem .5rem">' +
+                        '<button class="btn-primary" style="font-size:.75rem;padding:.25rem .5rem" onclick="editController(\'' + key + '\')">編輯</button>' +
+                        '<button class="btn-danger" onclick="deleteController(\'' + key + '\')">刪除</button>' +
+                        '</td>' +
+                        '</tr>';
+                }).join('') + '</tbody></table>';
+        }
+
+        function editController(key) {
+            var c = ctrlData[key];
+            document.getElementById('ctrl-edit-key').value = key;
+            document.getElementById('ctrl-name').value = c.color_name || '';
+            document.getElementById('ctrl-pid').value = c.pchome_pid || '';
+            document.getElementById('ctrl-pidlist').value = c.pid_list || '';
+            document.getElementById('ctrl-category').value = c.category || 'standard';
+            document.getElementById('ctrl-price').value = c.price || '';
+            document.getElementById('ctrl-img').value = c.img_url || '';
+            document.getElementById('ctrl-sort').value = c.sort_order || 0;
+            document.getElementById('ctrl-featured').checked = !!c.is_featured;
+            document.getElementById('ctrl-visible').checked = c.is_visible !== false;
+            document.getElementById('ctrl-promo-price').value = c.promo_price || '';
+            if (c.promo_start) { window.fpPromoStart && window.fpPromoStart.setDate(c.promo_start); } else { window.fpPromoStart && window.fpPromoStart.clear(); }
+            if (c.promo_end) { window.fpPromoEnd && window.fpPromoEnd.setDate(c.promo_end); } else { window.fpPromoEnd && window.fpPromoEnd.clear(); }
+            previewCtrlImg();
+            window.scrollTo(0, 0);
+        }
+
+        async function saveController() {
+            var key = document.getElementById('ctrl-edit-key').value;
+            var promoPrice = parseInt(document.getElementById('ctrl-promo-price').value) || null;
+            var data = {
+                color_name: document.getElementById('ctrl-name').value.trim(),
+                pchome_pid: document.getElementById('ctrl-pid').value.trim(),
+                pid_list: document.getElementById('ctrl-pidlist').value.trim(),
+                category: document.getElementById('ctrl-category').value,
+                price: parseInt(document.getElementById('ctrl-price').value) || null,
+                img_url: document.getElementById('ctrl-img').value.trim(),
+                sort_order: parseInt(document.getElementById('ctrl-sort').value) || 0,
+                is_featured: document.getElementById('ctrl-featured').checked,
+                is_visible: document.getElementById('ctrl-visible').checked,
+                promo_price: promoPrice,
+                promo_start: document.getElementById('ctrl-promo-start').value || null,
+                promo_end: document.getElementById('ctrl-promo-end').value || null,
+            };
+            if (!data.color_name) { showStatus('請填入顏色名稱', true); return; }
+            try {
+                if (key) await database.ref('xbox_controllers/' + key).update(data);
+                else await database.ref('xbox_controllers').push(data);
+                showStatus('✅ 控制器已儲存');
+                clearCtrlForm();
+                loadControllers().then(renderOverview);
+            } catch (e) { showStatus('❌ 儲存失敗：' + e.message, true); }
+        }
+
+        async function deleteController(key) {
+            if (!confirm('確定刪除？')) return;
+            await database.ref('xbox_controllers/' + key).remove();
+            showStatus('🗑 已刪除');
+            loadControllers().then(renderOverview);
+        }
+
+        function clearCtrlForm() {
+            ['ctrl-edit-key', 'ctrl-name', 'ctrl-pid', 'ctrl-pidlist', 'ctrl-price', 'ctrl-img',
+                'ctrl-promo-price'
+            ].forEach(function(id) { document.getElementById(id).value = ''; });
+            document.getElementById('ctrl-sort').value = 0;
+            document.getElementById('ctrl-category').value = 'standard';
+            document.getElementById('ctrl-featured').checked = false;
+            document.getElementById('ctrl-visible').checked = true;
+            document.getElementById('ctrl-img-preview').style.display = 'none';
+            // 優惠時間重設：今天 00:00 → 明天 00:00
+            if (window._promoDefaults) {
+                window.fpPromoStart && window.fpPromoStart.setDate(window._promoDefaults.start());
+                window.fpPromoEnd && window.fpPromoEnd.setDate(window._promoDefaults.end());
+            }
+        }
+
+        // ════ Xbox GAME PASS ════
+        var gpData = {};
+
+        function addFeature() {
+            var list = document.getElementById('gp-features-list');
+            var div = document.createElement('div');
+            div.className = 'feature-item';
+            div.innerHTML = '<input type="text" placeholder="方案特色..." /><button onclick="removeFeature(this)">✕</button>';
+            list.appendChild(div);
+        }
+
+        function removeFeature(btn) { btn.parentElement.remove(); }
+
+        function getFeatures() {
+            return Array.prototype.map.call(document.querySelectorAll('#gp-features-list input'), function(i) { return i.value.trim(); }).filter(Boolean);
+        }
+
+        async function loadGamePass() {
+            var snap = await database.ref('xbox_gamepass').once('value');
+            gpData = snap.exists() ? snap.val() : {};
+            renderGpTable();
+        }
+
+        function renderGpTable() {
+            var el = document.getElementById('gamepass-table');
+            var items = Object.entries(gpData).sort(function(a, b) { return (a[1].sort_order || 0) - (b[1].sort_order || 0); });
+            if (!items.length) { el.innerHTML = '<p style="color:#666;font-size:.85rem">尚無方案資料</p>'; return; }
+            el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:.82rem">' +
+                '<thead><tr style="color:#52b043;border-bottom:1px solid #333">' +
+                '<th style="text-align:left;padding:.4rem .5rem">方案名稱</th>' +
+                '<th>期間</th><th>價格</th><th>推薦</th><th>顯示</th><th></th>' +
+                '</tr></thead>' +
+                '<tbody>' + items.map(function(entry) {
+                    var key = entry[0], p = entry[1];
+                    return '<tr style="border-bottom:1px solid #222">' +
+                        '<td style="padding:.4rem .5rem">' + (p.plan_name || '') + '</td>' +
+                        '<td>' + (p.duration || '') + '</td>' +
+                        '<td>' + (p.price ? 'NT$' + Number(p.price).toLocaleString() : '-') + '</td>' +
+                        '<td>' + (p.is_featured ? '⭐' : '-') + '</td>' +
+                        '<td>' + (p.is_visible !== false ? '✅' : '❌') + '</td>' +
+                        '<td style="display:flex;gap:.4rem;padding:.4rem .5rem">' +
+                        '<button class="btn-primary" style="font-size:.75rem;padding:.25rem .5rem" onclick="editGp(\'' + key + '\')">編輯</button>' +
+                        '<button class="btn-danger" onclick="deleteGp(\'' + key + '\')">刪除</button>' +
+                        '</td>' +
+                        '</tr>';
+                }).join('') + '</tbody></table>';
+        }
+
+        function editGp(key) {
+            var p = gpData[key];
+            document.getElementById('gp-edit-key').value = key;
+            document.getElementById('gp-name').value = p.plan_name || '';
+            document.getElementById('gp-duration').value = p.duration || '';
+            document.getElementById('gp-unit').value = p.duration_unit || '個月';
+            document.getElementById('gp-price').value = p.price || '';
+            document.getElementById('gp-pid').value = p.pchome_pid || '';
+            document.getElementById('gp-pidlist').value = p.pid_list || '';
+            document.getElementById('gp-sort').value = p.sort_order || 0;
+            document.getElementById('gp-featured').checked = !!p.is_featured;
+            document.getElementById('gp-visible').checked = p.is_visible !== false;
+            var list = document.getElementById('gp-features-list');
+            list.innerHTML = '';
+            (p.features || []).forEach(function(f) {
+                var div = document.createElement('div');
+                div.className = 'feature-item';
+                div.innerHTML = '<input type="text" value="' + f + '" /><button onclick="removeFeature(this)">✕</button>';
+                list.appendChild(div);
+            });
+            window.scrollTo(0, 0);
+        }
+
+        async function saveGamePass() {
+            var key = document.getElementById('gp-edit-key').value;
+            var data = {
+                plan_name: document.getElementById('gp-name').value.trim(),
+                duration: document.getElementById('gp-duration').value.trim(),
+                duration_unit: document.getElementById('gp-unit').value.trim(),
+                price: parseInt(document.getElementById('gp-price').value) || 0,
+                pchome_pid: document.getElementById('gp-pid').value.trim(),
+                pid_list: document.getElementById('gp-pidlist').value.trim(),
+                sort_order: parseInt(document.getElementById('gp-sort').value) || 0,
+                features: getFeatures(),
+                is_featured: document.getElementById('gp-featured').checked,
+                is_visible: document.getElementById('gp-visible').checked,
+            };
+            if (!data.plan_name) { showStatus('請填入方案名稱', true); return; }
+            try {
+                if (key) await database.ref('xbox_gamepass/' + key).update(data);
+                else await database.ref('xbox_gamepass').push(data);
+                showStatus('✅ Game Pass 方案已儲存');
+                clearGpForm();
+                loadGamePass().then(renderOverview);
+            } catch (e) { showStatus('❌ 儲存失敗：' + e.message, true); }
+        }
+
+        async function deleteGp(key) {
+            if (!confirm('確定刪除？')) return;
+            await database.ref('xbox_gamepass/' + key).remove();
+            showStatus('🗑 已刪除');
+            loadGamePass().then(renderOverview);
+        }
+
+        function clearGpForm() {
+            ['gp-edit-key', 'gp-name', 'gp-duration', 'gp-pid', 'gp-pidlist', 'gp-price'].forEach(function(id) { document.getElementById(id).value = ''; });
+            document.getElementById('gp-unit').value = '個月';
+            document.getElementById('gp-sort').value = 0;
+            document.getElementById('gp-featured').checked = false;
+            document.getElementById('gp-visible').checked = true;
+            document.getElementById('gp-features-list').innerHTML =
+                '<div class="feature-item"><input type="text" placeholder="EA Play 內含" /><button onclick="removeFeature(this)">✕</button></div>';
+        }
+
+        // ════ Xbox YOUTUBE ════
+        var ytData = {};
+
+        function previewYt() {
+            var id = document.getElementById('yt-video-id').value.trim();
+            var wrap = document.getElementById('yt-preview-wrap');
+            var img = document.getElementById('yt-thumb-preview');
+            if (id) { img.src = 'https://img.youtube.com/vi/' + id + '/mqdefault.jpg'; wrap.style.display = 'block'; } else { wrap.style.display = 'none'; }
+        }
+
+        async function loadYoutube() {
+            var snap = await database.ref('xbox_youtube').once('value');
+            ytData = snap.exists() ? snap.val() : {};
+            renderYtTable();
+        }
+
+        function renderYtTable() {
+            var el = document.getElementById('youtube-table');
+            var items = Object.entries(ytData).sort(function(a, b) { return (a[1].sort_order || 0) - (b[1].sort_order || 0); });
+            if (!items.length) { el.innerHTML = '<p style="color:#666;font-size:.85rem">尚無影片資料</p>'; return; }
+            el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:.82rem">' +
+                '<thead><tr style="color:#52b043;border-bottom:1px solid #333">' +
+                '<th style="padding:.4rem .5rem">縮圖</th><th style="text-align:left">標題</th><th>Video ID</th><th>排序</th><th>顯示</th><th></th>' +
+                '</tr></thead>' +
+                '<tbody>' + items.map(function(entry) {
+                    var key = entry[0], v = entry[1];
+                    return '<tr style="border-bottom:1px solid #222">' +
+                        '<td style="padding:.4rem .5rem"><img src="https://img.youtube.com/vi/' + v.video_id + '/default.jpg" style="width:60px;border-radius:.25rem" /></td>' +
+                        '<td>' + (v.title || '') + '</td>' +
+                        '<td style="color:#666;font-size:.78rem">' + (v.video_id || '') + '</td>' +
+                        '<td>' + (v.sort_order || 0) + '</td>' +
+                        '<td>' + (v.is_visible !== false ? '✅' : '❌') + '</td>' +
+                        '<td style="display:flex;gap:.4rem;padding:.4rem .5rem">' +
+                        '<button class="btn-primary" style="font-size:.75rem;padding:.25rem .5rem" onclick="editYt(\'' + key + '\')">編輯</button>' +
+                        '<button class="btn-danger" onclick="deleteYt(\'' + key + '\')">刪除</button>' +
+                        '</td>' +
+                        '</tr>';
+                }).join('') + '</tbody></table>';
+        }
+
+        function editYt(key) {
+            var v = ytData[key];
+            document.getElementById('yt-edit-key').value = key;
+            document.getElementById('yt-video-id').value = v.video_id || '';
+            document.getElementById('yt-title').value = v.title || '';
+            document.getElementById('yt-sort').value = v.sort_order || 0;
+            document.getElementById('yt-visible').checked = v.is_visible !== false;
+            previewYt();
+            window.scrollTo(0, 0);
+        }
+
+        async function saveYoutube() {
+            var key = document.getElementById('yt-edit-key').value;
+            var data = {
+                video_id: document.getElementById('yt-video-id').value.trim(),
+                title: document.getElementById('yt-title').value.trim(),
+                sort_order: parseInt(document.getElementById('yt-sort').value) || 0,
+                is_visible: document.getElementById('yt-visible').checked,
+            };
+            if (!data.video_id) { showStatus('請填入 YouTube 影片 ID', true); return; }
+            try {
+                if (key) await database.ref('xbox_youtube/' + key).update(data);
+                else await database.ref('xbox_youtube').push(data);
+                showStatus('✅ 影片已儲存');
+                clearYtForm();
+                loadYoutube().then(renderOverview);
+            } catch (e) { showStatus('❌ 儲存失敗：' + e.message, true); }
+        }
+
+        async function deleteYt(key) {
+            if (!confirm('確定刪除？')) return;
+            await database.ref('xbox_youtube/' + key).remove();
+            showStatus('🗑 已刪除');
+            loadYoutube().then(renderOverview);
+        }
+
+        function clearYtForm() {
+            ['yt-edit-key', 'yt-video-id', 'yt-title'].forEach(function(id) { document.getElementById(id).value = ''; });
+            document.getElementById('yt-sort').value = 0;
+            document.getElementById('yt-visible').checked = true;
+            document.getElementById('yt-preview-wrap').style.display = 'none';
+        }
+
+        // ── Xbox 開機載入 ──
+        var xbLoaded = false;
+        XB.loadAll = async function() {
+            await Promise.all([loadXbBanners(), loadControllers(), loadGamePass(), loadYoutube()]);
+            renderOverview();
+            xbLoaded = true;
+        };
+
+        // Flatpickr — Xbox 優惠時間選擇器
+        (function() {
+            var opts = {
+                enableTime: true,
+                dateFormat: 'Y-m-d\\TH:i',
+                time_24hr: true,
+                minuteIncrement: 30,
+                disableMobile: true,
+            };
+            window.fpPromoStart = flatpickr('#ctrl-promo-start', opts);
+            window.fpPromoEnd = flatpickr('#ctrl-promo-end', opts);
+
+            // 預設：今天 00:00 → 明天 00:00
+            function todayMidnight() { var d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+            function tomorrowMidnight() { var d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0); return d; }
+            window._promoDefaults = { start: todayMidnight, end: tomorrowMidnight };
+            window.fpPromoStart.setDate(todayMidnight());
+            window.fpPromoEnd.setDate(tomorrowMidnight());
+        })();
+    </script>
+</body>
+
+</html>
