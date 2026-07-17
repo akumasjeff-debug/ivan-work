@@ -33,9 +33,10 @@
 | `內部比價程式/` | 內部比價程式 | PChome 24h 比價 CLI：區域→賣場→商品（過濾無可賣量）→品名搜全站同商品比價，產出 xlsx/md/tsv 報表（放 `reports/`）。**僅存本機、不上傳 GitHub**（已在 `.gitignore` 排除）。API 端點與可賣量判讀見該夾 `HANDOVER.md` | `內部比價程式/比價.py` | `py 內部比價程式\比價.py`（CLI，無伺服器） |
 | `PS旗艦館/` | PS旗艦館 | PChome PlayStation 品牌旗艦館（sites/playstation）：前台+本機後台+Firebase 資料庫+每日 GAS 自動化（備份/巡檢/PID切換）+每週一缺漏/缺貨例行。**實際檔案在 `C:\工作用資料夾\PlayStation 旗艦店\PS 新旗艦館\`（就地維護、不搬動）**，本資料夾僅登錄點，已在 `.gitignore` 排除。交接細節看實際資料夾的 `HANDOVER.md` | `PS旗艦館/OVERVIEW.md` | 無（改完打增量 zip 上傳 PChome） |
 | `Xbox旗艦館/` | Xbox旗艦館 | PChome Xbox 品牌旗艦館（sites/xbox）：前台（控制器/Game Pass/YouTube/Banner）+本機後台+Firebase（與 PS 同一專案）+每日 GAS（GA4 日報/賣場巡檢）+每週一缺漏/缺貨例行（與 PS 一起）。**實際檔案在 `C:\工作用資料夾\Xbox 旗艦店\Xbox旗艦館 (Claude code用)\`（就地維護、不搬動）**，本資料夾僅登錄點，已在 `.gitignore` 排除。交接細節看實際資料夾的 `HANDOVER.md` | `Xbox旗艦館/OVERVIEW.md` | 無（改完打增量 zip 上傳 PChome） |
+| `ivan-video/` | 影片大師 | AI 驅動的影片生成（Claude Code 產腳本/分鏡→TTS 語音→配樂→Remotion/FFmpeg 合成渲染）。已有 NS2 射擊 roundup 直式短片管線（Python builder＋Playwright overlay，見 `docs/pipeline-*.md`、`tools/`）；`.claude/skills/` 精選 23 個影片生成 skills。**獨立 git repo**（github.com/akumasjeff-debug/ivan-video），已在本 repo `.gitignore` 排除；媒體大檔（`影片/`、`測試/`、`output/`、`references/`）該 repo 自身已 gitignore | `ivan-video/CLAUDE.md` | 無（管線用 Python/Playwright 腳本跑） |
 | `任天堂旗艦館/` | 任天堂旗艦館 | PChome Nintendo 品牌旗艦館（sites/nintendo）改造案：**規劃階段（2026-07-14 評估完成，尚未動工）**。目標＝套 PS 館模式（Firebase+後台+GAS+例行）並保留現有角色分區/雙世代導覽優點；另做「翻面」非本家 Switch 遊戲面。**實際檔案在 `C:\工作用資料夾\Nintendo 旗艦館\NS旗艦館-Funsite檔\`（使用者自製、就地維護）**，本資料夾僅登錄點，已在 `.gitignore` 排除。決策與商品源賣場代碼看本夾 `OVERVIEW.md` | `任天堂旗艦館/OVERVIEW.md` | 無（改完打增量 zip 上傳 PChome，`nintendo_YYYYMMDD.zip`） |
 
-**進某個專案工作前，先讀該資料夾的 `CLAUDE.md`（若有，是精簡規則）**；要動架構或資料結構再讀 `HANDOVER.md`（完整交接細節），功能全貌看 `OVERVIEW.md`。目前已有子 `CLAUDE.md` 的專案：`合成台/`、`內部比價程式/`。
+**進某個專案工作前，先讀該資料夾的 `CLAUDE.md`（若有，是精簡規則）**；要動架構或資料結構再讀 `HANDOVER.md`（完整交接細節），功能全貌看 `OVERVIEW.md`。目前已有子 `CLAUDE.md` 的專案：`合成台/`、`內部比價程式/`、`ivan-video/`。
 
 ## 執行環境備註
 
