@@ -1,2 +1,0 @@
-本專案歸屬：ivan-work 主 repo，會上傳 GitHub。
-（資料本體在 Google 試算表雲端，repo 內只有建置腳本與文件，無敏感資料。）
