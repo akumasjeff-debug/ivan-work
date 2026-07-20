@@ -37,3 +37,4 @@ PTT彈幕/overlay-settings.json
 *.log
 Thumbs.db
 .DS_Store
+__pycache__/
