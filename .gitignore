@@ -29,6 +29,9 @@ Xbox旗艦館/
 # PTT彈幕：覆蓋層個人偏好（位置/大小/滑桿值），機器各自不同不上傳
 PTT彈幕/overlay-settings.json
 
+# 電玩庫存表：轉出的 TSV 報表含成本（敏感），僅存本機；腳本與文件仍追蹤
+電玩庫存表/reports/
+
 # 其他
 *.log
 Thumbs.db
