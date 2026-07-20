@@ -1,15 +1,17 @@
 /**
- * 電玩庫存表 — Google Sheet 建置腳本 v2
+ * 電玩庫存表 — Google Sheet 建置＋寫入端點 v3
  *
- * v2（2026-07-20）：格式改為對接 PChome 廠商商品匯出檔的六欄：
+ * 六欄格式（對接 PChome 廠商商品匯出檔）：
  *   廠商名稱 | 商品編號 | 商品名稱 | 可賣量 | 成本 | 售價
- * 資料由本機 `匯入轉換.py` 轉成 TSV 進剪貼簿，貼到「庫存表」分頁 A1。
  *
- * 使用方式：
- *   1. 試算表 → 擴充功能 → Apps Script，貼上本檔全部內容
- *   2. 執行 setup（第一次會跳授權）
- *   3. 之後每次匯入：本機跑 匯入轉換.py → 到「庫存表」點 A1 → Ctrl+V
+ * 一次性設定：
+ *   1. 試算表 → 擴充功能 → Apps Script，貼上本檔全部內容，執行 setup（跳授權照按）
+ *   2. 左側「專案設定」→ 指令碼屬性 → 新增屬性：API_TOKEN = （本機 config.local.json 裡的 token）
+ *   3. 右上「部署」→ 新增部署作業 → 類型「網頁應用程式」→ 執行身分「我」、
+ *      存取權「任何人」→ 部署 → 複製網頁應用程式網址，填回本機 config.local.json 的 webapp_url
+ *   之後本機跑 匯入轉換.py 就會直接寫進「庫存表」，不用手動貼。
  *
+ * 注意：之後若改了本檔程式碼，要「部署 → 管理部署作業 → 編輯 → 新版本」才會生效。
  * 重跑 setup 不會清資料，只重設標題列、格式與條件格式。
  */
 
@@ -46,4 +48,38 @@ function buildStock_(ss) {
   // 標題列篩選器（可依廠商/可賣量排序過濾）
   if (sh.getFilter()) sh.getFilter().remove();
   sh.getRange('A1:F' + MAX_ROWS).createFilter();
+}
+
+/**
+ * Web App 寫入端點：本機 匯入轉換.py POST JSON {token, rows:[[六欄]...]} 過來，
+ * 驗 token（存指令碼屬性 API_TOKEN，不進 git）後整份覆蓋「庫存表」資料列。
+ */
+function doPost(e) {
+  var out = { ok: false };
+  try {
+    var body = JSON.parse(e.postData.contents);
+    var token = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
+    if (!token || body.token !== token) {
+      out.error = 'bad token';
+      return json_(out);
+    }
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName(SHEET_STOCK);
+    if (!sh) { buildStock_(ss); sh = ss.getSheetByName(SHEET_STOCK); }
+    var rows = body.rows || [];
+    var last = sh.getLastRow();
+    if (last > 1) sh.getRange(2, 1, last - 1, 6).clearContent();
+    if (rows.length) sh.getRange(2, 1, rows.length, 6).setValues(rows);
+    out.ok = true;
+    out.written = rows.length;
+    out.updatedAt = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd HH:mm:ss');
+  } catch (err) {
+    out.error = String(err);
+  }
+  return json_(out);
+}
+
+function json_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }

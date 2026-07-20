@@ -14,14 +14,16 @@ PChome 廠商商品的庫存管理，本體是一份 **Google 試算表**。
 
 | 檔案 | 用途 |
 |------|------|
-| `匯入轉換.py` | 匯出檔 → 六欄 TSV（存 `reports/`）＋自動進剪貼簿 |
-| `apps-script/setup.gs` | 試算表一鍵建置（分頁、格式、缺貨標紅、篩選器），重跑不清資料 |
+| `匯入轉換.py` | 匯出檔 → 六欄 → **直接寫入 Google Sheet**（Web App）；未設定時退回剪貼簿模式。TSV 備份存 `reports/` |
+| `apps-script/setup.gs` | 試算表一鍵建置（分頁、格式、缺貨標紅、篩選器）＋ `doPost` 寫入端點，重跑 setup 不清資料 |
+| `config.local.json` | Web App 網址＋token（gitignore 僅本機） |
 
 ## 每次更新流程
 
 1. PChome 後台下載廠商商品匯出檔（存到 Downloads）
-2. `py 電玩庫存表\匯入轉換.py`（自動抓 Downloads 最新匯出檔；也可帶檔案路徑參數）
-3. 到試算表「庫存表」分頁點 **A1** → Ctrl+V 貼上（連標題整份覆蓋）
+2. `py 電玩庫存表\匯入轉換.py`（自動抓 Downloads 最新匯出檔；也可帶檔案路徑參數）→ 直接寫入試算表，完成
+
+（未部署 Web App 時第 2 步會改複製到剪貼簿，需手動到「庫存表」A1 貼上）
 
 ## 未來可擴充
 

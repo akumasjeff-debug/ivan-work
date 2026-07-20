@@ -3,7 +3,10 @@
 ## 架構
 
 - 資料本體＝Google 試算表（網址見 `OVERVIEW.md`）；本 repo 放轉換腳本與建置腳本，無實際資料。
-- 資料流：PChome 後台匯出檔（Downloads）→ `匯入轉換.py` → TSV 進剪貼簿 → 手動貼到「庫存表」A1。
+- 資料流：PChome 後台匯出檔（Downloads）→ `匯入轉換.py` → **POST 到試算表 Apps Script Web App（doPost）直接覆寫「庫存表」**；未設定 Web App 時退回剪貼簿手貼模式。
+- Web App 驗證：token 存兩處——GAS 指令碼屬性 `API_TOKEN`（雲端）與本機 `config.local.json`（gitignore），兩邊要一致。網址與 token 都不進 git。
+- `匯入轉換.py` 用 urllib POST；GAS Web App 回 302 轉址屬正常，urllib 會自動跟轉拿到 JSON 結果 `{ok, written, updatedAt}`。
+- **改了 setup.gs 的程式碼後，Web App 要「部署 → 管理部署作業 → 編輯 → 新版本」才會生效**（GAS 部署是快照，這步最常忘）。
 - v1 曾設計四分頁進出貨流水帳（商品主檔/進貨/出貨/總覽），2026-07-20 使用者提供 PChome 匯出檔後改為六欄匯入制，v1 設計已廢棄（git 歷史可查）。
 
 ## 匯出檔格式（匯入轉換.py 的輸入）
