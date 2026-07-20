@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>旗艦館總後台 v1（PS × Xbox × Nintendo）</title>
+    <title>旗艦館總後台 v2（PS × Xbox × Nintendo）</title>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- jspreadsheet v4（PS／任天堂 試算表直編用） -->
@@ -311,7 +311,7 @@
 
         <!-- 全域頂欄：館別切換 -->
         <header class="sticky top-0 z-50 bg-slate-900 text-white px-4 py-2 flex items-center gap-3 shadow-lg" style="height:56px">
-            <span class="font-black tracking-wide text-sm hidden md:inline">🏬 旗艦館總後台 <span class="text-slate-500 font-bold">v1</span></span>
+            <span class="font-black tracking-wide text-sm hidden md:inline">🏬 旗艦館總後台 <span class="text-slate-500 font-bold">v2</span></span>
             <nav class="flex gap-1.5">
                 <button id="brand-btn-ps" class="brand-btn" onclick="switchBrand('ps')">🕹️ PlayStation</button>
                 <button id="brand-btn-xb" class="brand-btn" onclick="switchBrand('xb')">🎮 Xbox</button>
@@ -748,6 +748,51 @@
                             <button onclick="NN.hwTable.insertRow()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-extrabold px-3 py-1 rounded transition">➕ 插入新周邊</button>
                             <span>💡 周邊卡目前多連 store 頁 → 填「連結覆蓋」；連單品就填 PID。</span>
                         </div>
+                    </section>
+
+                    <div class="p-4 bg-indigo-900 text-white rounded-xl font-bold text-sm tracking-wide shadow">
+                        🔄 翻面・非本家頁「Switch 全部遊戲」（game/game.html）管理 — 遊戲牆<b>即時自動抓賣場</b>（免維護），這裡只管「三廠廣告」「置頂/隱藏」「類型微調」
+                    </div>
+
+                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h2 class="text-sm font-black text-indigo-600">📣 三廠廣告 Banner（1644×604；上下架時間留空＝長期顯示）</h2>
+                            <button onclick="NN.saveTpBanners()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">⚡ 同步儲存廣告 (含刪除)</button>
+                        </div>
+                        <div class="resizable-container">
+                            <div id="nn-tp-banner-spreadsheet"></div>
+                        </div>
+                        <div class="text-[10px] text-slate-500 flex justify-between">
+                            <button onclick="NN.tpBannerTable.insertRow()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-extrabold px-3 py-1 rounded transition">➕ 追加廣告列</button>
+                            <span>💡 三廠提供 1644×604 圖檔；填完整網址或相對路徑。導購連結選填，留空＝不可點。</span>
+                        </div>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h2 class="text-sm font-black text-amber-600">⭐ 置頂精選 / 🚫 隱藏（依 PChome PID，一行一個）</h2>
+                            <button onclick="NN.saveTpOverrides()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-5 py-1.5 rounded-lg shadow-sm">⚡ 儲存精選/隱藏</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs font-black text-amber-700">⭐ 置頂精選（依序放最前「店長精選推薦」區）</label>
+                                <textarea id="nn-tp-feature" rows="6" class="w-full mt-1 px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-xs font-mono" placeholder="DGBJCW-A900JY0NJ&#10;DGBJRE-1900XXXXX"></textarea>
+                            </div>
+                            <div>
+                                <label class="text-xs font-black text-rose-700">🚫 隱藏（不想在非本家頁曝光的 PID）</label>
+                                <textarea id="nn-tp-hide" rows="6" class="w-full mt-1 px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 text-xs font-mono" placeholder="DGBJBH-1900XXXXX"></textarea>
+                            </div>
+                        </div>
+                        <div class="text-[10px] text-slate-500">💡 PID＝商品頁網址末段（可含或不含 -000）。遊戲牆本身自動抓賣場，這裡只做少量人工微調。</div>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h2 class="text-sm font-black text-teal-600">🎯 類型微調（自動關鍵字歸類為底，這裡覆蓋特定款）</h2>
+                            <button onclick="NN.saveTpGenres()" class="bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold px-5 py-1.5 rounded-lg shadow-sm">⚡ 儲存類型</button>
+                        </div>
+                        <textarea id="nn-tp-genres" rows="6" class="w-full px-3 py-2 rounded-xl border border-teal-200 bg-teal-50 text-xs font-mono" placeholder="一行一筆：PID=類型　或　關鍵詞=類型&#10;DGBJBH-1900XXXXX=動作冒險&#10;瑪利歐=派對同樂,兒童親子"></textarea>
+                        <div class="text-[10px] text-slate-500">💡 前端先套自動關鍵字（多標籤）；這裡填的優先覆蓋。可用 <b>PID</b>（單款）或 <b>品名關鍵詞</b>（整批）。多類型用逗號分隔。</div>
                     </section>
 
                     <div class="p-4 bg-slate-800 text-white rounded-xl font-bold text-sm tracking-wide shadow">
@@ -1630,6 +1675,7 @@
             var bannerKeys = [], bannerRaw = {};
             var gameKeys = [], gameRaw = {};
             var hwKeys = [], hwRaw = {};
+            var tpBannerKeys = [], tpBannerRaw = {};   // 非本家頁三廠廣告
 
             // 標籤固定字彙（與前台 index.html 同步）；ip_tag 存逗號串，表格用 IP/類型 兩欄多選下拉（分號分隔）
             var IP_VOCAB = ['瑪利歐', '薩爾達', '寶可夢', '卡比', '密特羅德', '斯普拉遁', '咚奇剛', '動物森友會', '三麗鷗'];
@@ -1818,6 +1864,62 @@
                     autoFitColumns(ns.hwTable, 60, 420);
                     renderPreview();
                 });
+
+                // ---------- 非本家頁：三廠廣告 Banner ----------
+                database.ref('nintendo_tp_banners').on('value', function(snap) {
+                    var d = [];
+                    tpBannerKeys = []; tpBannerRaw = {};
+                    var list = [];
+                    if (snap.exists()) {
+                        snap.forEach(function(c) { var v = c.val(); if (v) { v._key = c.key; list.push(v); } });
+                    }
+                    list.sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+                    list.forEach(function(v) {
+                        tpBannerKeys.push(v._key);
+                        tpBannerRaw[v._key] = v;
+                        d.push([v._key, v.sort_order || 0, v.internal_note || "", v.img_url || "", v.img_url_mb || "", v.link_url || "", v.start_time || "", v.end_time || ""]);
+                    });
+                    while (d.length < 2) d.push(["", 0, "", "", "", "", "", ""]);
+                    if (ns.tpBannerTable) ns.tpBannerTable.destroy();
+                    ns.tpBannerTable = jspreadsheet(document.getElementById('nn-tp-banner-spreadsheet'), {
+                        data: d,
+                        columns: [
+                            { type: 'hidden', title: 'key' },
+                            { type: 'numeric', title: '排序權重', width: 70 },
+                            { type: 'text', title: '名稱備註', width: 140 },
+                            { type: 'text', title: '電腦版圖片(1644x604)', width: 240 },
+                            { type: 'text', title: '手機版圖片', width: 200 },
+                            { type: 'text', title: '導購連結', width: 260 },
+                            { type: 'calendar', title: '上架時間', width: 130, options: { time: 1, format: 'YYYY-MM-DD HH:mm' } },
+                            { type: 'calendar', title: '下架時間', width: 130, options: { time: 1, format: 'YYYY-MM-DD HH:mm' } }
+                        ],
+                        columnResize: true,
+                        contextMenu: taiwaneseContextMenu,
+                        ononblur: closePChomeLens,
+                        onselection: function(obj, col, row) {
+                            var v = obj.jexcel.getValueFromCoords(col, row);
+                            if (col == 3 || col == 4) lens(v, true);
+                            else if (col == 5) lens(v, false);
+                            else closePChomeLens();
+                        }
+                    });
+                    autoFitColumns(ns.tpBannerTable, 60, 420);
+                });
+
+                // ---------- 非本家頁：置頂精選 / 隱藏 ----------
+                database.ref('nintendo_tp_overrides').on('value', function(snap) {
+                    var o = snap.val() || {};
+                    var f = document.getElementById('nn-tp-feature'), h = document.getElementById('nn-tp-hide');
+                    if (f) f.value = (o.feature || []).join('\n');
+                    if (h) h.value = (o.hide || []).join('\n');
+                });
+
+                // ---------- 非本家頁：類型微調 ----------
+                database.ref('nintendo_tp_genres').on('value', function(snap) {
+                    var o = snap.val() || {};
+                    var el = document.getElementById('nn-tp-genres');
+                    if (el) el.value = Object.keys(o).map(function(k) { return k + '=' + o[k]; }).join('\n');
+                });
             }
 
             function checkStatusFrom(oldFlag, transferFlag, warehouseFlag) {
@@ -1913,6 +2015,51 @@
                 });
                 database.ref('nintendo_hardware').set(up).then(function() {
                     alert("🕹️ 周邊庫同步成功！");
+                }).catch(function(err) { alert("儲存失敗：" + err.message); });
+            };
+
+            ns.saveTpBanners = function() {
+                var rows = ns.tpBannerTable.getData();
+                var up = {};
+                rows.forEach(function(r, i) {
+                    if (!r[3]) return;
+                    var key = r[0] || ("tb_" + Date.now() + "_" + i);
+                    up[key] = mergeRow(tpBannerRaw[key], {
+                        sort_order: parseInt(r[1]) || 0,
+                        internal_note: r[2] || "",
+                        img_url: (r[3] || "").trim(),
+                        img_url_mb: (r[4] || "").trim(),
+                        link_url: (r[5] || "").trim(),
+                        start_time: cleanDate(r[6]),
+                        end_time: cleanDate(r[7])
+                    });
+                });
+                database.ref('nintendo_tp_banners').set(up).then(function() {
+                    alert("📣 三廠廣告同步成功！非本家頁重新整理即可看到。");
+                }).catch(function(err) { alert("儲存失敗：" + err.message); });
+            };
+
+            ns.saveTpOverrides = function() {
+                function lines(id) {
+                    return (document.getElementById(id).value || "").split(/[\n,]/).map(function(s) { return s.trim(); }).filter(Boolean);
+                }
+                var o = { feature: lines('nn-tp-feature'), hide: lines('nn-tp-hide') };
+                database.ref('nintendo_tp_overrides').set(o).then(function() {
+                    alert("⭐ 置頂/隱藏已儲存！非本家頁重新整理生效。");
+                }).catch(function(err) { alert("儲存失敗：" + err.message); });
+            };
+
+            ns.saveTpGenres = function() {
+                var arr = (document.getElementById('nn-tp-genres').value || "").split('\n');
+                var o = {};
+                arr.forEach(function(ln) {
+                    var i = ln.indexOf('=');
+                    if (i < 0) return;
+                    var k = ln.slice(0, i).trim(), v = ln.slice(i + 1).trim();
+                    if (k && v) o[k.replace(/[.#$\[\]\/]/g, '')] = v;
+                });
+                database.ref('nintendo_tp_genres').set(o).then(function() {
+                    alert("🎯 類型微調已儲存！非本家頁重新整理生效。");
                 }).catch(function(err) { alert("儲存失敗：" + err.message); });
             };
 
