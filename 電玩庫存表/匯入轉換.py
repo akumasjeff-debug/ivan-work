@@ -39,6 +39,7 @@ COLUMNS = [
     ("可賣量", "可賣量"),
     ("成本", "成本"),
     ("售價(網路價)", "售價"),
+    ("來源廠商", "來源廠商"),
 ]
 
 
@@ -84,7 +85,15 @@ def to_num(s):
             return s
 
 
-def push_to_sheet(data) -> bool:
+def export_date(src: Path) -> str:
+    """匯出檔檔名開頭的日期戳（2026072013_...→2026-07-20），對不上就用今天。"""
+    m = re.match(r"^(20\d{2})(\d{2})(\d{2})", src.name)
+    if m:
+        return f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
+    return f"{datetime.now():%Y-%m-%d}"
+
+
+def push_to_sheet(data, src: Path) -> bool:
     """有設定 webapp_url 就直接 POST 進 Google Sheet，成功回 True。"""
     if not CONFIG.exists():
         return False
@@ -92,15 +101,18 @@ def push_to_sheet(data) -> bool:
     url, token = cfg.get("webapp_url"), cfg.get("token")
     if not url or not token:
         return False
-    rows = [[r[0], r[1], r[2], to_num(r[3]), to_num(r[4]), to_num(r[5])] for r in data]
-    payload = json.dumps({"token": token, "rows": rows}).encode("utf-8")
+    # 數字欄轉數值讓試算表格式生效；商品編號等文字欄 to_num 會原樣保留
+    rows = [[r[0], r[1], r[2]] + [to_num(c) for c in r[3:]] for r in data]
+    payload = json.dumps(
+        {"token": token, "date": export_date(src), "rows": rows}).encode("utf-8")
     req = urllib.request.Request(
         url, data=payload, headers={"Content-Type": "application/json"})
     resp = urllib.request.urlopen(req, timeout=90)  # GAS 會 302 轉址，urllib 會跟過去
     result = json.loads(resp.read().decode("utf-8"))
     if not result.get("ok"):
         sys.exit(f"寫入 Google Sheet 失敗：{result.get('error')}")
-    print(f"已直接寫入 Google Sheet「庫存表」：{result['written']} 筆（{result['updatedAt']}）")
+    print(f"已直接寫入 Google Sheet「庫存表」：{result['written']} 筆"
+          f"（歷史欄 {result.get('dateColumn')}，{result['updatedAt']}）")
     return True
 
 
@@ -121,7 +133,7 @@ def main():
     print(f"共 {len(data)} 筆商品（其中可賣量 0：{zero} 筆）")
     print(f"已存：{out}")
 
-    if push_to_sheet(data):
+    if push_to_sheet(data, src):
         return
 
     # 尚未設定 Web App → 退回剪貼簿模式
