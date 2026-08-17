@@ -16,7 +16,7 @@
 | 區塊 | 說明 |
 |------|------|
 | 共用層 | Firebase compat SDK 單一初始化、共用登入/登出、館別切換（記住上次停留館別 localStorage）、PChome 透視鏡、jspreadsheet 小工具（右鍵選單、自適應欄寬） |
-| `#brand-ps` ＋ `var PS = (…)()` | PS 館：試算表直編（輪播/遊戲/周邊 批次新增＋全量清單）＋三欄前台模擬預覽。Firebase 路徑：`site_banners` / `pchome_games` / `pchome_hardware` |
+| `#brand-ps` ＋ `var PS = (…)()` | PS 館：試算表直編（輪播/遊戲/周邊 批次新增＋全量清單）＋**⭐ 特別推薦挑選器**＋三欄前台模擬預覽。Firebase 路徑：`site_banners` / `pchome_games` / `pchome_hardware` / `ps_featured` |
 | `#brand-xbox` ＋ Xbox 全域函式群 | Xbox 館：深色表單分頁（總覽拖曳排序/Banner/控制器/Game Pass/YouTube）。Firebase 路徑：`xbox_site_banners` / `xbox_controllers` / `xbox_gamepass` / `xbox_youtube`。深色 CSS 全部限定在 `#brand-xbox` 下，不影響其他館 |
 | `#brand-nintendo` ＋ `var NN = (…)()` | 任天堂館：試算表直編（輪播/遊戲庫 NS2+NS/周邊庫，合併寫回不洗掉新欄位）＋前台分組預覽。Firebase 路徑：`nintendo_banners` / `nintendo_games` / `nintendo_hardware` |
 
@@ -45,6 +45,18 @@
 前提：新館的資料也放在同一個 Firebase 專案（各館用自己的節點前綴，如 `pokemon_*`），登入就能共用。
 Pokemon 旗艦館目前是純靜態頁（改完打 zip 上傳 PChome、無 Firebase），要納入前得先幫它做 Firebase 化的前台＋資料節點。
 
+## PS 館「⭐ 特別推薦」挑選器（v3 新增）
+
+前台 PS 館左欄最上方那塊輪播的內容來源，寫進 Firebase `ps_featured`。
+
+- **左側候選清單**＝遊戲資料庫（`pchome_games` 有 PID 的）＋前台右欄那四個賣場（`DGCK8B` 主機／`DGCK8C` 手把／`DGCK8D` 配件／`DGCK8E` 數位商品，開頁時用 JSONP 即時抓）。可搜品名或 PID、可依來源過濾，點「＋」加入。
+- **右側已選清單**＝由上而下即前台順序，`▲▼` 調序、`✕` 移除；每筆可填自訂標題（留空＝自動抓 PChome 品名）、推薦語、上下架時間（留空＝長期）。
+- 存檔用 `set()` 整包覆蓋 `ps_featured`，key 為 `f_000` 遞增、`sort_order` 即列序。
+- **只存 PID 與人工覆寫欄位**；品名、白圖、售價、缺貨狀態前台都自己抓，所以不必維護圖片。
+- 改完前台重整即生效，**不用打 zip 重傳 PChome**。
+
 ## 版本紀錄
 
 - v1（2026-07-17）：初版——PS/Xbox/Nintendo 三館後台合併、單一登入、館別頁籤、共用透視鏡。
+- v2：PS/Xbox/Nintendo 各館維護項目補齊（任天堂區塊加非本家頁「Switch 全部遊戲」管理）。
+- v3（2026-08-17）：PS 館新增「⭐ 特別推薦」挑選器（候選＝遊戲庫＋四賣場，寫入 `ps_featured`）。

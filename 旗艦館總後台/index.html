@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>旗艦館總後台 v2（PS × Xbox × Nintendo）</title>
+    <title>旗艦館總後台 v3（PS × Xbox × Nintendo）</title>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- jspreadsheet v4（PS／任天堂 試算表直編用） -->
@@ -311,7 +311,7 @@
 
         <!-- 全域頂欄：館別切換 -->
         <header class="sticky top-0 z-50 bg-slate-900 text-white px-4 py-2 flex items-center gap-3 shadow-lg" style="height:56px">
-            <span class="font-black tracking-wide text-sm hidden md:inline">🏬 旗艦館總後台 <span class="text-slate-500 font-bold">v2</span></span>
+            <span class="font-black tracking-wide text-sm hidden md:inline">🏬 旗艦館總後台 <span class="text-slate-500 font-bold">v3</span></span>
             <nav class="flex gap-1.5">
                 <button id="brand-btn-ps" class="brand-btn" onclick="switchBrand('ps')">🕹️ PlayStation</button>
                 <button id="brand-btn-xb" class="brand-btn" onclick="switchBrand('xb')">🎮 Xbox</button>
@@ -344,6 +344,31 @@
                         <div class="text-[10px] text-slate-500 flex justify-between">
                             <button onclick="PS.bannerTable.insertRow()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-extrabold px-3 py-1 rounded transition">➕ 追加廣告列</button>
                             <span>💡 提示：在表格點擊「右鍵」即可刪除列。</span>
+                        </div>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h2 class="text-sm font-black text-amber-600">⭐ 特別推薦 (前台左欄最上方輪播，遊戲與賣場商品都能放)</h2>
+                            <button onclick="PS.saveFeatured()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">儲存特別推薦</button>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div class="border rounded-lg p-3 bg-slate-50/60 flex flex-col">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <input id="ps-feat-search" type="text" placeholder="搜尋品名或 PID…" oninput="PS.renderFeatCandidates()" class="flex-1 text-xs border border-slate-300 rounded px-2 py-1.5">
+                                    <select id="ps-feat-source" onchange="PS.renderFeatCandidates()" class="text-xs border border-slate-300 rounded px-2 py-1.5">
+                                        <option value="all">全部來源</option>
+                                        <option value="game">遊戲資料庫</option>
+                                        <option value="store">四賣場商品</option>
+                                    </select>
+                                </div>
+                                <div class="text-[10px] text-slate-500 mb-1">點「＋」加入右側推薦清單</div>
+                                <div id="ps-feat-candidates" class="space-y-1 overflow-y-auto" style="max-height:340px"></div>
+                            </div>
+                            <div class="border rounded-lg p-3 flex flex-col">
+                                <div class="text-[11px] font-bold text-slate-600 mb-2">已選推薦（由上而下＝前台顯示順序；標題留空自動抓 PChome 品名）</div>
+                                <div id="ps-feat-selected" class="space-y-2 overflow-y-auto" style="max-height:340px"></div>
+                            </div>
                         </div>
                     </section>
 
@@ -1031,8 +1056,163 @@
                 initHwExcel();
                 if (!isDbListenersStarted) {
                     startDatabaseListeners();
+                    loadFeatStores();
                     isDbListenersStarted = true;
                 }
+            };
+
+            // ── ⭐ 特別推薦（Firebase /ps_featured）──────────────────
+            // 一筆＝一個 PID。候選來源＝遊戲資料庫 ＋ 前台右欄那四個賣場。
+            // 前台品名/圖/價都會自動抓，這裡只存 PID 與人工覆寫欄位。
+            var FEAT_STORES = ['DGCK8B', 'DGCK8C', 'DGCK8D', 'DGCK8E'];
+            var featStoreItems = [];
+            ns.featured = [];
+
+            function featJsonp(url, cb) {
+                var name = '__psf' + (featJsonp._i = (featJsonp._i || 0) + 1);
+                var s = document.createElement('script');
+                window[name] = function(data) {
+                    try { cb(data); } finally { delete window[name]; if (s.parentNode) s.parentNode.removeChild(s); }
+                };
+                s.src = url + '&_callback=' + name;
+                s.onerror = function() { delete window[name]; if (s.parentNode) s.parentNode.removeChild(s); };
+                document.head.appendChild(s);
+            }
+
+            function featNormPid(p) { return String(p || '').trim().replace(/-\d{3}$/, ''); }
+
+            function loadFeatStores() {
+                FEAT_STORES.forEach(function(sid) {
+                    featJsonp('https://ecapi.pchome.com.tw/ecshop/prodapi/v2/store/' + sid +
+                        '/prod&offset=1&limit=100&fields=Id,Name,Pic', function(items) {
+                        (items || []).forEach(function(it) {
+                            var pid = featNormPid(it.Id);
+                            if (!pid || featStoreItems.some(function(c) { return c.pid === pid; })) return;
+                            var pic = it.Pic || {}, wp = pic.W || pic.B || '';
+                            featStoreItems.push({
+                                pid: pid,
+                                name: it.Name || '',
+                                img: wp ? ('https://img.pchome.com.tw/cs' + wp) : '',
+                                src: '賣場'
+                            });
+                        });
+                        ns.renderFeatCandidates();
+                    });
+                });
+            }
+
+            function featCandidateList() {
+                var src = (document.getElementById('ps-feat-source') || {}).value || 'all';
+                var list = [];
+                if (src !== 'store') {
+                    rawGamesCache.forEach(function(g) {
+                        var pid = featNormPid(g.pchome_pid);
+                        if (pid) list.push({ pid: pid, name: g.title || '', img: g.img_url || '', src: '遊戲' });
+                    });
+                }
+                if (src !== 'game') list = list.concat(featStoreItems);
+                return list;
+            }
+
+            ns.renderFeatCandidates = function() {
+                var box = document.getElementById('ps-feat-candidates');
+                if (!box) return;
+                var q = ((document.getElementById('ps-feat-search') || {}).value || '').trim().toLowerCase();
+                var chosen = ns.featured.map(function(f) { return featNormPid(f.pchome_pid); });
+                var list = featCandidateList().filter(function(c) {
+                    if (!q) return true;
+                    return c.name.toLowerCase().indexOf(q) >= 0 || c.pid.toLowerCase().indexOf(q) >= 0;
+                });
+                if (!list.length) {
+                    box.innerHTML = '<div class="text-[11px] text-slate-400 py-4 text-center">沒有符合的商品</div>';
+                    return;
+                }
+                box.innerHTML = list.slice(0, 300).map(function(c) {
+                    var already = chosen.indexOf(c.pid) >= 0;
+                    return '<div class="flex items-center gap-2 bg-white border border-slate-200 rounded px-2 py-1">' +
+                        '<span class="text-[9px] font-bold px-1 py-0.5 rounded ' + (c.src === '遊戲' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700') + '">' + c.src + '</span>' +
+                        '<span class="flex-1 min-w-0 truncate text-[11px] text-slate-700" title="' + esc(c.name) + '">' + esc(c.name) + '</span>' +
+                        '<span class="text-[10px] text-slate-400 font-mono">' + esc(c.pid) + '</span>' +
+                        (already
+                            ? '<span class="text-[10px] text-amber-600 font-bold px-2">已選</span>'
+                            : '<button onclick="PS.addFeatured(\'' + c.pid + '\')" class="bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-black w-6 h-6 rounded shrink-0">＋</button>') +
+                        '</div>';
+                }).join('') + (list.length > 300 ? '<div class="text-[10px] text-slate-400 text-center py-1">只顯示前 300 筆，請用搜尋縮小範圍</div>' : '');
+            };
+
+            ns.addFeatured = function(pid) {
+                if (ns.featured.some(function(f) { return featNormPid(f.pchome_pid) === pid; })) return;
+                ns.featured.push({ pchome_pid: pid, title: '', note: '', start_time: '', end_time: '' });
+                ns.renderFeatSelected();
+                ns.renderFeatCandidates();
+            };
+
+            ns.removeFeatured = function(i) {
+                ns.featured.splice(i, 1);
+                ns.renderFeatSelected();
+                ns.renderFeatCandidates();
+            };
+
+            ns.moveFeatured = function(i, d) {
+                var j = i + d;
+                if (j < 0 || j >= ns.featured.length) return;
+                var t = ns.featured[i];
+                ns.featured[i] = ns.featured[j];
+                ns.featured[j] = t;
+                ns.renderFeatSelected();
+            };
+
+            // 打字時只更新資料、不重畫，否則游標會跳掉
+            ns.editFeatured = function(i, field, val) {
+                if (ns.featured[i]) ns.featured[i][field] = val;
+            };
+
+            ns.renderFeatSelected = function() {
+                var box = document.getElementById('ps-feat-selected');
+                if (!box) return;
+                if (!ns.featured.length) {
+                    box.innerHTML = '<div class="text-[11px] text-slate-400 py-6 text-center">尚未選任何推薦商品<br>前台推薦區會整塊隱藏</div>';
+                    return;
+                }
+                var nameOf = {};
+                featCandidateList().forEach(function(c) { if (!nameOf[c.pid]) nameOf[c.pid] = c.name; });
+                box.innerHTML = ns.featured.map(function(f, i) {
+                    var pid = featNormPid(f.pchome_pid);
+                    return '<div class="border border-amber-200 bg-amber-50/40 rounded-lg p-2 space-y-1">' +
+                        '<div class="flex items-center gap-1">' +
+                        '<span class="text-[10px] font-black text-amber-700 w-5">' + (i + 1) + '.</span>' +
+                        '<span class="flex-1 min-w-0 truncate text-[11px] font-bold text-slate-700">' + esc(nameOf[pid] || '(此 PID 不在遊戲庫與四賣場中)') + '</span>' +
+                        '<span class="text-[10px] text-slate-400 font-mono">' + esc(pid) + '</span>' +
+                        '<button onclick="PS.moveFeatured(' + i + ',-1)" class="bg-slate-200 hover:bg-slate-300 w-5 h-5 rounded text-[10px]">▲</button>' +
+                        '<button onclick="PS.moveFeatured(' + i + ',1)" class="bg-slate-200 hover:bg-slate-300 w-5 h-5 rounded text-[10px]">▼</button>' +
+                        '<button onclick="PS.removeFeatured(' + i + ')" class="bg-red-100 hover:bg-red-200 text-red-600 w-5 h-5 rounded text-[10px] font-black">✕</button>' +
+                        '</div>' +
+                        '<div class="grid grid-cols-2 gap-1">' +
+                        '<input type="text" placeholder="自訂標題（留空自動抓）" value="' + esc(f.title) + '" oninput="PS.editFeatured(' + i + ',\'title\',this.value)" class="text-[11px] border border-slate-300 rounded px-1.5 py-1">' +
+                        '<input type="text" placeholder="推薦語（選填）" value="' + esc(f.note) + '" oninput="PS.editFeatured(' + i + ',\'note\',this.value)" class="text-[11px] border border-slate-300 rounded px-1.5 py-1">' +
+                        '<input type="text" placeholder="上架 2026-08-20 09:00" value="' + esc(f.start_time) + '" oninput="PS.editFeatured(' + i + ',\'start_time\',this.value)" class="text-[11px] border border-slate-300 rounded px-1.5 py-1">' +
+                        '<input type="text" placeholder="下架（留空長期）" value="' + esc(f.end_time) + '" oninput="PS.editFeatured(' + i + ',\'end_time\',this.value)" class="text-[11px] border border-slate-300 rounded px-1.5 py-1">' +
+                        '</div></div>';
+                }).join('');
+            };
+
+            ns.saveFeatured = function() {
+                var up = {};
+                ns.featured.forEach(function(f, i) {
+                    var pid = featNormPid(f.pchome_pid);
+                    if (!pid) return;
+                    up['f_' + String(i).padStart(3, '0')] = {
+                        pchome_pid: pid,
+                        title: f.title || '',
+                        note: f.note || '',
+                        sort_order: i,
+                        start_time: f.start_time || '',
+                        end_time: f.end_time || ''
+                    };
+                });
+                database.ref('ps_featured').set(up).then(function() {
+                    alert('特別推薦已儲存，前台重整即生效（不用重傳 zip）');
+                }).catch(function() { alert('儲存失敗：您可能沒有權限'); });
             };
 
             // 💡 使用 destroy() 確保表格重建清空
@@ -1192,6 +1372,29 @@
                     });
                 });
 
+                database.ref('ps_featured').on('value', function(snap) {
+                    var arr = [];
+                    if (snap.exists()) {
+                        snap.forEach(function(c) {
+                            var v = c.val() || {};
+                            if (v.pchome_pid) {
+                                arr.push({
+                                    pchome_pid: v.pchome_pid,
+                                    title: v.title || '',
+                                    note: v.note || '',
+                                    sort_order: v.sort_order || 0,
+                                    start_time: v.start_time || '',
+                                    end_time: v.end_time || ''
+                                });
+                            }
+                        });
+                    }
+                    arr.sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+                    ns.featured = arr;
+                    ns.renderFeatSelected();
+                    ns.renderFeatCandidates();
+                });
+
                 database.ref('pchome_games').on('value', function(snapshot) {
                     var excelData = [];
                     gameKeysMap = [];
@@ -1213,6 +1416,8 @@
                             excelData.push([item.release_date || "", item.title || "", item.sort_order || 0, item.pchome_pid || "", item.img_url || "", cs.includes("舊遊戲"), cs.includes("轉單"), cs.includes("寄倉"), item.internal_note || "", item.pid_list || ""]);
                         });
                     }
+                    ns.renderFeatCandidates();   // 遊戲庫是特別推薦的候選來源之一
+                    ns.renderFeatSelected();
                     if (ns.liveGamesTable) ns.liveGamesTable.destroy();
                     ns.liveGamesTable = jspreadsheet(document.getElementById('ps-live-games-spreadsheet'), {
                         data: excelData,
