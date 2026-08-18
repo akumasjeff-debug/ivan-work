@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>旗艦館總後台 v5（PS × Xbox × Nintendo）</title>
+    <title>旗艦館總後台 v6（PS × Xbox × Nintendo）</title>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- jspreadsheet v4（PS／任天堂 試算表直編用） -->
@@ -306,6 +306,62 @@
         #brand-xbox .lab-bar { position: sticky; bottom: 0; background: #101810; border-top: 1px solid #2a3a2a; padding: .75rem 1rem; display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin: 0 -1.5rem -1.5rem; }
         #brand-xbox .lab-bar .lab-status { color: #888; font-size: .78rem; flex: 1; }
 
+        /* ══ Xbox 一頁式工作台（v6） ══ */
+        #brand-xbox .xb-bar { position: sticky; top: 56px; z-index: 40; background: #101810; border-bottom: 1px solid #2a3a2a; padding: .6rem 1.25rem; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+        #brand-xbox .xb-bar .xb-jump { display: flex; gap: .15rem; flex-wrap: wrap; }
+        #brand-xbox .xb-bar .xb-jump a { color: #9a9a9a; font-size: .78rem; padding: .2rem .5rem; border-radius: .3rem; text-decoration: none; }
+        #brand-xbox .xb-bar .xb-jump a:hover { background: #1f3a1f; color: #fff; }
+        #brand-xbox .xb-bar .xb-acts { margin-left: auto; display: flex; gap: .4rem; align-items: center; }
+        #brand-xbox .xb-bar button { font-size: .8rem; padding: .35rem .8rem; }
+        #brand-xbox .xb-status { color: #7f7f7f; font-size: .75rem; padding: .35rem 1.25rem; background: #0d0d0d; border-bottom: 1px solid #1c1c1c; }
+        #brand-xbox .xb-sec { scroll-margin-top: 118px; }
+
+        /* 側邊抽屜 */
+        #brand-xbox .xb-mask { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 60; opacity: 0; pointer-events: none; transition: opacity .2s; }
+        #brand-xbox .xb-mask.on { opacity: 1; pointer-events: auto; }
+        #brand-xbox .xb-drawer { position: fixed; top: 0; right: 0; height: 100vh; width: min(560px, 94vw); background: #141414; border-left: 1px solid #2a2a2a; z-index: 61; transform: translateX(100%); transition: transform .22s ease; display: flex; flex-direction: column; box-shadow: -12px 0 40px rgba(0,0,0,.5); }
+        #brand-xbox .xb-drawer.on { transform: translateX(0); }
+        #brand-xbox .xb-dhead { display: flex; align-items: center; gap: .6rem; padding: .85rem 1rem; border-bottom: 1px solid #262626; background: #101810; }
+        #brand-xbox .xb-dhead h3 { margin: 0; font-size: .95rem; color: #52b043; font-weight: 700; flex: 1; }
+        #brand-xbox .xb-dclose { background: #202020; border: 1px solid #333; color: #bbb; border-radius: .3rem; padding: .25rem .6rem; cursor: pointer; }
+        #brand-xbox .xb-dclose:hover { border-color: #52b043; color: #fff; }
+        #brand-xbox .xb-dbody { flex: 1; overflow-y: auto; padding: 1rem; }
+        #brand-xbox .xb-dbody .tab-pane { display: block !important; padding: 0; }
+        #brand-xbox .xb-dbody .grid-2, #brand-xbox .xb-dbody .grid-3 { grid-template-columns: 1fr; }
+        #brand-xbox .xb-dbody .section-card { margin-bottom: 1rem; }
+        #brand-xbox #xb-pane-holder { display: none; }
+
+        /* 抽屜內：banner 細節 */
+        #brand-xbox .dw-preview { width: 100%; border-radius: .5rem; background: #1e1e1e; display: block; }
+        #brand-xbox .dw-mo-wrap { display: flex; gap: .8rem; align-items: flex-start; }
+        #brand-xbox .dw-mo { width: 150px; height: 150px; object-fit: cover; border-radius: .5rem; background: #1e1e1e; flex-shrink: 0; }
+        #brand-xbox .dw-row { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .5rem; }
+        #brand-xbox .dw-row button { font-size: .75rem; padding: .3rem .6rem; border-radius: .3rem; border: 1px solid #333; background: #202020; color: #bbb; cursor: pointer; }
+        #brand-xbox .dw-row button:hover { border-color: #52b043; color: #fff; }
+        #brand-xbox .dw-row button.del { border-color: #5a2020; color: #f87171; }
+        #brand-xbox input[type=range] { width: 100%; accent-color: #107C10; }
+        #brand-xbox .dw-hint { font-size: .72rem; color: #777; line-height: 1.6; margin-top: .35rem; }
+
+        /* banner 卡片（一頁式主畫面用，點了才開抽屜） */
+        #brand-xbox .bn-strip { display: flex; gap: .7rem; flex-wrap: wrap; }
+        #brand-xbox .bn-card { width: 232px; border: 1px solid #262626; border-radius: .5rem; overflow: hidden; background: #171717; cursor: pointer; transition: border-color .15s, transform .12s; position: relative; }
+        #brand-xbox .bn-card:hover { border-color: #52b043; transform: translateY(-2px); }
+        #brand-xbox .bn-card.dragging { opacity: .35; }
+        #brand-xbox .bn-card.drag-over { border-color: #52b043; box-shadow: 0 0 0 2px rgba(82,176,67,.3); }
+        #brand-xbox .bn-card img { width: 100%; height: 86px; object-fit: cover; display: block; background: #1e1e1e; }
+        #brand-xbox .bn-meta { padding: .35rem .5rem .5rem; font-size: .72rem; color: #999; display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+        #brand-xbox .bn-idx { position: absolute; top: .3rem; left: .3rem; background: rgba(0,0,0,.7); color: #fff; font-size: .68rem; border-radius: .25rem; padding: .05rem .35rem; }
+        #brand-xbox .bn-grip { position: absolute; top: .3rem; right: .3rem; background: rgba(0,0,0,.6); color: #ccc; border-radius: .25rem; padding: .05rem .35rem; cursor: grab; font-size: .8rem; }
+        #brand-xbox .bn-add { width: 232px; min-height: 130px; border: 2px dashed #2f5a2f; border-radius: .5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #6f8f6f; font-size: .8rem; cursor: pointer; background: #121a12; text-align: center; padding: .5rem; }
+        #brand-xbox .bn-add:hover, #brand-xbox .bn-add.hot { border-color: #52b043; color: #cfe8cf; background: #162816; }
+        #brand-xbox .bn-group { background: #121212; border: 1px solid #222; border-radius: .5rem; padding: .7rem; }
+        #brand-xbox .bn-group-title { font-size: .8rem; color: #ccc; margin-bottom: .6rem; }
+        #brand-xbox .bn-group-title span { color: #666; font-size: .74rem; }
+        #brand-xbox .bn-divider { display: flex; align-items: center; gap: .6rem; margin: .7rem 0; color: #6a6a6a; font-size: .74rem; }
+        #brand-xbox .bn-divider::before, #brand-xbox .bn-divider::after { content: ''; flex: 1; border-top: 1px dashed #333; }
+        #brand-xbox .pv-clickable { cursor: pointer; }
+        #brand-xbox .pv-clickable:hover { border-color: #52b043; }
+
         /* ══ Xbox 前台模擬（v5） ══ */
         #brand-xbox .pv-wrap { background: #0b0b0b; border: 1px solid #222; border-radius: .75rem; overflow: hidden; }
         #brand-xbox .pv-block { border-bottom: 1px solid #1c1c1c; padding: 1rem 1.1rem 1.3rem; }
@@ -380,7 +436,7 @@
 
         <!-- 全域頂欄：館別切換 -->
         <header class="sticky top-0 z-50 bg-slate-900 text-white px-4 py-2 flex items-center gap-3 shadow-lg" style="height:56px">
-            <span class="font-black tracking-wide text-sm hidden md:inline">🏬 旗艦館總後台 <span class="text-slate-500 font-bold">v5</span></span>
+            <span class="font-black tracking-wide text-sm hidden md:inline">🏬 旗艦館總後台 <span class="text-slate-500 font-bold">v6</span></span>
             <nav class="flex gap-1.5">
                 <button id="brand-btn-ps" class="brand-btn" onclick="switchBrand('ps')">🕹️ PlayStation</button>
                 <button id="brand-btn-xb" class="brand-btn" onclick="switchBrand('xb')">🎮 Xbox</button>
@@ -541,19 +597,27 @@
              Xbox（原 Xbox admin.html，深色主題限定在本區）
         ════════════════════════════════════════════════ -->
         <div id="brand-xbox" class="brand-pane">
-            <!-- Xbox 內部分頁 -->
-            <div class="tabs">
-                <button class="tab-btn active" onclick="xbSwitchTab('overview')">📋 總覽</button>
-                <button class="tab-btn" onclick="xbSwitchTab('preview')">👁 前台模擬</button>
-                <button class="tab-btn" onclick="xbSwitchTab('bannerlab')">🖼 版頭工作台</button>
-                <button class="tab-btn" onclick="xbSwitchTab('banner')">🗂 Banner（舊表單）</button>
-                <button class="tab-btn" onclick="xbSwitchTab('controller')">🎮 控制器（賣場維護）</button>
-                <button class="tab-btn" onclick="xbSwitchTab('gamepass')">💳 Game Pass</button>
-                <button class="tab-btn" onclick="xbSwitchTab('youtube')">🎬 YouTube</button>
+            <!-- 一頁式操作列（v6：不再有分頁，捲一頁看完，點區塊才從側邊開細節） -->
+            <div class="xb-bar">
+                <div class="xb-jump">
+                    <a href="#xb-sec-hero">① 版頭 Banner</a>
+                    <a href="#xb-sec-ctrl">② 控制器</a>
+                    <a href="#xb-sec-gp">③ Game Pass</a>
+                    <a href="#xb-sec-gift">④ 禮品卡</a>
+                    <a href="#xb-sec-yt">⑤ 影片</a>
+                </div>
+                <div class="xb-acts">
+                    <button class="btn-primary" onclick="XBLAB.render(true)" style="background:#333">🔄 重新整理</button>
+                    <button class="btn-primary" onclick="XBLAB.save()">💾 儲存</button>
+                    <button class="btn-primary" onclick="XBLAB.makeZip()" style="background:#1f5fa0">📦 產生上傳包</button>
+                    <button class="btn-primary" onclick="XBLAB.markUploaded()" style="background:#4a3a10;color:#fbbf24">✅ 標記已上傳</button>
+                    <button class="btn-primary" onclick="XBLAB.openPane('overview')" style="background:#222">📋 舊總覽</button>
+                </div>
             </div>
+            <div class="xb-status" id="xb-status">—</div>
 
             <!-- ─────── TAB: 總覽 ─────── -->
-            <div class="tab-pane active" id="pane-overview">
+            <div class="tab-pane" id="pane-overview">
                 <p style="color:#666;font-size:.82rem;margin-bottom:1rem">拖曳 <span style="color:#888">⠿</span> 調整順序・點 ✏ 跳到編輯・點 👁 切換顯示</p>
                 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;align-items:start">
 
@@ -604,58 +668,70 @@
                 </div>
             </div>
 
-            <!-- ─────── TAB: 前台模擬（v5）─────── -->
-            <div class="tab-pane" id="pane-preview">
-                <div class="pv-note">
-                    照前台真實順序畫出整頁。<b>綠色「可維護」</b>的區塊在本後台改；
-                    <b>灰色「賣場維護」</b>的區塊由 PChome 賣場決定，商品掛上／下架就自動同步，後台改了也沒用。
+            <!-- ─────── 一頁式主畫面（v6）：前台模擬＝唯一頁面，其他功能整合進來 ─────── -->
+            <div class="tab-pane active" id="pane-preview">
+                <input type="file" id="lab-file" accept="image/*" multiple style="display:none" />
+                <input type="file" id="lab-file-mo" accept="image/*" style="display:none" />
+
+                <div class="pv-wrap">
+                    <div class="pv-block xb-sec" id="xb-sec-hero">
+                        <div class="pv-head"><h3>① 🖼 版頭 Banner</h3><span class="pv-tag edit">可維護</span>
+                            <span style="color:#666;font-size:.75rem;margin-left:.5rem">點卡片開設定・拖曳換順序（兩組之間也可互拖）</span></div>
+
+                        <div class="bn-group">
+                            <div class="bn-group-title"><b>首屏輪播</b> <span>前台最上方那組大輪播・最多 5 張</span></div>
+                            <div class="bn-strip" id="xb-hero"></div>
+                        </div>
+
+                        <div class="bn-divider"><span>↓ 以下這組在前台會排在最尾巴 ↓</span></div>
+
+                        <div class="bn-group">
+                            <div class="bn-group-title"><b>更多精選活動</b> <span>前台最底部那排小圖・數量不限</span></div>
+                            <div class="bn-strip" id="xb-more"></div>
+                        </div>
+                    </div>
+
+                    <div class="pv-block xb-sec" id="xb-sec-ctrl">
+                        <div class="pv-head"><h3>② 🎮 Xbox 無線控制器系列</h3><span class="pv-tag ro">賣場維護</span>
+                            <button class="pv-jump" onclick="window.open('https://24h.pchome.com.tw/store/DGBJAH')">↗ 賣場 DGBJAH</button></div>
+                        <div id="xb-ctrl"></div>
+                    </div>
+
+                    <div class="pv-block xb-sec" id="xb-sec-gp">
+                        <div class="pv-head"><h3>③ 💳 Xbox Game Pass 訂閱方案</h3><span class="pv-tag edit">可維護</span>
+                            <button class="pv-jump" onclick="XBLAB.openPane('gamepass')">＋ 新增／全部方案</button></div>
+                        <div id="xb-gp"></div>
+                    </div>
+
+                    <div class="pv-block xb-sec" id="xb-sec-gift">
+                        <div class="pv-head"><h3>④ 🎁 禮品卡與遊戲貨幣</h3><span class="pv-tag ro">賣場維護</span>
+                            <button class="pv-jump" onclick="window.open('https://24h.pchome.com.tw/store/DGBJI4')">↗ 賣場 DGBJI4</button></div>
+                        <div id="xb-gift"></div>
+                    </div>
+
+                    <div class="pv-block xb-sec" id="xb-sec-yt" style="border-bottom:none">
+                        <div class="pv-head"><h3>⑤ 🎬 Xbox 官方精選影片</h3><span class="pv-tag edit">可維護</span>
+                            <button class="pv-jump" onclick="XBLAB.openPane('youtube')">＋ 新增／全部影片</button></div>
+                        <div id="xb-yt"></div>
+                    </div>
+
                 </div>
-                <div style="display:flex;gap:.6rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
-                    <button class="btn-primary" onclick="XBLAB.renderPreview(true)">🔄 重新整理</button>
-                    <a class="ov-edit-btn" href="https://24h.pchome.com.tw/sites/xbox" target="_blank" style="text-decoration:none">↗ 開啟實際前台</a>
-                    <span id="pv-updated" style="color:#666;font-size:.75rem"></span>
+
+                <div style="margin-top:1rem;color:#555;font-size:.75rem">
+                    控制器的 Firebase 舊資料（前台已不讀，只給缺漏檢查／GAS 用）：
+                    <a href="javascript:XBLAB.openPane('controller')" style="color:#52b043">開啟舊控制器表單</a>　｜
+                    <a href="javascript:XBLAB.openPane('banner')" style="color:#52b043">Banner 舊表單（貼外部圖網址用）</a>
                 </div>
-                <div class="pv-wrap" id="pv-wrap"></div>
             </div>
 
-            <!-- ─────── TAB: 版頭工作台（v5）─────── -->
-            <div class="tab-pane" id="pane-bannerlab">
-                <div class="pv-warn">
-                    <b>圖片沒辦法由後台直接上到 PChome</b>（沒有 API，一定要人工登入上傳）。流程是：
-                    拖圖進來 → 排好順序 → <b>💾 儲存</b> → <b>📦 產生上傳包</b> → 到 PChome 後台上傳那顆 zip → 回來按 <b>✅ 標記已上傳</b>。
-                    沒按「已上傳」之前，新圖的 banner 會標 <span class="lab-badge pend">⏳ 待上傳</span> 並且<b>不會出現在前台</b>，不會開天窗。
-                </div>
+            <!-- 被移進抽屜的舊分頁暫存區 -->
+            <div id="xb-pane-holder"></div>
 
-                <div class="lab-drop" id="lab-drop">
-                    <div style="font-size:1.6rem;margin-bottom:.3rem">🖼</div>
-                    <div><b>把版頭圖片拖進來</b>（或點這裡選檔，可一次多張）</div>
-                    <div style="font-size:.75rem;margin-top:.4rem;color:#666">
-                        PC 版自動處理成 1644×604、手機版 1200×450（沒另外拖手機版就從 PC 圖裁中間）<br>
-                        自動命名 <code>xb-YYYYMMDD-NN.jpg</code>（純英數、不覆蓋舊檔）
-                    </div>
-                    <input type="file" id="lab-file" accept="image/*" multiple style="display:none" />
-                </div>
-
-                <div style="height:1rem"></div>
-
-                <div class="lab-zone">
-                    <h3>① 首屏輪播</h3>
-                    <div class="lab-hint">前台最上方那組大輪播，<b>最多 5 張</b>（超過的會自動被推到下面「更多精選」）。由上而下＝輪播順序。</div>
-                    <div class="lab-list" id="lab-hero"></div>
-                </div>
-
-                <div class="lab-zone">
-                    <h3>② 底部「更多精選活動」</h3>
-                    <div class="lab-hint">前台最下方那排小圖，數量不限。</div>
-                    <div class="lab-list" id="lab-more"></div>
-                </div>
-
-                <div class="lab-bar">
-                    <span class="lab-status" id="lab-status">—</span>
-                    <button class="btn-primary" onclick="XBLAB.save()">💾 儲存排序與設定</button>
-                    <button class="btn-primary" onclick="XBLAB.makeZip()" style="background:#1f5fa0">📦 產生上傳包 zip</button>
-                    <button class="btn-primary" onclick="XBLAB.markUploaded()" style="background:#4a3a10;color:#fbbf24">✅ 標記已上傳</button>
-                </div>
+            <!-- 側邊抽屜：點區塊才滑出 -->
+            <div class="xb-mask" id="xb-mask" onclick="XBLAB.closeDrawer()"></div>
+            <div class="xb-drawer" id="xb-drawer">
+                <div class="xb-dhead"><h3 id="xb-dtitle">設定</h3><button class="xb-dclose" onclick="XBLAB.closeDrawer()">✕ 關閉</button></div>
+                <div class="xb-dbody" id="xb-dbody"></div>
             </div>
 
             <!-- ─────── TAB: Banner ─────── -->
@@ -2700,14 +2776,16 @@
             setTimeout(function() { bar.classList.remove('show'); }, 3000);
         }
 
-        // ── Xbox 內部分頁 ──
+        // ── 舊的分頁切換（v6 已無分頁）：轉成「開抽屜／捲到區塊」──
         function xbSwitchTab(tab) {
-            document.querySelectorAll('#brand-xbox .tab-btn').forEach(function(b) { b.classList.remove('active'); });
-            document.querySelectorAll('#brand-xbox .tab-pane').forEach(function(p) { p.classList.remove('active'); });
-            document.getElementById('pane-' + tab).classList.add('active');
-            document.querySelector('#brand-xbox [onclick="xbSwitchTab(\'' + tab + '\')"]').classList.add('active');
-            if (tab === 'bannerlab' && window.XBLAB) XBLAB.open();
-            if (tab === 'preview' && window.XBLAB) XBLAB.renderPreview();
+            if (!window.XBLAB) return;
+            var secOf = { preview: 'xb-sec-hero', bannerlab: 'xb-sec-hero', banner: 'xb-sec-hero' };
+            if (tab === 'gamepass' || tab === 'youtube' || tab === 'controller' || tab === 'overview' || tab === 'banner') {
+                XBLAB.openPane(tab);
+                return;
+            }
+            var el = document.getElementById(secOf[tab] || 'xb-sec-hero');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function toggleSection(name) {
@@ -3237,31 +3315,34 @@
 
 
         // ════════════════════════════════════════════════
-        // Xbox 版頭工作台 ＋ 前台模擬（v5, 2026-08-18）
-        //  - 工作台：拖圖進來 → 自動縮成 1644x604 / 1200x450、自動命名 → 卡片拖曳排序
-        //            → 存 Firebase → 產生 PChome 上傳用 zip（JSZip）→ 標記已上傳
-        //  - 圖檔「無法」由後台送上 PChome（沒有 API），所以新圖先標 pending，
-        //    前台會跳過 pending 的 banner，避免圖還沒上傳就開天窗。
+        // Xbox 一頁式工作台（v6, 2026-08-18）
+        //  設計：前台模擬＝唯一頁面，捲一頁看完六個區塊；預設什麼都不展開，
+        //        點卡片才從右側滑出抽屜設定細節；舊的表單分頁被搬進抽屜裡重用。
+        //  版頭圖：拖進來自動產 PC 1644x604 ＋ 手機 900x900（1:1，比照線上最新 462x462 的方形慣例）
+        //        寬圖裁成方形會砍很多，所以抽屜裡有裁切位置滑桿，也可以改成沿用 PC 圖或另外拖一張。
+        //  圖檔無法由後台送上 PChome（沒有 API）→ 新圖標 pending，前台會跳過，不會開天窗。
         // ════════════════════════════════════════════════
         var XBLAB = (function () {
             var SITE = 'https://24h.pchome.com.tw/sites/xbox/';
             var DIR = 'img/banner/';
-            var PC = { w: 1644, h: 604 }, MO = { w: 1200, h: 450 };
+            var PC = { w: 1644, h: 604 };
+            var MO = { w: 900, h: 900 };      // 手機版＝正方形（前台 max-width:767px 時用）
             var LSKEY = 'xblab_pending_v1';
             var MAX_HERO = 5;
 
-            var rows = [];        // 工作台的列（由 bannersData 展開）
-            var pendingFiles = {};// 檔名 → dataURL（尚未上傳到 PChome 的圖）
-            var deleted = [];     // 待刪除的 Firebase key
-            var uid = 0;
-            var opened = false;
+            var rows = [];          // 版頭資料（hero＋more 同一個陣列，用 zone 分組）
+            var pendingFiles = {};  // 檔名 → dataURL（還沒上傳到 PChome 的圖）
+            var origImages = {};    // PC 檔名 → 原始 Image（本次載入才有，用來重裁手機版）
+            var deleted = [];
+            var uid = 0, dragId = null, curBanner = null, hostedPane = null;
+            var STORE = {}, booted = false, rendering = false;
 
             function pad(v) { return v < 10 ? '0' + v : '' + v; }
             function todayStr() { var d = new Date(); return '' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()); }
             function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
             function baseName(u) { return String(u || '').split('/').pop(); }
+            function $(id) { return document.getElementById(id); }
 
-            // 相對路徑 → 可顯示的網址；還沒上傳的圖直接用本機 dataURL
             function imgUrl(u) {
                 if (!u) return '';
                 if (/^(https?:)?\/\//.test(u)) return u;
@@ -3274,22 +3355,23 @@
             }
             function savePending() {
                 try { localStorage.setItem(LSKEY, JSON.stringify(pendingFiles)); }
-                catch (e) { showStatus('⚠ 圖片暫存空間不足，請盡快按「產生上傳包」把圖存下來', true); }
+                catch (e) { showStatus('⚠ 瀏覽器暫存空間不足，請盡快按「產生上傳包」把圖存下來', true); }
             }
 
-            // ── 圖片處理：置中裁切成指定尺寸的 jpg，太大就降畫質重壓 ──
-            function toJpeg(img, size) {
+            // ── 圖片：置中（可調水平位置）裁切成指定尺寸的 jpg ──
+            function toJpeg(img, size, focusX) {
                 var c = document.createElement('canvas');
                 c.width = size.w; c.height = size.h;
                 var ctx = c.getContext('2d');
                 ctx.fillStyle = '#000'; ctx.fillRect(0, 0, size.w, size.h);
                 var sc = Math.max(size.w / img.width, size.h / img.height);
                 var dw = img.width * sc, dh = img.height * sc;
-                ctx.drawImage(img, (size.w - dw) / 2, (size.h - dh) / 2, dw, dh);
+                var fx = (focusX == null ? 0.5 : focusX);
+                ctx.drawImage(img, (size.w - dw) * fx, (size.h - dh) / 2, dw, dh);
                 var qs = [0.86, 0.75, 0.65, 0.55], out = '';
                 for (var i = 0; i < qs.length; i++) {
                     out = c.toDataURL('image/jpeg', qs[i]);
-                    if (out.length * 0.75 < 700 * 1024) break;   // 目標單張 < 700KB
+                    if (out.length * 0.75 < 700 * 1024) break;
                 }
                 return out;
             }
@@ -3310,9 +3392,7 @@
 
             function usedNames() {
                 var u = {};
-                rows.forEach(function (r) {
-                    [r.img_pc, r.img_mobile].forEach(function (x) { if (x) u[baseName(x)] = 1; });
-                });
+                rows.forEach(function (r) { [r.img_pc, r.img_mobile].forEach(function (x) { if (x) u[baseName(x)] = 1; }); });
                 Object.keys(pendingFiles).forEach(function (f) { u[f] = 1; });
                 return u;
             }
@@ -3322,198 +3402,295 @@
                 return nm;
             }
 
-            // ── 加圖 ──
-            async function addFiles(fileList) {
+            async function addFiles(fileList, zone) {
                 var list = Array.prototype.slice.call(fileList || []).filter(function (f) { return /^image\//.test(f.type); });
                 if (!list.length) return;
                 for (var i = 0; i < list.length; i++) {
                     try {
                         var im = await readImage(list[i]);
-                        var nm = nextName();
-                        var mo = nm.replace(/\.jpg$/, '-m.jpg');
+                        var nm = nextName(), mo = nm.replace(/\.jpg$/, '-m.jpg');
                         pendingFiles[nm] = toJpeg(im, PC);
-                        pendingFiles[mo] = toJpeg(im, MO);
+                        pendingFiles[mo] = toJpeg(im, MO, 0.5);
+                        origImages[nm] = im;
+                        var z = zone || 'hero';
+                        if (z === 'hero' && rows.filter(function (r) { return r.zone === 'hero'; }).length >= MAX_HERO) z = 'more';
                         rows.push({
                             __id: ++uid, key: null,
                             title: list[i].name.replace(/\.[^.]+$/, ''),
                             img_pc: DIR + nm, img_mobile: DIR + mo,
-                            link: '', start_time: '', end_time: '',
-                            pending: true,
-                            zone: rows.filter(function (r) { return r.zone === 'hero'; }).length < MAX_HERO ? 'hero' : 'more'
+                            link: '', start_time: '', end_time: '', pending: true, focus: 0.5, zone: z
                         });
                     } catch (e) { showStatus('❌ ' + list[i].name + ' 讀取失敗', true); }
                 }
-                savePending();
-                render();
-                showStatus('已加入 ' + list.length + ' 張，記得按「儲存」再「產生上傳包」');
+                savePending(); renderBanners();
+                showStatus('已加入 ' + list.length + ' 張 → 點卡片可調設定，記得「儲存」再「產生上傳包」');
             }
 
-            // 只換某一列的手機版圖
-            async function replaceMobile(id, file) {
-                var r = rows.filter(function (x) { return x.__id === id; })[0];
-                if (!r || !file) return;
-                var im = await readImage(file);
-                var nm = baseName(r.img_pc).replace(/\.jpg$/, '-m.jpg');
-                if (!r.img_pc) { nm = nextName().replace(/\.jpg$/, '-m.jpg'); }
-                pendingFiles[nm] = toJpeg(im, MO);
-                r.img_mobile = DIR + nm;
-                r.pending = true;
-                savePending(); render();
-                showStatus('手機版圖已換：' + nm);
-            }
-
-            // ── 由 Firebase 資料重建工作台 ──
             function syncFromData() {
                 rows = Object.keys(bannersData || {}).map(function (k) {
                     var b = bannersData[k] || {};
                     return {
-                        __id: ++uid, key: k,
-                        title: b.title || '', img_pc: b.img_pc || '', img_mobile: b.img_mobile || '',
+                        __id: ++uid, key: k, title: b.title || '',
+                        img_pc: b.img_pc || '', img_mobile: b.img_mobile || '',
                         link: b.link || '', start_time: b.start_time || '', end_time: b.end_time || '',
-                        pending: !!b.pending,
-                        sort_order: b.sort_order || 0,
+                        pending: !!b.pending, focus: 0.5, sort_order: b.sort_order || 0,
                         zone: (b.sort_order || 99) <= MAX_HERO ? 'hero' : 'more'
                     };
                 }).sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
                 deleted = [];
             }
 
-            function open() {
-                if (!opened) { loadPending(); opened = true; }
-                if (!rows.length) syncFromData();
-                bindDrop();
-                render();
-            }
+            function idx(id) { for (var i = 0; i < rows.length; i++) if (rows[i].__id === id) return i; return -1; }
+            function rowOf(id) { var i = idx(id); return i < 0 ? null : rows[i]; }
 
-            function bindDrop() {
-                var dz = document.getElementById('lab-drop');
-                var fi = document.getElementById('lab-file');
-                if (dz.dataset.bound) return;
-                dz.dataset.bound = '1';
-                dz.addEventListener('click', function () { fi.click(); });
-                fi.addEventListener('change', function () { addFiles(fi.files); fi.value = ''; });
-                ['dragenter', 'dragover'].forEach(function (ev) {
-                    dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.add('hot'); });
-                });
-                ['dragleave', 'drop'].forEach(function (ev) {
-                    dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.remove('hot'); });
-                });
-                dz.addEventListener('drop', function (e) { addFiles(e.dataTransfer.files); });
-            }
-
-            // ── 排程狀態徽章 ──
             function badge(r) {
                 if (r.pending) return '<span class="lab-badge pend">⏳ 待上傳</span>';
                 var now = Date.now();
-                if (r.start_time && new Date(r.start_time).getTime() > now) return '<span class="lab-badge sched">🕐 未到上架時間</span>';
+                if (r.start_time && new Date(r.start_time).getTime() > now) return '<span class="lab-badge sched">🕐 未到上架</span>';
                 if (r.end_time && new Date(r.end_time).getTime() < now) return '<span class="lab-badge expired">⛔ 已過期</span>';
-                return '<span class="lab-badge live">✅ 前台顯示中</span>';
+                return '<span class="lab-badge live">✅ 顯示中</span>';
             }
 
-            var dragId = null;
-
-            function cardHtml(r, idx) {
-                return '' +
-                    '<div class="lab-card" draggable="true" data-id="' + r.__id + '">' +
-                    '<div class="lab-grip">⠿</div>' +
-                    '<div class="lab-thumbs">' +
-                    '<img class="lab-thumb-pc" src="' + esc(imgUrl(r.img_pc)) + '" onerror="this.style.opacity=.25" title="PC 版 1644×604">' +
-                    '<img class="lab-thumb-mo" src="' + esc(imgUrl(r.img_mobile || r.img_pc)) + '" onerror="this.style.opacity=.25" title="手機版 1200×450">' +
-                    '</div>' +
-                    '<div class="lab-fields">' +
-                    '<div class="span2" style="display:flex;gap:.5rem;align-items:center">' + badge(r) +
-                    '<span style="color:#555;font-size:.7rem">' + esc(baseName(r.img_pc) || '（未設定圖片）') + '</span></div>' +
-                    '<div class="span2"><label>標題（備註用，前台不顯示）</label>' +
-                    '<input type="text" value="' + esc(r.title) + '" oninput="XBLAB.set(' + r.__id + ',\'title\',this.value)"></div>' +
-                    '<div class="span2"><label>點擊連結（空白＝不可點）</label>' +
-                    '<input type="url" value="' + esc(r.link) + '" placeholder="https://24h.pchome.com.tw/..." oninput="XBLAB.set(' + r.__id + ',\'link\',this.value)"></div>' +
-                    '<div><label>上架時間（空＝立即）</label>' +
-                    '<input type="datetime-local" value="' + esc(r.start_time) + '" onchange="XBLAB.set(' + r.__id + ',\'start_time\',this.value)"></div>' +
-                    '<div><label>下架時間（空＝永久）</label>' +
-                    '<input type="datetime-local" value="' + esc(r.end_time) + '" onchange="XBLAB.set(' + r.__id + ',\'end_time\',this.value)"></div>' +
-                    '</div>' +
-                    '<div class="lab-side">' +
-                    '<button onclick="XBLAB.move(' + r.__id + ',-1)">▲ 上移</button>' +
-                    '<button onclick="XBLAB.move(' + r.__id + ',1)">▼ 下移</button>' +
-                    '<button onclick="XBLAB.swapZone(' + r.__id + ')">' + (r.zone === 'hero' ? '↓ 移到精選' : '↑ 移到輪播') + '</button>' +
-                    '<button onclick="XBLAB.pickMobile(' + r.__id + ')">🖼 換手機圖</button>' +
-                    '<button class="del" onclick="XBLAB.remove(' + r.__id + ')">✕ 刪除</button>' +
-                    '</div>' +
-                    '</div>';
-            }
-
-            function render() {
+            // ════ ① 版頭 Banner（兩組同一區塊）════
+            function renderBanners() {
                 ['hero', 'more'].forEach(function (zone) {
-                    var el = document.getElementById(zone === 'hero' ? 'lab-hero' : 'lab-more');
+                    var el = $(zone === 'hero' ? 'xb-hero' : 'xb-more');
+                    if (!el) return;
                     var list = rows.filter(function (r) { return r.zone === zone; });
-                    el.innerHTML = list.length ? list.map(cardHtml).join('')
-                        : '<div style="color:#555;font-size:.8rem;padding:.6rem">（空的，把圖拖進上方虛線框，或從另一區移過來）</div>';
-                    el.ondragover = function (e) { e.preventDefault(); };
-                    el.ondrop = function (e) {
-                        if (e.target === el) { e.preventDefault(); moveTo(dragId, zone, null); }
-                    };
-                    el.querySelectorAll('.lab-card').forEach(function (card) {
+                    var html = list.map(function (r, i) {
+                        return '<div class="bn-card" draggable="true" data-id="' + r.__id + '" title="點一下開設定">' +
+                            '<span class="bn-idx">' + (i + 1) + '</span><span class="bn-grip" draggable="true">⠿</span>' +
+                            '<img src="' + esc(imgUrl(r.img_pc)) + '" onerror="this.style.opacity=.2">' +
+                            '<div class="bn-meta">' + badge(r) +
+                            '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px">' +
+                            esc(r.title || baseName(r.img_pc) || '（未命名）') + '</span></div></div>';
+                    }).join('');
+                    html += '<div class="bn-add" data-zone="' + zone + '">＋<div style="margin-top:.3rem">把圖片拖到這裡<br>或點一下選檔</div></div>';
+                    el.innerHTML = html;
+
+                    el.querySelectorAll('.bn-card').forEach(function (card) {
                         var id = +card.dataset.id;
-                        card.addEventListener('dragstart', function (e) { dragId = id; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+                        card.addEventListener('click', function (e) { if (!e.target.classList.contains('bn-grip')) openBanner(id); });
+                        card.addEventListener('dragstart', function (e) { dragId = id; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(id)); });
                         card.addEventListener('dragend', function () { card.classList.remove('dragging'); });
-                        card.addEventListener('dragover', function (e) { e.preventDefault(); card.classList.add('drag-over'); });
+                        card.addEventListener('dragover', function (e) { if (dragId != null) { e.preventDefault(); card.classList.add('drag-over'); } });
                         card.addEventListener('dragleave', function () { card.classList.remove('drag-over'); });
-                        card.addEventListener('drop', function (e) { e.preventDefault(); e.stopPropagation(); card.classList.remove('drag-over'); moveTo(dragId, zone, id); });
+                        card.addEventListener('drop', function (e) {
+                            card.classList.remove('drag-over');
+                            if (dragId == null) return;
+                            e.preventDefault(); e.stopPropagation();
+                            moveTo(dragId, zone, id); dragId = null;
+                        });
                     });
+
+                    var add = el.querySelector('.bn-add');
+                    add.addEventListener('click', function () {
+                        var fi = $('lab-file'); fi.onchange = function () { addFiles(fi.files, zone); fi.value = ''; }; fi.click();
+                    });
+                    ['dragenter', 'dragover'].forEach(function (ev) {
+                        add.addEventListener(ev, function (e) { e.preventDefault(); add.classList.add('hot'); });
+                    });
+                    ['dragleave', 'drop'].forEach(function (ev) {
+                        add.addEventListener(ev, function (e) { e.preventDefault(); add.classList.remove('hot'); });
+                    });
+                    add.addEventListener('drop', function (e) {
+                        if (dragId != null) { moveTo(dragId, zone, null); dragId = null; return; }   // 卡片拖到區塊尾端
+                        addFiles(e.dataTransfer.files, zone);
+                    });
+
+                    el.addEventListener('dragover', function (e) { if (dragId != null) e.preventDefault(); });
                 });
                 updateStatus();
             }
 
-            function idx(id) { for (var i = 0; i < rows.length; i++) if (rows[i].__id === id) return i; return -1; }
-
             function moveTo(id, zone, beforeId) {
-                if (id == null) return;
                 var i = idx(id); if (i < 0) return;
                 var r = rows.splice(i, 1)[0];
                 r.zone = zone;
-                if (beforeId == null || beforeId === id) { rows.push(r); }
-                else {
-                    var j = idx(beforeId);
-                    rows.splice(j < 0 ? rows.length : j, 0, r);
-                }
-                render();
+                if (beforeId == null || beforeId === id) rows.push(r);
+                else { var j = idx(beforeId); rows.splice(j < 0 ? rows.length : j, 0, r); }
+                renderBanners();
             }
 
-            function move(id, dir) {
-                var r = rows[idx(id)]; if (!r) return;
-                var same = rows.filter(function (x) { return x.zone === r.zone; });
-                var pos = same.indexOf(r), target = same[pos + dir];
-                if (!target) return;
-                var a = idx(r.__id), b = idx(target.__id);
-                rows[a] = target; rows[b] = r;
-                render();
+            function updateStatus() {
+                var hero = rows.filter(function (r) { return r.zone === 'hero'; }).length;
+                var pend = rows.filter(function (r) { return r.pending; });
+                var names = {};
+                pend.forEach(function (r) { [r.img_pc, r.img_mobile].forEach(function (u) { var f = baseName(u); if (f && pendingFiles[f]) names[f] = 1; }); });
+                var bytes = Object.keys(names).reduce(function (a, f) { return a + pendingFiles[f].length * 0.75; }, 0);
+                var msg = '首屏輪播 ' + hero + '/' + MAX_HERO + ' 張・底部精選 ' + (rows.length - hero) + ' 張';
+                if (hero > MAX_HERO) msg += '　⚠ 首屏超過 5 張，儲存時多的會自動移到底部精選';
+                if (pend.length) msg += '　⏳ 待上傳 ' + pend.length + ' 張（zip 約 ' +
+                    (bytes > 1024 * 1024 ? (bytes / 1024 / 1024).toFixed(1) + 'MB' : Math.round(bytes / 1024) + 'KB') + '）';
+                else msg += '　✅ 沒有待上傳的圖';
+                var el = $('xb-status'); if (el) el.textContent = msg;
             }
 
-            function swapZone(id) {
-                var r = rows[idx(id)]; if (!r) return;
-                r.zone = r.zone === 'hero' ? 'more' : 'hero';
-                rows.splice(idx(id), 1); rows.push(r);
-                render();
+            // ════ 側邊抽屜 ════
+            function openDrawer(title) {
+                $('xb-dtitle').textContent = title;
+                $('xb-drawer').classList.add('on');
+                $('xb-mask').classList.add('on');
+            }
+            function closeDrawer() {
+                $('xb-drawer').classList.remove('on');
+                $('xb-mask').classList.remove('on');
+                if (hostedPane) { $('xb-pane-holder').appendChild(hostedPane); hostedPane = null; }
+                $('xb-dbody').innerHTML = '';
+                curBanner = null;
+            }
+            // 把舊的表單分頁整個節點搬進抽屜（保留原有事件與 id，不用重寫表單）
+            var PANE_TITLE = { overview: '📋 總覽（拖曳排序）', banner: '🗂 Banner 舊表單（貼外部圖網址）', controller: '🎮 控制器舊資料（前台已不讀）', gamepass: '💳 Game Pass 方案', youtube: '🎬 YouTube 精選影片' };
+            function openPane(name, then) {
+                var pane = $('pane-' + name);
+                if (!pane) return;
+                if (hostedPane) $('xb-pane-holder').appendChild(hostedPane);
+                $('xb-dbody').innerHTML = '';
+                $('xb-dbody').appendChild(pane);
+                hostedPane = pane;
+                openDrawer(PANE_TITLE[name] || name);
+                if (typeof then === 'function') then();
             }
 
-            function remove(id) {
-                var r = rows[idx(id)]; if (!r) return;
-                if (!confirm('確定刪除這張 banner？（存檔後才會真的從 Firebase 移除）')) return;
-                if (r.key) deleted.push(r.key);
-                rows.splice(idx(id), 1);
-                render();
-            }
+            function openBanner(id) {
+                var r = rowOf(id); if (!r) return;
+                curBanner = id;
+                var hasOrig = !!origImages[baseName(r.img_pc)];
+                $('xb-dbody').innerHTML =
+                    '<div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.6rem">' + badge(r) +
+                    '<span style="color:#666;font-size:.75rem">' + esc(baseName(r.img_pc) || '（無檔名）') + '</span></div>' +
 
-            function pickMobile(id) {
-                var inp = document.createElement('input');
-                inp.type = 'file'; inp.accept = 'image/*';
-                inp.onchange = function () { if (inp.files[0]) replaceMobile(id, inp.files[0]); };
-                inp.click();
+                    '<label>PC 版（1644×604）</label>' +
+                    '<img class="dw-preview" src="' + esc(imgUrl(r.img_pc)) + '" onerror="this.style.opacity=.2">' +
+                    '<div class="dw-row"><button onclick="XBLAB.pickPc(' + id + ')">🖼 換一張 PC 圖</button></div>' +
+
+                    '<label style="margin-top:1rem">手機版（900×900 正方形）</label>' +
+                    '<div class="dw-mo-wrap">' +
+                    '<img class="dw-mo" id="dw-mo-img" src="' + esc(imgUrl(r.img_mobile || r.img_pc)) + '" onerror="this.style.opacity=.2">' +
+                    '<div style="flex:1;min-width:0">' +
+                    (r.img_mobile ? '' : '<div class="dw-hint" style="color:#e8c56a">目前沒有手機版圖，前台手機會直接用 PC 那張寬圖（在手機上會很扁）。</div>') +
+                    (hasOrig ? '<label style="margin-top:0">裁切位置（左 ←→ 右）</label>' +
+                        '<input type="range" min="0" max="100" value="' + Math.round((r.focus == null ? 0.5 : r.focus) * 100) + '" ' +
+                        'oninput="XBLAB.recrop(' + id + ', this.value)">' +
+                        '<div class="dw-hint">寬版 banner 裁成正方形會砍掉約 6 成寬度，拉滑桿選要留哪一段（主視覺／文字通常在中間或左邊）。</div>'
+                        : '<div class="dw-hint">這張圖是先前產生的，本次沒有原圖無法重新裁切；要調整就重新拖一張圖進來。</div>') +
+                    '<div class="dw-row">' +
+                    '<button onclick="XBLAB.pickMobile(' + id + ')">📱 另外拖一張手機圖</button>' +
+                    '<button onclick="XBLAB.clearMobile(' + id + ')">沿用 PC 圖</button>' +
+                    '</div></div></div>' +
+
+                    '<label style="margin-top:1rem">標題（備註用，前台不顯示）</label>' +
+                    '<input type="text" value="' + esc(r.title) + '" oninput="XBLAB.set(' + id + ',\'title\',this.value)">' +
+                    '<label>點擊連結（空白＝不可點）</label>' +
+                    '<input type="url" value="' + esc(r.link) + '" placeholder="https://24h.pchome.com.tw/..." oninput="XBLAB.set(' + id + ',\'link\',this.value)">' +
+                    '<div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">' +
+                    '<div><label>上架時間（空＝立即）</label><input type="datetime-local" value="' + esc(r.start_time) + '" onchange="XBLAB.set(' + id + ',\'start_time\',this.value)"></div>' +
+                    '<div><label>下架時間（空＝永久）</label><input type="datetime-local" value="' + esc(r.end_time) + '" onchange="XBLAB.set(' + id + ',\'end_time\',this.value)"></div>' +
+                    '</div>' +
+
+                    '<label style="margin-top:1rem">位置</label>' +
+                    '<div class="dw-row">' +
+                    '<button onclick="XBLAB.swapZone(' + id + ')">' + (r.zone === 'hero' ? '↓ 改放「更多精選」（前台尾巴）' : '↑ 改放「首屏輪播」（前台最上方）') + '</button>' +
+                    '</div>' +
+
+                    '<div class="dw-row" style="margin-top:1.5rem;border-top:1px solid #262626;padding-top:.8rem">' +
+                    '<button class="del" onclick="XBLAB.remove(' + id + ')">✕ 刪除這張</button>' +
+                    '<button onclick="XBLAB.closeDrawer()">完成</button>' +
+                    '<span class="dw-hint" style="flex:1;margin:0;align-self:center">改完記得按上方的 💾 儲存</span>' +
+                    '</div>';
+                openDrawer('🖼 ' + (r.zone === 'hero' ? '首屏輪播' : '更多精選') + ' — Banner 設定');
             }
 
             function set(id, field, val) {
-                var r = rows[idx(id)];
-                if (r) { r[field] = val; if (field === 'start_time' || field === 'end_time') updateStatus(); }
+                var r = rowOf(id); if (!r) return;
+                r[field] = val;
+                if (field === 'start_time' || field === 'end_time') { renderBanners(); }
+            }
+            function recrop(id, v) {
+                var r = rowOf(id); if (!r) return;
+                var im = origImages[baseName(r.img_pc)]; if (!im) return;
+                r.focus = (+v) / 100;
+                var nm = baseName(r.img_pc).replace(/\.jpg$/, '-m.jpg');
+                pendingFiles[nm] = toJpeg(im, MO, r.focus);
+                r.img_mobile = DIR + nm; r.pending = true;
+                savePending();
+                var el = $('dw-mo-img'); if (el) el.src = pendingFiles[nm];
+            }
+            function pickPc(id) {
+                var fi = $('lab-file-mo');
+                fi.onchange = async function () {
+                    if (!fi.files[0]) return;
+                    var r = rowOf(id); if (!r) return;
+                    var im = await readImage(fi.files[0]);
+                    var nm = nextName(), mo = nm.replace(/\.jpg$/, '-m.jpg');
+                    pendingFiles[nm] = toJpeg(im, PC);
+                    pendingFiles[mo] = toJpeg(im, MO, r.focus == null ? 0.5 : r.focus);
+                    origImages[nm] = im;
+                    r.img_pc = DIR + nm; r.img_mobile = DIR + mo; r.pending = true;
+                    savePending(); renderBanners(); openBanner(id);
+                    fi.value = '';
+                };
+                fi.click();
+            }
+            function pickMobile(id) {
+                var fi = $('lab-file-mo');
+                fi.onchange = async function () {
+                    if (!fi.files[0]) return;
+                    var r = rowOf(id); if (!r) return;
+                    var im = await readImage(fi.files[0]);
+                    var nm = (baseName(r.img_pc) || nextName()).replace(/\.jpg$/, '-m.jpg');
+                    pendingFiles[nm] = toJpeg(im, MO, 0.5);
+                    r.img_mobile = DIR + nm; r.pending = true;
+                    savePending(); renderBanners(); openBanner(id);
+                    fi.value = '';
+                };
+                fi.click();
+            }
+            function clearMobile(id) {
+                var r = rowOf(id); if (!r) return;
+                r.img_mobile = '';
+                renderBanners(); openBanner(id);
+                showStatus('這張改成手機也用 PC 圖');
+            }
+            function swapZone(id) {
+                var r = rowOf(id); if (!r) return;
+                r.zone = r.zone === 'hero' ? 'more' : 'hero';
+                rows.splice(idx(id), 1); rows.push(r);
+                renderBanners(); openBanner(id);
+            }
+            function remove(id) {
+                var r = rowOf(id); if (!r) return;
+                if (!confirm('確定刪除這張 banner？（按上方「儲存」後才會真的從 Firebase 移除）')) return;
+                if (r.key) deleted.push(r.key);
+                rows.splice(idx(id), 1);
+                closeDrawer(); renderBanners();
+            }
+
+            // ════ 儲存／打包／標記已上傳 ════
+            async function save() {
+                var hero = rows.filter(function (r) { return r.zone === 'hero'; });
+                var more = rows.filter(function (r) { return r.zone === 'more'; });
+                while (hero.length > MAX_HERO) { var x = hero.pop(); x.zone = 'more'; more.unshift(x); }
+                var order = hero.concat(more);
+                var bad = order.filter(function (r) { return !r.img_pc; });
+                if (bad.length) { showStatus('❌ 有 ' + bad.length + ' 張沒有圖片，請先拖圖或刪除', true); return; }
+                try {
+                    for (var i = 0; i < deleted.length; i++) await database.ref('xbox_site_banners/' + deleted[i]).remove();
+                    deleted = [];
+                    for (var j = 0; j < order.length; j++) {
+                        var r = order[j];
+                        var data = {
+                            title: r.title || '', img_pc: r.img_pc, img_mobile: r.img_mobile || '',
+                            link: r.link || '', start_time: r.start_time || null, end_time: r.end_time || null,
+                            sort_order: r.zone === 'hero' ? (j + 1) : (MAX_HERO + 1 + j - hero.length),
+                            pending: !!r.pending
+                        };
+                        if (r.key) await database.ref('xbox_site_banners/' + r.key).update(data);
+                        else { var ref = await database.ref('xbox_site_banners').push(data); r.key = ref.key; }
+                    }
+                    showStatus('✅ 已儲存 ' + order.length + ' 張 banner');
+                    await loadXbBanners(); renderOverview(); renderBanners();
+                } catch (e) { showStatus('❌ 儲存失敗：' + e.message, true); }
             }
 
             function pendingList() {
@@ -3528,95 +3705,38 @@
                 return out;
             }
 
-            function updateStatus() {
-                var hero = rows.filter(function (r) { return r.zone === 'hero'; }).length;
-                var pend = rows.filter(function (r) { return r.pending; }).length;
-                var files = pendingList();
-                var bytes = files.reduce(function (a, f) { return a + pendingFiles[f].length * 0.75; }, 0);
-                var msg = '首屏 ' + hero + '/' + MAX_HERO + ' 張・底部精選 ' + (rows.length - hero) + ' 張';
-                if (hero > MAX_HERO) msg += '　⚠ 首屏超過 5 張，存檔時多的會自動移到底部精選';
-                if (pend) msg += '　⏳ 待上傳 ' + pend + ' 張（zip 約 ' +
-                    (bytes > 1024 * 1024 ? (bytes / 1024 / 1024).toFixed(1) + 'MB' : Math.round(bytes / 1024) + 'KB') + '）';
-                document.getElementById('lab-status').textContent = msg;
-            }
-
-            // ── 存回 Firebase ──
-            async function save() {
-                var hero = rows.filter(function (r) { return r.zone === 'hero'; });
-                var more = rows.filter(function (r) { return r.zone === 'more'; });
-                while (hero.length > MAX_HERO) { var x = hero.pop(); x.zone = 'more'; more.unshift(x); }
-
-                var order = hero.concat(more);
-                var bad = order.filter(function (r) { return !r.img_pc; });
-                if (bad.length) { showStatus('❌ 有 ' + bad.length + ' 張沒有圖片，請先拖圖或刪除', true); return; }
-
-                try {
-                    for (var i = 0; i < deleted.length; i++) {
-                        await database.ref('xbox_site_banners/' + deleted[i]).remove();
-                    }
-                    deleted = [];
-                    for (var j = 0; j < order.length; j++) {
-                        var r = order[j];
-                        var data = {
-                            title: r.title || '',
-                            img_pc: r.img_pc,
-                            img_mobile: r.img_mobile || '',
-                            link: r.link || '',
-                            start_time: r.start_time || null,
-                            end_time: r.end_time || null,
-                            sort_order: r.zone === 'hero' ? (j + 1) : (MAX_HERO + 1 + j - hero.length),
-                            pending: !!r.pending
-                        };
-                        if (r.key) { await database.ref('xbox_site_banners/' + r.key).update(data); }
-                        else { var ref = await database.ref('xbox_site_banners').push(data); r.key = ref.key; }
-                    }
-                    showStatus('✅ 已儲存 ' + order.length + ' 張 banner' + (pendingList().length ? '（還有待上傳的圖，記得產生 zip）' : ''));
-                    await loadXbBanners();
-                    renderOverview();
-                    render();
-                } catch (e) { showStatus('❌ 儲存失敗：' + e.message, true); }
-            }
-
-            // ── 產生 PChome 上傳用 zip ──
             async function makeZip() {
                 var files = pendingList();
-                if (!files.length) { showStatus('沒有待上傳的新圖（拖圖進來後會出現）', true); return; }
+                if (!files.length) { showStatus('沒有待上傳的新圖（拖圖進來後才會有）', true); return; }
                 if (typeof JSZip === 'undefined') { showStatus('❌ JSZip 沒載入，請重整頁面', true); return; }
                 var zip = new JSZip();
-                files.forEach(function (f) {
-                    zip.file(DIR + f, pendingFiles[f].split(',')[1], { base64: true, createFolders: false });
-                });
+                files.forEach(function (f) { zip.file(DIR + f, pendingFiles[f].split(',')[1], { base64: true, createFolders: false }); });
                 var blob = await zip.generateAsync({ type: 'blob' });
-                if (blob.size > 9.5 * 1024 * 1024) {
-                    showStatus('⚠ zip 已達 ' + (blob.size / 1024 / 1024).toFixed(1) + 'MB，PChome 單次上限 10MB，請分批', true);
-                }
+                if (blob.size > 9.5 * 1024 * 1024) showStatus('⚠ zip ' + (blob.size / 1024 / 1024).toFixed(1) + 'MB，PChome 單次上限 10MB，請分批', true);
                 var a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
                 a.download = 'xbox_' + todayStr() + '.zip';
                 a.click();
                 setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
-                showStatus('📦 已下載 xbox_' + todayStr() + '.zip（' + files.length + ' 個檔，' + (blob.size / 1024 / 1024).toFixed(1) + 'MB）→ 請上傳 PChome 後回來按「標記已上傳」');
+                showStatus('📦 已下載 xbox_' + todayStr() + '.zip（' + files.length + ' 檔 / ' + (blob.size / 1024 / 1024).toFixed(1) + 'MB）→ 上傳 PChome 後回來按「標記已上傳」');
             }
 
-            // ── 標記已上傳：解除 pending，前台才會開始顯示 ──
             async function markUploaded() {
                 var pend = rows.filter(function (r) { return r.pending; });
                 if (!pend.length) { showStatus('目前沒有待上傳的 banner'); return; }
-                if (!confirm('確定這 ' + pend.length + ' 張圖已經上傳到 PChome 了嗎？\n按確定後它們就會開始出現在前台。')) return;
+                if (!confirm('確定這 ' + pend.length + ' 張圖已經上傳到 PChome 了嗎？\n按確定後它們才會開始出現在前台。')) return;
                 try {
                     for (var i = 0; i < pend.length; i++) {
                         pend[i].pending = false;
                         if (pend[i].key) await database.ref('xbox_site_banners/' + pend[i].key).update({ pending: false });
                     }
-                    // 圖已在 PChome 上，本機暫存可以清掉
                     pendingFiles = {}; savePending();
                     showStatus('✅ 已標記上傳完成，前台重整即可看到');
-                    await loadXbBanners(); renderOverview(); render();
+                    await loadXbBanners(); renderOverview(); renderBanners();
                 } catch (e) { showStatus('❌ 失敗：' + e.message, true); }
             }
 
-            // ════ 前台模擬 ════
-            var STORE = {};
+            // ════ ②④ 賣場即時區塊 ＋ ③⑤ 可維護區塊 ════
             function jsonp(url) {
                 return new Promise(function (resolve) {
                     var cb = '__xblab' + Math.floor(Math.random() * 1e9);
@@ -3637,169 +3757,143 @@
             async function stockOf(pids) {
                 var out = {};
                 for (var i = 0; i < pids.length; i += 15) {
-                    var res = await jsonp('https://ecapi.pchome.com.tw/ecshop/prodapi/v2/prod/button&id=' +
-                        pids.slice(i, i + 15).join(',') + '&fields=Id,Qty,ButtonType');
-                    (res || []).forEach(function (b) {
-                        out[String(b.Id).replace(/-\d{3}$/, '')] = (b.ButtonType === 'ForSale' && (b.Qty || 0) > 0);
-                    });
+                    var res = await jsonp('https://ecapi.pchome.com.tw/ecshop/prodapi/v2/prod/button&id=' + pids.slice(i, i + 15).join(',') + '&fields=Id,Qty,ButtonType');
+                    (res || []).forEach(function (b) { out[String(b.Id).replace(/-\d{3}$/, '')] = (b.ButtonType === 'ForSale' && (b.Qty || 0) > 0); });
                 }
                 return out;
             }
             async function priceOf(pids) {
                 var out = {};
                 for (var i = 0; i < pids.length; i += 20) {
-                    var res = await jsonp('https://ecapi.pchome.com.tw/ecshop/prodapi/v2/prod&id=' +
-                        pids.slice(i, i + 20).join(',') + '&fields=Id,Price');
-                    var arr = Array.isArray(res) ? res : [];
-                    arr.forEach(function (d) {
+                    var res = await jsonp('https://ecapi.pchome.com.tw/ecshop/prodapi/v2/prod&id=' + pids.slice(i, i + 20).join(',') + '&fields=Id,Price');
+                    (Array.isArray(res) ? res : []).forEach(function (d) {
                         if (d && d.Price && d.Price.P) out[String(d.Id).replace(/-\d{3}$/, '')] = d.Price.P;
                     });
                 }
                 return out;
             }
+            function prodImg(it) { var pic = it.Pic || {}, w = pic.W || pic.B || ''; return w ? 'https://img.pchome.com.tw/cs' + w : ''; }
 
-            function prodImg(it) {
-                var pic = it.Pic || {}, w = pic.W || pic.B || '';
-                return w ? 'https://img.pchome.com.tw/cs' + w : '';
-            }
-
-            function blockHead(title, editable, jumpTab, jumpLabel) {
-                return '<div class="pv-head"><h3>' + title + '</h3>' +
-                    (editable ? '<span class="pv-tag edit">可維護</span>' : '<span class="pv-tag ro">賣場維護</span>') +
-                    (jumpTab ? '<button class="pv-jump" onclick="' + jumpTab + '">' + jumpLabel + '</button>' : '') +
-                    '</div>';
-            }
-
-            function bannerStrip(list) {
-                if (!list.length) return '<div class="pv-empty">（沒有資料，前台這區會整塊隱藏）</div>';
-                return '<div class="pv-strip">' + list.map(function (b, i) {
-                    return '<div class="pv-banner"><img src="' + esc(imgUrl(b.img_pc)) + '" onerror="this.style.opacity=.2">' +
-                        '<div class="pv-cap">' + (i + 1) + '. ' + badge(b) + '</div>' +
-                        '<div class="pv-cap">' + esc(b.title || '（無標題）') + '</div></div>';
-                }).join('') + '</div>';
-            }
-
-            async function renderPreview(force) {
-                var box = document.getElementById('pv-wrap');
-                if (!opened) { loadPending(); opened = true; }
-                if (!rows.length || force) syncFromData();
-                if (force) STORE = {};
-                box.innerHTML = '<div class="pv-block"><div class="pv-empty">讀取賣場中…</div></div>';
-
-                var now = Date.now();
-                var visible = rows.filter(function (r) {
-                    if (r.pending) return false;
-                    if (r.start_time && new Date(r.start_time).getTime() > now) return false;
-                    if (r.end_time && new Date(r.end_time).getTime() < now) return false;
-                    return true;
-                });
-                var hero = visible.filter(function (r) { return r.zone === 'hero'; });
-                var more = visible.filter(function (r) { return r.zone === 'more'; });
-
+            async function renderStoreBlocks() {
                 var ctrl = (await storeProds('DGBJAH')).filter(function (it) {
                     return !/^DGBJI3/i.test(it.Id || '') && !/Game\s*Pass/i.test(it.Name || '');
                 });
                 var gift = await storeProds('DGBJI4');
                 var stock = await stockOf(ctrl.concat(gift).map(function (it) { return it.Id; }));
-                var gpPids = Object.keys(gpData || {}).map(function (k) { return (gpData[k] || {}).pchome_pid; }).filter(Boolean);
-                var gpLive = await priceOf(gpPids);
 
-                function prodCard(it) {
-                    var pid = String(it.Id).replace(/-\d{3}$/, '');
-                    var out = stock[pid] === false;
-                    return '<div class="pv-card' + (out ? ' oos' : '') + '">' +
-                        '<img src="' + esc(prodImg(it)) + '" onerror="this.style.opacity=.2">' +
+                function card(it) {
+                    var pid = String(it.Id).replace(/-\d{3}$/, ''), out = stock[pid] === false;
+                    return '<div class="pv-card' + (out ? ' oos' : '') + '"><img src="' + esc(prodImg(it)) + '" onerror="this.style.opacity=.2">' +
                         '<div class="pv-nm">' + esc(it.Name) + '</div>' +
-                        '<div class="pv-pr">NT$ ' + Number((it.Price || {}).P || 0).toLocaleString() +
-                        (out ? ' <span class="oosmark">補貨中</span>' : '') + '</div></div>';
+                        '<div class="pv-pr">NT$ ' + Number((it.Price || {}).P || 0).toLocaleString() + (out ? ' <span class="oosmark">補貨中</span>' : '') + '</div></div>';
                 }
                 var isElite = function (it) { return /Elite|菁英|配件/i.test(it.Name || ''); };
+                $('xb-ctrl').innerHTML =
+                    '<div class="pv-grid">' + ctrl.filter(function (it) { return !isElite(it); }).map(card).join('') + '</div>' +
+                    '<div style="margin:.8rem 0 .4rem;color:#888;font-size:.8rem">⭐ Elite 菁英系列與配件</div>' +
+                    '<div class="pv-grid">' + ctrl.filter(isElite).map(card).join('') + '</div>';
 
-                // Game Pass：同 plan_name 收成一張卡（與前台同邏輯）
-                var gps = Object.keys(gpData || {}).map(function (k) { return gpData[k]; })
+                var groups = [
+                    { t: 'Xbox 數位禮品卡', f: function (nm) { return /禮品卡|Gift\s*Card/i.test(nm); }, list: [] },
+                    { t: 'Minecraft 遊戲貨幣', f: function (nm) { return /Minecraft|Minecoins?|遊戲貨幣/i.test(nm); }, list: [] },
+                    { t: '其他數位商品', f: function () { return true; }, list: [] }
+                ];
+                gift.forEach(function (it) {
+                    for (var i = 0; i < groups.length; i++) if (groups[i].f(it.Name || '')) { groups[i].list.push(it); return; }
+                });
+                groups = groups.filter(function (g) { return g.list.length; });
+                groups.forEach(function (g) { g.list.sort(function (a, b) { return ((a.Price || {}).P || 0) - ((b.Price || {}).P || 0); }); });
+                $('xb-gift').innerHTML =
+                    '<div style="color:#666;font-size:.75rem;margin-bottom:.6rem">卡片敘述文案寫死在前台 index.html 的 GIFT_GROUPS，要改文案才需要重傳 zip；面額由賣場決定。</div>' +
+                    '<div class="pv-grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr))">' +
+                    groups.map(function (g) {
+                        var d = g.list[0];
+                        return '<div class="pv-plan"><div class="pv-pn">' + esc(g.t) + '</div><div class="pv-pills">' +
+                            g.list.map(function (v, i) {
+                                var pid = String(v.Id).replace(/-\d{3}$/, '');
+                                return '<span class="pv-pill' + (i === 0 ? ' on' : '') + '"' + (stock[pid] === false ? ' style="text-decoration:line-through;color:#555"' : '') + '>' +
+                                    Number((v.Price || {}).P || 0).toLocaleString() + '</span>';
+                            }).join('') + '</div><div class="pv-amt">NT$ ' + Number((d.Price || {}).P || 0).toLocaleString() + '</div></div>';
+                    }).join('') + '</div>';
+            }
+
+            async function renderGp() {
+                var gps = Object.keys(gpData || {}).map(function (k) { var v = gpData[k]; v.__key = k; return v; })
                     .filter(function (p) { return p.is_visible !== false && !p.hidden; })
                     .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
-                var gpGroups = [];
+                var groups = [];
                 gps.forEach(function (p) {
-                    var g = gpGroups.filter(function (x) { return x.name === (p.plan_name || ''); })[0];
-                    if (!g) { g = { name: p.plan_name || '', vs: [] }; gpGroups.push(g); }
+                    var g = groups.filter(function (x) { return x.name === (p.plan_name || ''); })[0];
+                    if (!g) { g = { name: p.plan_name || '', vs: [] }; groups.push(g); }
                     g.vs.push(p);
                 });
+                var live = await priceOf(gps.map(function (p) { return p.pchome_pid; }).filter(Boolean));
+                $('xb-gp').innerHTML =
+                    '<div style="color:#666;font-size:.75rem;margin-bottom:.6rem">價格顯示 PChome 現售價（前台一樣即時抓）；點方案卡開設定，點月數 pill 直接編那一筆。</div>' +
+                    '<div class="pv-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">' +
+                    (groups.length ? groups.map(function (g) {
+                        var d = g.vs.filter(function (v) { return v.is_featured; })[0] || g.vs[0];
+                        return '<div class="pv-plan pv-clickable" onclick="XBLAB.editGp(\'' + d.__key + '\')"><div class="pv-pn">' + esc(g.name) + '</div>' +
+                            '<div class="pv-pills">' + g.vs.map(function (v) {
+                                return '<span class="pv-pill' + (v === d ? ' on' : '') + '" onclick="event.stopPropagation();XBLAB.editGp(\'' + v.__key + '\')" style="cursor:pointer">' +
+                                    (v.is_featured ? '★ ' : '') + esc(v.duration || '') + '</span>';
+                            }).join('') + '</div>' +
+                            '<div class="pv-amt">NT$ ' + Number(live[String(d.pchome_pid || '').replace(/-\d{3}$/, '')] || d.price || 0).toLocaleString() + '</div>' +
+                            '<ul>' + (Array.isArray(d.features) ? d.features : []).map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('') + '</ul></div>';
+                    }).join('') : '<div class="pv-empty">（沒有資料）</div>') + '</div>';
+            }
 
-                var giftGroups = [
-                    { t: 'Xbox 數位禮品卡', f: function (nm) { return /禮品卡|Gift\s*Card/i.test(nm); } },
-                    { t: 'Minecraft 遊戲貨幣', f: function (nm) { return /Minecraft|Minecoins?|遊戲貨幣/i.test(nm); } },
-                    { t: '其他數位商品', f: function () { return true; } }
-                ].map(function (g) { return { t: g.t, f: g.f, list: [] }; });
-                gift.forEach(function (it) {
-                    for (var i = 0; i < giftGroups.length; i++) {
-                        if (giftGroups[i].f(it.Name || '')) { giftGroups[i].list.push(it); return; }
-                    }
-                });
-                giftGroups = giftGroups.filter(function (g) { return g.list.length; });
-                giftGroups.forEach(function (g) {
-                    g.list.sort(function (a, b) { return ((a.Price || {}).P || 0) - ((b.Price || {}).P || 0); });
-                });
-
-                var yts = Object.keys(ytData || {}).map(function (k) { return ytData[k]; })
+            function renderYt() {
+                var yts = Object.keys(ytData || {}).map(function (k) { var v = ytData[k]; v.__key = k; return v; })
                     .filter(function (v) { return v.is_visible !== false; })
                     .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
-
-                var h = '';
-                h += '<div class="pv-block">' + blockHead('① 首屏輪播 Banner', true, "xbSwitchTab('bannerlab')", '✏ 去工作台') + bannerStrip(hero) + '</div>';
-
-                h += '<div class="pv-block">' + blockHead('② 🎮 Xbox 無線控制器系列', false, "window.open('https://24h.pchome.com.tw/store/DGBJAH')", '↗ 賣場 DGBJAH') +
-                    '<div class="pv-grid">' + ctrl.filter(function (it) { return !isElite(it); }).map(prodCard).join('') + '</div>' +
-                    '<div style="margin:.8rem 0 .4rem;color:#888;font-size:.8rem">⭐ Elite 菁英系列與配件</div>' +
-                    '<div class="pv-grid">' + ctrl.filter(isElite).map(prodCard).join('') + '</div></div>';
-
-                h += '<div class="pv-block">' + blockHead('③ 💳 Xbox Game Pass 訂閱方案', true, "xbSwitchTab('gamepass')", '✏ 去編輯') +
-                    '<div style="color:#666;font-size:.75rem;margin:-.4rem 0 .7rem">價格顯示 PChome 現售價（前台一樣即時抓）；後台欄位裡的價只是建議售價，兩者不同是正常的。</div>' +
-                    '<div class="pv-grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr))">' +
-                    (gpGroups.length ? gpGroups.map(function (g) {
-                        var d = g.vs.filter(function (v) { return v.is_featured; })[0] || g.vs[0];
-                        return '<div class="pv-plan"><div class="pv-pn">' + esc(g.name) + '</div>' +
-                            '<div class="pv-pills">' + g.vs.map(function (v) {
-                                return '<span class="pv-pill' + (v === d ? ' on' : '') + '">' + (v.is_featured ? '★ ' : '') + esc(v.duration || '') + '</span>';
-                            }).join('') + '</div>' +
-                            '<div class="pv-amt">NT$ ' + Number(gpLive[String(d.pchome_pid || '').replace(/-\d{3}$/, '')] || d.price || 0).toLocaleString() + '</div>' +
-                            '<ul>' + (Array.isArray(d.features) ? d.features : []).map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('') + '</ul></div>';
-                    }).join('') : '<div class="pv-empty">（沒有資料）</div>') + '</div></div>';
-
-                h += '<div class="pv-block">' + blockHead('④ 🎁 禮品卡與遊戲貨幣', false, "window.open('https://24h.pchome.com.tw/store/DGBJI4')", '↗ 賣場 DGBJI4') +
-                    '<div style="color:#666;font-size:.75rem;margin:-.4rem 0 .7rem">卡片敘述文案寫死在前台 index.html 的 GIFT_GROUPS，要改文案才需要重傳 zip；面額由賣場決定。</div>' +
-                    '<div class="pv-grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr))">' +
-                    giftGroups.map(function (g) {
-                        var d = g.list[0];
-                        return '<div class="pv-plan"><div class="pv-pn">' + esc(g.t) + '</div>' +
-                            '<div class="pv-pills">' + g.list.map(function (v, i) {
-                                var pid = String(v.Id).replace(/-\d{3}$/, '');
-                                return '<span class="pv-pill' + (i === 0 ? ' on' : '') + '"' +
-                                    (stock[pid] === false ? ' style="text-decoration:line-through;color:#555"' : '') + '>' +
-                                    Number((v.Price || {}).P || 0).toLocaleString() + '</span>';
-                            }).join('') + '</div>' +
-                            '<div class="pv-amt">NT$ ' + Number((d.Price || {}).P || 0).toLocaleString() + '</div></div>';
-                    }).join('') + '</div></div>';
-
-                h += '<div class="pv-block">' + blockHead('⑤ 🎬 Xbox 官方精選影片', true, "xbSwitchTab('youtube')", '✏ 去編輯') +
-                    '<div style="color:#666;font-size:.75rem;margin:-.4rem 0 .7rem">每日 GAS 自動抓 Xbox Taiwan 頻道最新 6 支（auto_ 開頭），手動加的排前面。</div>' +
+                $('xb-yt').innerHTML =
+                    '<div style="color:#666;font-size:.75rem;margin-bottom:.6rem">每日 GAS 自動抓 Xbox Taiwan 頻道最新 6 支（auto_ 開頭）；手動加的用 sort_order 1~10 排前面。點縮圖可編輯。</div>' +
                     '<div class="pv-strip">' + (yts.length ? yts.map(function (v) {
-                        return '<div class="pv-yt"><img src="https://img.youtube.com/vi/' + esc(v.video_id) + '/mqdefault.jpg">' +
-                            '<div class="pv-cap">' + esc((v.title || '').slice(0, 28)) + '</div></div>';
-                    }).join('') : '<div class="pv-empty">（沒有資料）</div>') + '</div></div>';
+                        return '<div class="pv-yt pv-clickable" onclick="XBLAB.editYt(\'' + v.__key + '\')">' +
+                            '<img src="https://img.youtube.com/vi/' + esc(v.video_id) + '/mqdefault.jpg">' +
+                            '<div class="pv-cap">' + esc((v.title || '').slice(0, 26)) + '</div></div>';
+                    }).join('') : '<div class="pv-empty">（沒有資料）</div>') + '</div>';
+            }
 
-                h += '<div class="pv-block" style="border-bottom:none">' + blockHead('⑥ 🖼 底部「更多精選活動」', true, "xbSwitchTab('bannerlab')", '✏ 去工作台') + bannerStrip(more) + '</div>';
-
-                box.innerHTML = h;
-                document.getElementById('pv-updated').textContent =
-                    '更新於 ' + new Date().toLocaleTimeString('zh-TW') + '（banner 依現在時間套用上下架，待上傳的不顯示）';
+            async function render(force) {
+                if (rendering) return;
+                rendering = true;
+                try {
+                    if (!booted) { loadPending(); booted = true; }
+                    if (force) { STORE = {}; syncFromData(); }
+                    if (!rows.length) syncFromData();
+                    renderBanners();
+                    renderYt();
+                    $('xb-ctrl').innerHTML = '<div class="pv-empty">讀取賣場中…</div>';
+                    await renderStoreBlocks();
+                    await renderGp();
+                } finally { rendering = false; }
             }
 
             return {
-                open: open, save: save, makeZip: makeZip, markUploaded: markUploaded,
-                move: move, swapZone: swapZone, remove: remove, set: set, pickMobile: pickMobile,
-                renderPreview: renderPreview, syncFromData: syncFromData, imgUrl: imgUrl
+                render: render, syncFromData: syncFromData, imgUrl: imgUrl,
+                save: save, makeZip: makeZip, markUploaded: markUploaded,
+                openPane: openPane, closeDrawer: closeDrawer,
+                set: set, recrop: recrop, pickPc: pickPc, pickMobile: pickMobile, clearMobile: clearMobile,
+                swapZone: swapZone, remove: remove,
+                editGp: function (k) { openPane('gamepass', function () { editGp(k); }); },
+                editYt: function (k) { openPane('youtube', function () { editYt(k); }); }
             };
+        })();
+
+        // 舊的表單分頁一開始就收進 holder，要用時 openPane() 再整個節點搬進抽屜
+        (function stashPanes() {
+            function go() {
+                var holder = document.getElementById('xb-pane-holder');
+                if (!holder) return;
+                ['overview', 'banner', 'controller', 'gamepass', 'youtube'].forEach(function (nm) {
+                    var el = document.getElementById('pane-' + nm);
+                    if (el && el.parentNode !== holder) { el.classList.remove('active'); holder.appendChild(el); }
+                });
+            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go);
+            else go();
         })();
 
         // ── Xbox 開機載入 ──
@@ -3808,6 +3902,7 @@
             await Promise.all([loadXbBanners(), loadControllers(), loadGamePass(), loadYoutube()]);
             renderOverview();
             XBLAB.syncFromData();
+            XBLAB.render();
             xbLoaded = true;
         };
 
