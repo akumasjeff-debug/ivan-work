@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>旗艦館總後台 v3（PS × Xbox × Nintendo）</title>
+    <title>旗艦館總後台 v5（PS × Xbox × Nintendo）</title>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- jspreadsheet v4（PS／任天堂 試算表直編用） -->
@@ -16,6 +16,9 @@
     <!-- Flatpickr（Xbox 優惠時間選擇器用） -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css" />
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <!-- JSZip（Xbox 版頭工作台：瀏覽器內產生 PChome 上傳用 zip） -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
     <!-- Firebase compat（三館共用同一專案 game-release-schedule） -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -271,6 +274,72 @@
             #brand-xbox .grid-2, #brand-xbox .grid-3 { grid-template-columns: 1fr; }
         }
 
+        /* ══ Xbox 版頭工作台（v5） ══ */
+        #brand-xbox .lab-drop { border: 2px dashed #2f5a2f; border-radius: .75rem; padding: 2rem 1rem; text-align: center; color: #7a7a7a; background: #131a13; cursor: pointer; transition: all .15s; }
+        #brand-xbox .lab-drop:hover, #brand-xbox .lab-drop.hot { border-color: #52b043; background: #162816; color: #b8d8b8; }
+        #brand-xbox .lab-zone { background: #141414; border: 1px solid #262626; border-radius: .75rem; padding: .9rem; margin-bottom: 1rem; }
+        #brand-xbox .lab-zone h3 { font-size: .9rem; color: #52b043; margin: 0 0 .2rem; font-weight: 700; }
+        #brand-xbox .lab-zone .lab-hint { font-size: .75rem; color: #666; margin-bottom: .75rem; }
+        #brand-xbox .lab-list { display: flex; flex-direction: column; gap: .6rem; min-height: 60px; }
+        #brand-xbox .lab-list.drag-target { outline: 2px dashed #107C10; outline-offset: 4px; border-radius: .5rem; }
+        #brand-xbox .lab-card { display: flex; gap: .75rem; background: #1b1b1b; border: 1px solid #2a2a2a; border-radius: .6rem; padding: .6rem; align-items: flex-start; }
+        #brand-xbox .lab-card.dragging { opacity: .4; }
+        #brand-xbox .lab-card.drag-over { border-color: #52b043; box-shadow: 0 0 0 2px rgba(82,176,67,.25); }
+        #brand-xbox .lab-card .lab-grip { cursor: grab; color: #555; font-size: 1.1rem; padding-top: .4rem; user-select: none; }
+        #brand-xbox .lab-card .lab-grip:active { cursor: grabbing; }
+        #brand-xbox .lab-thumbs { display: flex; flex-direction: column; gap: .3rem; flex-shrink: 0; }
+        #brand-xbox .lab-thumb-pc { width: 168px; height: 62px; object-fit: cover; border-radius: .3rem; background: #222; }
+        #brand-xbox .lab-thumb-mo { width: 168px; height: 32px; object-fit: cover; border-radius: .3rem; background: #222; opacity: .85; }
+        #brand-xbox .lab-fields { flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: .4rem .6rem; }
+        #brand-xbox .lab-fields label { margin: 0 0 .1rem; font-size: .7rem; }
+        #brand-xbox .lab-fields input { padding: .35rem .5rem; font-size: .8rem; }
+        #brand-xbox .lab-fields .span2 { grid-column: 1 / -1; }
+        #brand-xbox .lab-side { display: flex; flex-direction: column; gap: .35rem; flex-shrink: 0; width: 108px; }
+        #brand-xbox .lab-side button { font-size: .72rem; padding: .28rem .4rem; border-radius: .3rem; border: 1px solid #333; background: #202020; color: #bbb; cursor: pointer; }
+        #brand-xbox .lab-side button:hover { border-color: #52b043; color: #fff; }
+        #brand-xbox .lab-side button.del { border-color: #5a2020; color: #f87171; }
+        #brand-xbox .lab-badge { display: inline-block; font-size: .68rem; font-weight: 700; border-radius: 999px; padding: .1rem .5rem; }
+        #brand-xbox .lab-badge.pend { background: #4a3a10; color: #fbbf24; }
+        #brand-xbox .lab-badge.live { background: #143314; color: #52b043; }
+        #brand-xbox .lab-badge.sched { background: #1e293b; color: #93c5fd; }
+        #brand-xbox .lab-badge.expired { background: #2a1010; color: #f87171; }
+        #brand-xbox .lab-bar { position: sticky; bottom: 0; background: #101810; border-top: 1px solid #2a3a2a; padding: .75rem 1rem; display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin: 0 -1.5rem -1.5rem; }
+        #brand-xbox .lab-bar .lab-status { color: #888; font-size: .78rem; flex: 1; }
+
+        /* ══ Xbox 前台模擬（v5） ══ */
+        #brand-xbox .pv-wrap { background: #0b0b0b; border: 1px solid #222; border-radius: .75rem; overflow: hidden; }
+        #brand-xbox .pv-block { border-bottom: 1px solid #1c1c1c; padding: 1rem 1.1rem 1.3rem; }
+        #brand-xbox .pv-head { display: flex; align-items: center; gap: .6rem; margin-bottom: .8rem; }
+        #brand-xbox .pv-head h3 { font-size: .95rem; color: #fff; margin: 0; font-weight: 700; border-left: 3px solid #107C10; padding-left: .5rem; }
+        #brand-xbox .pv-tag { font-size: .68rem; border-radius: 999px; padding: .1rem .55rem; font-weight: 700; }
+        #brand-xbox .pv-tag.edit { background: #143314; color: #52b043; }
+        #brand-xbox .pv-tag.ro { background: #202020; color: #888; border: 1px solid #333; }
+        #brand-xbox .pv-jump { margin-left: auto; background: #1f3a1f; color: #52b043; border: 1px solid #2a5a2a; padding: .22rem .7rem; border-radius: .3rem; cursor: pointer; font-size: .75rem; }
+        #brand-xbox .pv-jump:hover { background: #2a5a2a; color: #fff; }
+        #brand-xbox .pv-strip { display: flex; gap: .6rem; overflow-x: auto; padding-bottom: .3rem; }
+        #brand-xbox .pv-banner { flex-shrink: 0; width: 260px; }
+        #brand-xbox .pv-banner img { width: 260px; height: 95px; object-fit: cover; border-radius: .4rem; background: #1e1e1e; display: block; }
+        #brand-xbox .pv-cap { font-size: .7rem; color: #777; margin-top: .25rem; display: flex; gap: .35rem; align-items: center; }
+        #brand-xbox .pv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(122px, 1fr)); gap: .6rem; }
+        #brand-xbox .pv-card { background: #171717; border: 1px solid #262626; border-radius: .5rem; overflow: hidden; }
+        #brand-xbox .pv-card img { width: 100%; aspect-ratio: 1/1; object-fit: contain; background: #fff; padding: .25rem; display: block; }
+        #brand-xbox .pv-card.oos img { opacity: .5; }
+        #brand-xbox .pv-card .pv-nm { font-size: .7rem; color: #bbb; padding: .35rem .4rem 0; line-height: 1.35; height: 2.9em; overflow: hidden; }
+        #brand-xbox .pv-card .pv-pr { font-size: .78rem; color: #52b043; font-weight: 700; padding: .1rem .4rem .45rem; }
+        #brand-xbox .pv-card .pv-pr .oosmark { color: #888; font-weight: 400; font-size: .7rem; }
+        #brand-xbox .pv-plan { background: #171717; border: 1px solid #262626; border-radius: .6rem; padding: .7rem .8rem; }
+        #brand-xbox .pv-plan .pv-pn { font-weight: 700; color: #fff; font-size: .85rem; text-align: center; }
+        #brand-xbox .pv-pills { display: flex; gap: .3rem; flex-wrap: wrap; justify-content: center; margin: .4rem 0; }
+        #brand-xbox .pv-pill { font-size: .68rem; border: 1px solid #333; border-radius: 999px; padding: .1rem .5rem; color: #999; }
+        #brand-xbox .pv-pill.on { background: #107C10; border-color: #107C10; color: #fff; }
+        #brand-xbox .pv-plan .pv-amt { text-align: center; color: #52b043; font-weight: 800; font-size: 1.1rem; }
+        #brand-xbox .pv-plan ul { margin: .4rem 0 0; padding-left: 1rem; color: #888; font-size: .72rem; }
+        #brand-xbox .pv-yt { flex-shrink: 0; width: 150px; }
+        #brand-xbox .pv-yt img { width: 150px; height: 84px; object-fit: cover; border-radius: .35rem; background: #1e1e1e; display: block; }
+        #brand-xbox .pv-empty { color: #555; font-size: .8rem; padding: .6rem 0; }
+        #brand-xbox .pv-note { background: #16281a; border: 1px solid #24422a; color: #9ccfa4; font-size: .78rem; border-radius: .5rem; padding: .6rem .8rem; margin-bottom: 1rem; line-height: 1.6; }
+        #brand-xbox .pv-warn { background: #2a2210; border: 1px solid #4a3a10; color: #e8c56a; font-size: .78rem; border-radius: .5rem; padding: .6rem .8rem; margin-bottom: 1rem; line-height: 1.6; }
+
         #brand-xbox .feature-list { display: flex; flex-direction: column; gap: .4rem; }
         #brand-xbox .feature-item { display: flex; gap: .5rem; }
         #brand-xbox .feature-item input { flex: 1; }
@@ -311,7 +380,7 @@
 
         <!-- 全域頂欄：館別切換 -->
         <header class="sticky top-0 z-50 bg-slate-900 text-white px-4 py-2 flex items-center gap-3 shadow-lg" style="height:56px">
-            <span class="font-black tracking-wide text-sm hidden md:inline">🏬 旗艦館總後台 <span class="text-slate-500 font-bold">v3</span></span>
+            <span class="font-black tracking-wide text-sm hidden md:inline">🏬 旗艦館總後台 <span class="text-slate-500 font-bold">v5</span></span>
             <nav class="flex gap-1.5">
                 <button id="brand-btn-ps" class="brand-btn" onclick="switchBrand('ps')">🕹️ PlayStation</button>
                 <button id="brand-btn-xb" class="brand-btn" onclick="switchBrand('xb')">🎮 Xbox</button>
@@ -349,8 +418,8 @@
 
                     <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
                         <div class="flex justify-between items-center border-b pb-2">
-                            <h2 class="text-sm font-black text-amber-600">⭐ 特別推薦 (前台左欄最上方輪播，遊戲與賣場商品都能放)</h2>
-                            <button onclick="PS.saveFeatured()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">儲存特別推薦</button>
+                            <h2 class="text-sm font-black text-amber-600">⭐ 館長推薦 (前台左欄最上方輪播，遊戲與賣場商品都能放)</h2>
+                            <button onclick="PS.saveFeatured()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">儲存館長推薦</button>
                         </div>
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                             <div class="border rounded-lg p-3 bg-slate-50/60 flex flex-col">
@@ -368,6 +437,30 @@
                             <div class="border rounded-lg p-3 flex flex-col">
                                 <div class="text-[11px] font-bold text-slate-600 mb-2">已選推薦（由上而下＝前台顯示順序；標題留空自動抓 PChome 品名）</div>
                                 <div id="ps-feat-selected" class="space-y-2 overflow-y-auto" style="max-height:340px"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h2 class="text-sm font-black text-violet-600">🔥 期待遊戲 (前台左欄，尚未開放訂購的遊戲；沒 PID 的也能選)</h2>
+                            <button onclick="PS.saveExpected()" class="bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">儲存期待遊戲</button>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div class="border rounded-lg p-3 bg-slate-50/60 flex flex-col">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <input id="ps-exp-search" type="text" placeholder="搜尋品名或 PID…" oninput="PS.renderExpCandidates()" class="flex-1 text-xs border border-slate-300 rounded px-2 py-1.5">
+                                    <select id="ps-exp-filter" onchange="PS.renderExpCandidates()" class="text-xs border border-slate-300 rounded px-2 py-1.5">
+                                        <option value="notready">只看尚未開放訂購</option>
+                                        <option value="all">全部遊戲</option>
+                                    </select>
+                                </div>
+                                <div class="text-[10px] text-slate-500 mb-1">綠＝可訂購、紫＝尚未開放、灰＝還沒建商品（無 PID，照樣可以選）</div>
+                                <div id="ps-exp-candidates" class="space-y-1 overflow-y-auto" style="max-height:340px"></div>
+                            </div>
+                            <div class="border rounded-lg p-3 flex flex-col">
+                                <div class="text-[11px] font-bold text-slate-600 mb-2">已選期待遊戲（由上而下＝前台順序；純文字標題榜，不需要圖）</div>
+                                <div id="ps-exp-selected" class="space-y-2 overflow-y-auto" style="max-height:340px"></div>
                             </div>
                         </div>
                     </section>
@@ -451,8 +544,10 @@
             <!-- Xbox 內部分頁 -->
             <div class="tabs">
                 <button class="tab-btn active" onclick="xbSwitchTab('overview')">📋 總覽</button>
-                <button class="tab-btn" onclick="xbSwitchTab('banner')">🖼 Banner</button>
-                <button class="tab-btn" onclick="xbSwitchTab('controller')">🎮 控制器</button>
+                <button class="tab-btn" onclick="xbSwitchTab('preview')">👁 前台模擬</button>
+                <button class="tab-btn" onclick="xbSwitchTab('bannerlab')">🖼 版頭工作台</button>
+                <button class="tab-btn" onclick="xbSwitchTab('banner')">🗂 Banner（舊表單）</button>
+                <button class="tab-btn" onclick="xbSwitchTab('controller')">🎮 控制器（賣場維護）</button>
                 <button class="tab-btn" onclick="xbSwitchTab('gamepass')">💳 Game Pass</button>
                 <button class="tab-btn" onclick="xbSwitchTab('youtube')">🎬 YouTube</button>
             </div>
@@ -509,6 +604,60 @@
                 </div>
             </div>
 
+            <!-- ─────── TAB: 前台模擬（v5）─────── -->
+            <div class="tab-pane" id="pane-preview">
+                <div class="pv-note">
+                    照前台真實順序畫出整頁。<b>綠色「可維護」</b>的區塊在本後台改；
+                    <b>灰色「賣場維護」</b>的區塊由 PChome 賣場決定，商品掛上／下架就自動同步，後台改了也沒用。
+                </div>
+                <div style="display:flex;gap:.6rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
+                    <button class="btn-primary" onclick="XBLAB.renderPreview(true)">🔄 重新整理</button>
+                    <a class="ov-edit-btn" href="https://24h.pchome.com.tw/sites/xbox" target="_blank" style="text-decoration:none">↗ 開啟實際前台</a>
+                    <span id="pv-updated" style="color:#666;font-size:.75rem"></span>
+                </div>
+                <div class="pv-wrap" id="pv-wrap"></div>
+            </div>
+
+            <!-- ─────── TAB: 版頭工作台（v5）─────── -->
+            <div class="tab-pane" id="pane-bannerlab">
+                <div class="pv-warn">
+                    <b>圖片沒辦法由後台直接上到 PChome</b>（沒有 API，一定要人工登入上傳）。流程是：
+                    拖圖進來 → 排好順序 → <b>💾 儲存</b> → <b>📦 產生上傳包</b> → 到 PChome 後台上傳那顆 zip → 回來按 <b>✅ 標記已上傳</b>。
+                    沒按「已上傳」之前，新圖的 banner 會標 <span class="lab-badge pend">⏳ 待上傳</span> 並且<b>不會出現在前台</b>，不會開天窗。
+                </div>
+
+                <div class="lab-drop" id="lab-drop">
+                    <div style="font-size:1.6rem;margin-bottom:.3rem">🖼</div>
+                    <div><b>把版頭圖片拖進來</b>（或點這裡選檔，可一次多張）</div>
+                    <div style="font-size:.75rem;margin-top:.4rem;color:#666">
+                        PC 版自動處理成 1644×604、手機版 1200×450（沒另外拖手機版就從 PC 圖裁中間）<br>
+                        自動命名 <code>xb-YYYYMMDD-NN.jpg</code>（純英數、不覆蓋舊檔）
+                    </div>
+                    <input type="file" id="lab-file" accept="image/*" multiple style="display:none" />
+                </div>
+
+                <div style="height:1rem"></div>
+
+                <div class="lab-zone">
+                    <h3>① 首屏輪播</h3>
+                    <div class="lab-hint">前台最上方那組大輪播，<b>最多 5 張</b>（超過的會自動被推到下面「更多精選」）。由上而下＝輪播順序。</div>
+                    <div class="lab-list" id="lab-hero"></div>
+                </div>
+
+                <div class="lab-zone">
+                    <h3>② 底部「更多精選活動」</h3>
+                    <div class="lab-hint">前台最下方那排小圖，數量不限。</div>
+                    <div class="lab-list" id="lab-more"></div>
+                </div>
+
+                <div class="lab-bar">
+                    <span class="lab-status" id="lab-status">—</span>
+                    <button class="btn-primary" onclick="XBLAB.save()">💾 儲存排序與設定</button>
+                    <button class="btn-primary" onclick="XBLAB.makeZip()" style="background:#1f5fa0">📦 產生上傳包 zip</button>
+                    <button class="btn-primary" onclick="XBLAB.markUploaded()" style="background:#4a3a10;color:#fbbf24">✅ 標記已上傳</button>
+                </div>
+            </div>
+
             <!-- ─────── TAB: Banner ─────── -->
             <div class="tab-pane" id="pane-banner">
                 <div class="grid-2">
@@ -557,6 +706,11 @@
 
             <!-- ─────── TAB: Controller ─────── -->
             <div class="tab-pane" id="pane-controller">
+                <div class="pv-warn">
+                    <b>2026-08-18 起前台的控制器牆不再讀這裡</b>，改成即時抓 PChome 賣場
+                    <a href="https://24h.pchome.com.tw/store/DGBJAH" target="_blank" style="color:#e8c56a"><b>DGBJAH</b></a>。
+                    要上／下架控制器請去賣場掛商品，這一頁的資料只留給缺漏檢查與 GAS 巡檢用，改了前台不會變。
+                </div>
                 <div class="section-card">
                     <h2>新增 / 編輯控制器</h2>
                     <input type="hidden" id="ctrl-edit-key" />
@@ -1061,7 +1215,7 @@
                 }
             };
 
-            // ── ⭐ 特別推薦（Firebase /ps_featured）──────────────────
+            // ── ⭐ 館長推薦（Firebase /ps_featured）──────────────────
             // 一筆＝一個 PID。候選來源＝遊戲資料庫 ＋ 前台右欄那四個賣場。
             // 前台品名/圖/價都會自動抓，這裡只存 PID 與人工覆寫欄位。
             var FEAT_STORES = ['DGCK8B', 'DGCK8C', 'DGCK8D', 'DGCK8E'];
@@ -1196,6 +1350,154 @@
                 }).join('');
             };
 
+            // ── 🔥 期待遊戲（Firebase /ps_expected）──────────────────
+            // 候選只有遊戲（含還沒建商品、沒有 PID 的），存的是 pchome_games 的 Firebase key，
+            // 所以沒 PID 也能指定。前台不顯示售價，一律標「尚未開放訂購」。
+            ns.expected = [];
+            var expBtnStatus = {};   // PID -> ButtonType
+
+            function loadExpStatus() {
+                var pids = [];
+                rawGamesCache.forEach(function(g) {
+                    var p = featNormPid(g.pchome_pid);
+                    if (p && pids.indexOf(p) < 0 && expBtnStatus[p] === undefined) pids.push(p);
+                });
+                if (!pids.length) { ns.renderExpCandidates(); return; }
+                for (var i = 0; i < pids.length; i += 20) {
+                    (function(chunk) {
+                        var ids = chunk.map(function(p) { return p + '-000'; }).join(',');
+                        featJsonp('https://ecapi.pchome.com.tw/ecshop/prodapi/v2/prod/button&id=' + ids +
+                            '&fields=Id,Qty,ButtonType', function(res) {
+                            (res || []).forEach(function(b) {
+                                expBtnStatus[featNormPid(b.Id)] =
+                                    (b.ButtonType === 'ForSale' && (b.Qty || 0) > 0) ? 'ok' : (b.ButtonType || 'NA');
+                            });
+                            ns.renderExpCandidates();
+                        });
+                    })(pids.slice(i, i + 20));
+                }
+            }
+
+            function expStatusOf(g) {
+                var p = featNormPid(g.pchome_pid);
+                if (!p) return { key: 'nopid', label: '無PID', cls: 'bg-slate-200 text-slate-600' };
+                var st = expBtnStatus[p];
+                if (st === undefined) return { key: 'unknown', label: '查詢中', cls: 'bg-slate-100 text-slate-400' };
+                if (st === 'ok') return { key: 'forsale', label: '可訂購', cls: 'bg-emerald-100 text-emerald-700' };
+                return { key: 'notready', label: st, cls: 'bg-violet-100 text-violet-700' };
+            }
+
+            ns.renderExpCandidates = function() {
+                var box = document.getElementById('ps-exp-candidates');
+                if (!box) return;
+                var q = ((document.getElementById('ps-exp-search') || {}).value || '').trim().toLowerCase();
+                var mode = (document.getElementById('ps-exp-filter') || {}).value || 'notready';
+                var chosen = ns.expected.map(function(e) { return e.game_id; });
+                var list = rawGamesCache.filter(function(g) {
+                    var st = expStatusOf(g);
+                    if (mode === 'notready' && st.key === 'forsale') return false;
+                    if (!q) return true;
+                    return String(g.title || '').toLowerCase().indexOf(q) >= 0 ||
+                           String(g.pchome_pid || '').toLowerCase().indexOf(q) >= 0;
+                });
+                if (!list.length) {
+                    box.innerHTML = '<div class="text-[11px] text-slate-400 py-4 text-center">沒有符合的遊戲</div>';
+                    return;
+                }
+                box.innerHTML = list.slice(0, 300).map(function(g) {
+                    var st = expStatusOf(g);
+                    var already = chosen.indexOf(g.id) >= 0;
+                    return '<div class="flex items-center gap-2 bg-white border border-slate-200 rounded px-2 py-1">' +
+                        '<span class="text-[9px] font-bold px-1 py-0.5 rounded ' + st.cls + '">' + esc(st.label) + '</span>' +
+                        '<span class="text-[10px] text-slate-400 font-mono w-20 shrink-0">' + esc(g.release_date || 'TBA') + '</span>' +
+                        '<span class="flex-1 min-w-0 truncate text-[11px] text-slate-700" title="' + esc(g.title) + '">' + esc(g.title) + '</span>' +
+                        (already
+                            ? '<span class="text-[10px] text-violet-600 font-bold px-2">已選</span>'
+                            : '<button onclick="PS.addExpected(\'' + g.id + '\')" class="bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-black w-6 h-6 rounded shrink-0">＋</button>') +
+                        '</div>';
+                }).join('') + (list.length > 300 ? '<div class="text-[10px] text-slate-400 text-center py-1">只顯示前 300 筆，請用搜尋縮小範圍</div>' : '');
+            };
+
+            ns.addExpected = function(gid) {
+                if (ns.expected.some(function(e) { return e.game_id === gid; })) return;
+                var g = rawGamesCache.filter(function(x) { return x.id === gid; })[0] || {};
+                ns.expected.push({
+                    game_id: gid,
+                    pchome_pid: featNormPid(g.pchome_pid),
+                    title: '', note: '', start_time: '', end_time: ''
+                });
+                ns.renderExpSelected();
+                ns.renderExpCandidates();
+            };
+
+            ns.removeExpected = function(i) {
+                ns.expected.splice(i, 1);
+                ns.renderExpSelected();
+                ns.renderExpCandidates();
+            };
+
+            ns.moveExpected = function(i, d) {
+                var j = i + d;
+                if (j < 0 || j >= ns.expected.length) return;
+                var t = ns.expected[i];
+                ns.expected[i] = ns.expected[j];
+                ns.expected[j] = t;
+                ns.renderExpSelected();
+            };
+
+            ns.editExpected = function(i, field, val) {
+                if (ns.expected[i]) ns.expected[i][field] = val;
+            };
+
+            ns.renderExpSelected = function() {
+                var box = document.getElementById('ps-exp-selected');
+                if (!box) return;
+                if (!ns.expected.length) {
+                    box.innerHTML = '<div class="text-[11px] text-slate-400 py-6 text-center">尚未選任何期待遊戲<br>前台期待遊戲區會整塊隱藏</div>';
+                    return;
+                }
+                box.innerHTML = ns.expected.map(function(e, i) {
+                    var g = rawGamesCache.filter(function(x) { return x.id === e.game_id; })[0];
+                    var nm = e.title || (g && g.title) || '(此遊戲已從遊戲庫移除)';
+                    var pid = featNormPid(e.pchome_pid) || (g ? featNormPid(g.pchome_pid) : '');
+                    var noPid = !pid;
+                    return '<div class="border border-violet-200 bg-violet-50/40 rounded-lg p-2 space-y-1">' +
+                        '<div class="flex items-center gap-1">' +
+                        '<span class="text-[10px] font-black text-violet-700 w-5">' + (i + 1) + '.</span>' +
+                        '<span class="flex-1 min-w-0 truncate text-[11px] font-bold text-slate-700">' + esc(nm) + '</span>' +
+                        '<span class="text-[10px] font-mono ' + (noPid ? 'text-amber-600 font-bold' : 'text-slate-400') + '">' + (noPid ? '無PID' : esc(pid)) + '</span>' +
+                        '<button onclick="PS.moveExpected(' + i + ',-1)" class="bg-slate-200 hover:bg-slate-300 w-5 h-5 rounded text-[10px]">▲</button>' +
+                        '<button onclick="PS.moveExpected(' + i + ',1)" class="bg-slate-200 hover:bg-slate-300 w-5 h-5 rounded text-[10px]">▼</button>' +
+                        '<button onclick="PS.removeExpected(' + i + ')" class="bg-red-100 hover:bg-red-200 text-red-600 w-5 h-5 rounded text-[10px] font-black">✕</button>' +
+                        '</div>' +
+                        '<div class="grid grid-cols-2 gap-1">' +
+                        '<input type="text" placeholder="自訂標題（留空用遊戲庫品名）" value="' + esc(e.title) + '" oninput="PS.editExpected(' + i + ',\'title\',this.value)" class="text-[11px] border border-slate-300 rounded px-1.5 py-1">' +
+                        '<input type="text" placeholder="期待語（選填）" value="' + esc(e.note) + '" oninput="PS.editExpected(' + i + ',\'note\',this.value)" class="text-[11px] border border-slate-300 rounded px-1.5 py-1">' +
+                        '<input type="text" placeholder="上架（留空立即）" value="' + esc(e.start_time) + '" oninput="PS.editExpected(' + i + ',\'start_time\',this.value)" class="text-[11px] border border-slate-300 rounded px-1.5 py-1">' +
+                        '<input type="text" placeholder="下架（留空長期）" value="' + esc(e.end_time) + '" oninput="PS.editExpected(' + i + ',\'end_time\',this.value)" class="text-[11px] border border-slate-300 rounded px-1.5 py-1">' +
+                        '</div></div>';
+                }).join('');
+            };
+
+            ns.saveExpected = function() {
+                var up = {};
+                ns.expected.forEach(function(e, i) {
+                    if (!e.game_id && !featNormPid(e.pchome_pid) && !e.title) return;
+                    up['e_' + String(i).padStart(3, '0')] = {
+                        game_id: e.game_id || '',
+                        pchome_pid: featNormPid(e.pchome_pid),
+                        title: e.title || '',
+                        note: e.note || '',
+                        sort_order: i,
+                        start_time: e.start_time || '',
+                        end_time: e.end_time || ''
+                    };
+                });
+                database.ref('ps_expected').set(up).then(function() {
+                    alert('期待遊戲已儲存，前台重整即生效（不用重傳 zip）');
+                }).catch(function() { alert('儲存失敗：您可能沒有權限'); });
+            };
+
             ns.saveFeatured = function() {
                 var up = {};
                 ns.featured.forEach(function(f, i) {
@@ -1211,7 +1513,7 @@
                     };
                 });
                 database.ref('ps_featured').set(up).then(function() {
-                    alert('特別推薦已儲存，前台重整即生效（不用重傳 zip）');
+                    alert('館長推薦已儲存，前台重整即生效（不用重傳 zip）');
                 }).catch(function() { alert('儲存失敗：您可能沒有權限'); });
             };
 
@@ -1395,6 +1697,28 @@
                     ns.renderFeatCandidates();
                 });
 
+                database.ref('ps_expected').on('value', function(snap) {
+                    var arr = [];
+                    if (snap.exists()) {
+                        snap.forEach(function(c) {
+                            var v = c.val() || {};
+                            arr.push({
+                                game_id: v.game_id || '',
+                                pchome_pid: v.pchome_pid || '',
+                                title: v.title || '',
+                                note: v.note || '',
+                                sort_order: v.sort_order || 0,
+                                start_time: v.start_time || '',
+                                end_time: v.end_time || ''
+                            });
+                        });
+                    }
+                    arr.sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+                    ns.expected = arr;
+                    ns.renderExpSelected();
+                    ns.renderExpCandidates();
+                });
+
                 database.ref('pchome_games').on('value', function(snapshot) {
                     var excelData = [];
                     gameKeysMap = [];
@@ -1416,8 +1740,10 @@
                             excelData.push([item.release_date || "", item.title || "", item.sort_order || 0, item.pchome_pid || "", item.img_url || "", cs.includes("舊遊戲"), cs.includes("轉單"), cs.includes("寄倉"), item.internal_note || "", item.pid_list || ""]);
                         });
                     }
-                    ns.renderFeatCandidates();   // 遊戲庫是特別推薦的候選來源之一
+                    ns.renderFeatCandidates();   // 遊戲庫是館長推薦的候選來源之一
                     ns.renderFeatSelected();
+                    ns.renderExpSelected();
+                    loadExpStatus();             // 期待遊戲候選要標「可訂購／尚未開放」
                     if (ns.liveGamesTable) ns.liveGamesTable.destroy();
                     ns.liveGamesTable = jspreadsheet(document.getElementById('ps-live-games-spreadsheet'), {
                         data: excelData,
@@ -2380,6 +2706,8 @@
             document.querySelectorAll('#brand-xbox .tab-pane').forEach(function(p) { p.classList.remove('active'); });
             document.getElementById('pane-' + tab).classList.add('active');
             document.querySelector('#brand-xbox [onclick="xbSwitchTab(\'' + tab + '\')"]').classList.add('active');
+            if (tab === 'bannerlab' && window.XBLAB) XBLAB.open();
+            if (tab === 'preview' && window.XBLAB) XBLAB.renderPreview();
         }
 
         function toggleSection(name) {
@@ -2446,7 +2774,7 @@
         function renderOvBanner(key, b) {
             var vis = b.title || '（無標題）';
             return '<span class="drag-handle">⠿</span>' +
-                '<img class="ov-banner-thumb" src="' + (b.img_pc || '') + '" onerror="this.style.display=\'none\'" />' +
+                '<img class="ov-banner-thumb" src="' + XBLAB.imgUrl(b.img_pc) + '" onerror="this.style.display=\'none\'" />' +
                 '<div class="ov-info"><div class="ov-name">' + vis + '</div><div class="ov-meta">排序 ' + (b.sort_order || 0) + ' ' + (b.start_time ? '🕐' + b.start_time : '') + '</div></div>' +
                 '<div class="ov-actions">' +
                 '<button class="ov-edit-btn" onclick="editBanner(\'' + key + '\');xbSwitchTab(\'banner\')">✏ 編輯</button>' +
@@ -2456,7 +2784,7 @@
 
         function renderOvCtrl(key, c) {
             return '<span class="drag-handle">⠿</span>' +
-                '<img class="ov-thumb" src="' + (c.img_url || '') + '" onerror="this.style.background=\'#222\';this.style.display=\'block\'" />' +
+                '<img class="ov-thumb" src="' + XBLAB.imgUrl(c.img_url) + '" onerror="this.style.background=\'#222\';this.style.display=\'block\'" />' +
                 '<div class="ov-info">' +
                 '<div class="ov-name">' + (c.color_name || '') + ' ' + (c.is_featured ? '⭐' : '') + '</div>' +
                 '<div class="ov-meta">' + (c.price ? 'NT$' + Number(c.price).toLocaleString() : '') + ' ' + (c.is_visible === false ? '❌隱藏' : '') + '</div>' +
@@ -2499,7 +2827,8 @@
             var url = document.getElementById('banner-img-pc').value.trim();
             var wrap = document.getElementById('banner-img-preview');
             var img = document.getElementById('banner-preview-img');
-            if (url) { img.src = url; wrap.style.display = 'block'; } else { wrap.style.display = 'none'; }
+            // Firebase 存的是相對路徑（img/banner/xxx.jpg），後台要補站台前綴才看得到
+            if (url) { img.src = XBLAB.imgUrl(url); wrap.style.display = 'block'; } else { wrap.style.display = 'none'; }
         }
 
         async function loadXbBanners() {
@@ -2515,7 +2844,7 @@
             el.innerHTML = items.map(function(entry) {
                 var key = entry[0], b = entry[1];
                 return '<div class="banner-row">' +
-                    '<img src="' + (b.img_pc || '') + '" onerror="this.style.display=\'none\'" />' +
+                    '<img src="' + XBLAB.imgUrl(b.img_pc) + '" onerror="this.style.display=\'none\'" />' +
                     '<div class="banner-info">' +
                     '<div class="banner-title">' + (b.title || '（無標題）') + '</div>' +
                     '<div class="banner-meta">排序 ' + (b.sort_order || 0) + ' ｜ ' + (b.start_time ? '🕐 ' + b.start_time : '立即') + (b.end_time ? ' → ' + b.end_time : '') + '</div>' +
@@ -2906,11 +3235,579 @@
             document.getElementById('yt-preview-wrap').style.display = 'none';
         }
 
+
+        // ════════════════════════════════════════════════
+        // Xbox 版頭工作台 ＋ 前台模擬（v5, 2026-08-18）
+        //  - 工作台：拖圖進來 → 自動縮成 1644x604 / 1200x450、自動命名 → 卡片拖曳排序
+        //            → 存 Firebase → 產生 PChome 上傳用 zip（JSZip）→ 標記已上傳
+        //  - 圖檔「無法」由後台送上 PChome（沒有 API），所以新圖先標 pending，
+        //    前台會跳過 pending 的 banner，避免圖還沒上傳就開天窗。
+        // ════════════════════════════════════════════════
+        var XBLAB = (function () {
+            var SITE = 'https://24h.pchome.com.tw/sites/xbox/';
+            var DIR = 'img/banner/';
+            var PC = { w: 1644, h: 604 }, MO = { w: 1200, h: 450 };
+            var LSKEY = 'xblab_pending_v1';
+            var MAX_HERO = 5;
+
+            var rows = [];        // 工作台的列（由 bannersData 展開）
+            var pendingFiles = {};// 檔名 → dataURL（尚未上傳到 PChome 的圖）
+            var deleted = [];     // 待刪除的 Firebase key
+            var uid = 0;
+            var opened = false;
+
+            function pad(v) { return v < 10 ? '0' + v : '' + v; }
+            function todayStr() { var d = new Date(); return '' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()); }
+            function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+            function baseName(u) { return String(u || '').split('/').pop(); }
+
+            // 相對路徑 → 可顯示的網址；還沒上傳的圖直接用本機 dataURL
+            function imgUrl(u) {
+                if (!u) return '';
+                if (/^(https?:)?\/\//.test(u)) return u;
+                var f = pendingFiles[baseName(u)];
+                return f ? f : SITE + u.replace(/^\//, '');
+            }
+
+            function loadPending() {
+                try { pendingFiles = JSON.parse(localStorage.getItem(LSKEY) || '{}'); } catch (e) { pendingFiles = {}; }
+            }
+            function savePending() {
+                try { localStorage.setItem(LSKEY, JSON.stringify(pendingFiles)); }
+                catch (e) { showStatus('⚠ 圖片暫存空間不足，請盡快按「產生上傳包」把圖存下來', true); }
+            }
+
+            // ── 圖片處理：置中裁切成指定尺寸的 jpg，太大就降畫質重壓 ──
+            function toJpeg(img, size) {
+                var c = document.createElement('canvas');
+                c.width = size.w; c.height = size.h;
+                var ctx = c.getContext('2d');
+                ctx.fillStyle = '#000'; ctx.fillRect(0, 0, size.w, size.h);
+                var sc = Math.max(size.w / img.width, size.h / img.height);
+                var dw = img.width * sc, dh = img.height * sc;
+                ctx.drawImage(img, (size.w - dw) / 2, (size.h - dh) / 2, dw, dh);
+                var qs = [0.86, 0.75, 0.65, 0.55], out = '';
+                for (var i = 0; i < qs.length; i++) {
+                    out = c.toDataURL('image/jpeg', qs[i]);
+                    if (out.length * 0.75 < 700 * 1024) break;   // 目標單張 < 700KB
+                }
+                return out;
+            }
+
+            function readImage(file) {
+                return new Promise(function (resolve, reject) {
+                    var fr = new FileReader();
+                    fr.onload = function () {
+                        var im = new Image();
+                        im.onload = function () { resolve(im); };
+                        im.onerror = reject;
+                        im.src = fr.result;
+                    };
+                    fr.onerror = reject;
+                    fr.readAsDataURL(file);
+                });
+            }
+
+            function usedNames() {
+                var u = {};
+                rows.forEach(function (r) {
+                    [r.img_pc, r.img_mobile].forEach(function (x) { if (x) u[baseName(x)] = 1; });
+                });
+                Object.keys(pendingFiles).forEach(function (f) { u[f] = 1; });
+                return u;
+            }
+            function nextName() {
+                var t = todayStr(), u = usedNames(), i = 1, nm;
+                do { nm = 'xb-' + t + '-' + pad(i) + '.jpg'; i++; } while (u[nm]);
+                return nm;
+            }
+
+            // ── 加圖 ──
+            async function addFiles(fileList) {
+                var list = Array.prototype.slice.call(fileList || []).filter(function (f) { return /^image\//.test(f.type); });
+                if (!list.length) return;
+                for (var i = 0; i < list.length; i++) {
+                    try {
+                        var im = await readImage(list[i]);
+                        var nm = nextName();
+                        var mo = nm.replace(/\.jpg$/, '-m.jpg');
+                        pendingFiles[nm] = toJpeg(im, PC);
+                        pendingFiles[mo] = toJpeg(im, MO);
+                        rows.push({
+                            __id: ++uid, key: null,
+                            title: list[i].name.replace(/\.[^.]+$/, ''),
+                            img_pc: DIR + nm, img_mobile: DIR + mo,
+                            link: '', start_time: '', end_time: '',
+                            pending: true,
+                            zone: rows.filter(function (r) { return r.zone === 'hero'; }).length < MAX_HERO ? 'hero' : 'more'
+                        });
+                    } catch (e) { showStatus('❌ ' + list[i].name + ' 讀取失敗', true); }
+                }
+                savePending();
+                render();
+                showStatus('已加入 ' + list.length + ' 張，記得按「儲存」再「產生上傳包」');
+            }
+
+            // 只換某一列的手機版圖
+            async function replaceMobile(id, file) {
+                var r = rows.filter(function (x) { return x.__id === id; })[0];
+                if (!r || !file) return;
+                var im = await readImage(file);
+                var nm = baseName(r.img_pc).replace(/\.jpg$/, '-m.jpg');
+                if (!r.img_pc) { nm = nextName().replace(/\.jpg$/, '-m.jpg'); }
+                pendingFiles[nm] = toJpeg(im, MO);
+                r.img_mobile = DIR + nm;
+                r.pending = true;
+                savePending(); render();
+                showStatus('手機版圖已換：' + nm);
+            }
+
+            // ── 由 Firebase 資料重建工作台 ──
+            function syncFromData() {
+                rows = Object.keys(bannersData || {}).map(function (k) {
+                    var b = bannersData[k] || {};
+                    return {
+                        __id: ++uid, key: k,
+                        title: b.title || '', img_pc: b.img_pc || '', img_mobile: b.img_mobile || '',
+                        link: b.link || '', start_time: b.start_time || '', end_time: b.end_time || '',
+                        pending: !!b.pending,
+                        sort_order: b.sort_order || 0,
+                        zone: (b.sort_order || 99) <= MAX_HERO ? 'hero' : 'more'
+                    };
+                }).sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+                deleted = [];
+            }
+
+            function open() {
+                if (!opened) { loadPending(); opened = true; }
+                if (!rows.length) syncFromData();
+                bindDrop();
+                render();
+            }
+
+            function bindDrop() {
+                var dz = document.getElementById('lab-drop');
+                var fi = document.getElementById('lab-file');
+                if (dz.dataset.bound) return;
+                dz.dataset.bound = '1';
+                dz.addEventListener('click', function () { fi.click(); });
+                fi.addEventListener('change', function () { addFiles(fi.files); fi.value = ''; });
+                ['dragenter', 'dragover'].forEach(function (ev) {
+                    dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.add('hot'); });
+                });
+                ['dragleave', 'drop'].forEach(function (ev) {
+                    dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.remove('hot'); });
+                });
+                dz.addEventListener('drop', function (e) { addFiles(e.dataTransfer.files); });
+            }
+
+            // ── 排程狀態徽章 ──
+            function badge(r) {
+                if (r.pending) return '<span class="lab-badge pend">⏳ 待上傳</span>';
+                var now = Date.now();
+                if (r.start_time && new Date(r.start_time).getTime() > now) return '<span class="lab-badge sched">🕐 未到上架時間</span>';
+                if (r.end_time && new Date(r.end_time).getTime() < now) return '<span class="lab-badge expired">⛔ 已過期</span>';
+                return '<span class="lab-badge live">✅ 前台顯示中</span>';
+            }
+
+            var dragId = null;
+
+            function cardHtml(r, idx) {
+                return '' +
+                    '<div class="lab-card" draggable="true" data-id="' + r.__id + '">' +
+                    '<div class="lab-grip">⠿</div>' +
+                    '<div class="lab-thumbs">' +
+                    '<img class="lab-thumb-pc" src="' + esc(imgUrl(r.img_pc)) + '" onerror="this.style.opacity=.25" title="PC 版 1644×604">' +
+                    '<img class="lab-thumb-mo" src="' + esc(imgUrl(r.img_mobile || r.img_pc)) + '" onerror="this.style.opacity=.25" title="手機版 1200×450">' +
+                    '</div>' +
+                    '<div class="lab-fields">' +
+                    '<div class="span2" style="display:flex;gap:.5rem;align-items:center">' + badge(r) +
+                    '<span style="color:#555;font-size:.7rem">' + esc(baseName(r.img_pc) || '（未設定圖片）') + '</span></div>' +
+                    '<div class="span2"><label>標題（備註用，前台不顯示）</label>' +
+                    '<input type="text" value="' + esc(r.title) + '" oninput="XBLAB.set(' + r.__id + ',\'title\',this.value)"></div>' +
+                    '<div class="span2"><label>點擊連結（空白＝不可點）</label>' +
+                    '<input type="url" value="' + esc(r.link) + '" placeholder="https://24h.pchome.com.tw/..." oninput="XBLAB.set(' + r.__id + ',\'link\',this.value)"></div>' +
+                    '<div><label>上架時間（空＝立即）</label>' +
+                    '<input type="datetime-local" value="' + esc(r.start_time) + '" onchange="XBLAB.set(' + r.__id + ',\'start_time\',this.value)"></div>' +
+                    '<div><label>下架時間（空＝永久）</label>' +
+                    '<input type="datetime-local" value="' + esc(r.end_time) + '" onchange="XBLAB.set(' + r.__id + ',\'end_time\',this.value)"></div>' +
+                    '</div>' +
+                    '<div class="lab-side">' +
+                    '<button onclick="XBLAB.move(' + r.__id + ',-1)">▲ 上移</button>' +
+                    '<button onclick="XBLAB.move(' + r.__id + ',1)">▼ 下移</button>' +
+                    '<button onclick="XBLAB.swapZone(' + r.__id + ')">' + (r.zone === 'hero' ? '↓ 移到精選' : '↑ 移到輪播') + '</button>' +
+                    '<button onclick="XBLAB.pickMobile(' + r.__id + ')">🖼 換手機圖</button>' +
+                    '<button class="del" onclick="XBLAB.remove(' + r.__id + ')">✕ 刪除</button>' +
+                    '</div>' +
+                    '</div>';
+            }
+
+            function render() {
+                ['hero', 'more'].forEach(function (zone) {
+                    var el = document.getElementById(zone === 'hero' ? 'lab-hero' : 'lab-more');
+                    var list = rows.filter(function (r) { return r.zone === zone; });
+                    el.innerHTML = list.length ? list.map(cardHtml).join('')
+                        : '<div style="color:#555;font-size:.8rem;padding:.6rem">（空的，把圖拖進上方虛線框，或從另一區移過來）</div>';
+                    el.ondragover = function (e) { e.preventDefault(); };
+                    el.ondrop = function (e) {
+                        if (e.target === el) { e.preventDefault(); moveTo(dragId, zone, null); }
+                    };
+                    el.querySelectorAll('.lab-card').forEach(function (card) {
+                        var id = +card.dataset.id;
+                        card.addEventListener('dragstart', function (e) { dragId = id; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+                        card.addEventListener('dragend', function () { card.classList.remove('dragging'); });
+                        card.addEventListener('dragover', function (e) { e.preventDefault(); card.classList.add('drag-over'); });
+                        card.addEventListener('dragleave', function () { card.classList.remove('drag-over'); });
+                        card.addEventListener('drop', function (e) { e.preventDefault(); e.stopPropagation(); card.classList.remove('drag-over'); moveTo(dragId, zone, id); });
+                    });
+                });
+                updateStatus();
+            }
+
+            function idx(id) { for (var i = 0; i < rows.length; i++) if (rows[i].__id === id) return i; return -1; }
+
+            function moveTo(id, zone, beforeId) {
+                if (id == null) return;
+                var i = idx(id); if (i < 0) return;
+                var r = rows.splice(i, 1)[0];
+                r.zone = zone;
+                if (beforeId == null || beforeId === id) { rows.push(r); }
+                else {
+                    var j = idx(beforeId);
+                    rows.splice(j < 0 ? rows.length : j, 0, r);
+                }
+                render();
+            }
+
+            function move(id, dir) {
+                var r = rows[idx(id)]; if (!r) return;
+                var same = rows.filter(function (x) { return x.zone === r.zone; });
+                var pos = same.indexOf(r), target = same[pos + dir];
+                if (!target) return;
+                var a = idx(r.__id), b = idx(target.__id);
+                rows[a] = target; rows[b] = r;
+                render();
+            }
+
+            function swapZone(id) {
+                var r = rows[idx(id)]; if (!r) return;
+                r.zone = r.zone === 'hero' ? 'more' : 'hero';
+                rows.splice(idx(id), 1); rows.push(r);
+                render();
+            }
+
+            function remove(id) {
+                var r = rows[idx(id)]; if (!r) return;
+                if (!confirm('確定刪除這張 banner？（存檔後才會真的從 Firebase 移除）')) return;
+                if (r.key) deleted.push(r.key);
+                rows.splice(idx(id), 1);
+                render();
+            }
+
+            function pickMobile(id) {
+                var inp = document.createElement('input');
+                inp.type = 'file'; inp.accept = 'image/*';
+                inp.onchange = function () { if (inp.files[0]) replaceMobile(id, inp.files[0]); };
+                inp.click();
+            }
+
+            function set(id, field, val) {
+                var r = rows[idx(id)];
+                if (r) { r[field] = val; if (field === 'start_time' || field === 'end_time') updateStatus(); }
+            }
+
+            function pendingList() {
+                var out = [];
+                rows.forEach(function (r) {
+                    if (!r.pending) return;
+                    [r.img_pc, r.img_mobile].forEach(function (u) {
+                        var f = baseName(u);
+                        if (f && pendingFiles[f] && out.indexOf(f) < 0) out.push(f);
+                    });
+                });
+                return out;
+            }
+
+            function updateStatus() {
+                var hero = rows.filter(function (r) { return r.zone === 'hero'; }).length;
+                var pend = rows.filter(function (r) { return r.pending; }).length;
+                var files = pendingList();
+                var bytes = files.reduce(function (a, f) { return a + pendingFiles[f].length * 0.75; }, 0);
+                var msg = '首屏 ' + hero + '/' + MAX_HERO + ' 張・底部精選 ' + (rows.length - hero) + ' 張';
+                if (hero > MAX_HERO) msg += '　⚠ 首屏超過 5 張，存檔時多的會自動移到底部精選';
+                if (pend) msg += '　⏳ 待上傳 ' + pend + ' 張（zip 約 ' +
+                    (bytes > 1024 * 1024 ? (bytes / 1024 / 1024).toFixed(1) + 'MB' : Math.round(bytes / 1024) + 'KB') + '）';
+                document.getElementById('lab-status').textContent = msg;
+            }
+
+            // ── 存回 Firebase ──
+            async function save() {
+                var hero = rows.filter(function (r) { return r.zone === 'hero'; });
+                var more = rows.filter(function (r) { return r.zone === 'more'; });
+                while (hero.length > MAX_HERO) { var x = hero.pop(); x.zone = 'more'; more.unshift(x); }
+
+                var order = hero.concat(more);
+                var bad = order.filter(function (r) { return !r.img_pc; });
+                if (bad.length) { showStatus('❌ 有 ' + bad.length + ' 張沒有圖片，請先拖圖或刪除', true); return; }
+
+                try {
+                    for (var i = 0; i < deleted.length; i++) {
+                        await database.ref('xbox_site_banners/' + deleted[i]).remove();
+                    }
+                    deleted = [];
+                    for (var j = 0; j < order.length; j++) {
+                        var r = order[j];
+                        var data = {
+                            title: r.title || '',
+                            img_pc: r.img_pc,
+                            img_mobile: r.img_mobile || '',
+                            link: r.link || '',
+                            start_time: r.start_time || null,
+                            end_time: r.end_time || null,
+                            sort_order: r.zone === 'hero' ? (j + 1) : (MAX_HERO + 1 + j - hero.length),
+                            pending: !!r.pending
+                        };
+                        if (r.key) { await database.ref('xbox_site_banners/' + r.key).update(data); }
+                        else { var ref = await database.ref('xbox_site_banners').push(data); r.key = ref.key; }
+                    }
+                    showStatus('✅ 已儲存 ' + order.length + ' 張 banner' + (pendingList().length ? '（還有待上傳的圖，記得產生 zip）' : ''));
+                    await loadXbBanners();
+                    renderOverview();
+                    render();
+                } catch (e) { showStatus('❌ 儲存失敗：' + e.message, true); }
+            }
+
+            // ── 產生 PChome 上傳用 zip ──
+            async function makeZip() {
+                var files = pendingList();
+                if (!files.length) { showStatus('沒有待上傳的新圖（拖圖進來後會出現）', true); return; }
+                if (typeof JSZip === 'undefined') { showStatus('❌ JSZip 沒載入，請重整頁面', true); return; }
+                var zip = new JSZip();
+                files.forEach(function (f) {
+                    zip.file(DIR + f, pendingFiles[f].split(',')[1], { base64: true, createFolders: false });
+                });
+                var blob = await zip.generateAsync({ type: 'blob' });
+                if (blob.size > 9.5 * 1024 * 1024) {
+                    showStatus('⚠ zip 已達 ' + (blob.size / 1024 / 1024).toFixed(1) + 'MB，PChome 單次上限 10MB，請分批', true);
+                }
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'xbox_' + todayStr() + '.zip';
+                a.click();
+                setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+                showStatus('📦 已下載 xbox_' + todayStr() + '.zip（' + files.length + ' 個檔，' + (blob.size / 1024 / 1024).toFixed(1) + 'MB）→ 請上傳 PChome 後回來按「標記已上傳」');
+            }
+
+            // ── 標記已上傳：解除 pending，前台才會開始顯示 ──
+            async function markUploaded() {
+                var pend = rows.filter(function (r) { return r.pending; });
+                if (!pend.length) { showStatus('目前沒有待上傳的 banner'); return; }
+                if (!confirm('確定這 ' + pend.length + ' 張圖已經上傳到 PChome 了嗎？\n按確定後它們就會開始出現在前台。')) return;
+                try {
+                    for (var i = 0; i < pend.length; i++) {
+                        pend[i].pending = false;
+                        if (pend[i].key) await database.ref('xbox_site_banners/' + pend[i].key).update({ pending: false });
+                    }
+                    // 圖已在 PChome 上，本機暫存可以清掉
+                    pendingFiles = {}; savePending();
+                    showStatus('✅ 已標記上傳完成，前台重整即可看到');
+                    await loadXbBanners(); renderOverview(); render();
+                } catch (e) { showStatus('❌ 失敗：' + e.message, true); }
+            }
+
+            // ════ 前台模擬 ════
+            var STORE = {};
+            function jsonp(url) {
+                return new Promise(function (resolve) {
+                    var cb = '__xblab' + Math.floor(Math.random() * 1e9);
+                    var sc = document.createElement('script');
+                    var t = setTimeout(function () { done([]); }, 8000);
+                    function done(d) { clearTimeout(t); delete window[cb]; if (sc.parentNode) sc.remove(); resolve(d); }
+                    window[cb] = function (d) { done(Array.isArray(d) ? d : []); };
+                    sc.src = url + '&_callback=' + cb;
+                    sc.onerror = function () { done([]); };
+                    document.head.appendChild(sc);
+                });
+            }
+            async function storeProds(id) {
+                if (STORE[id]) return STORE[id];
+                STORE[id] = await jsonp('https://ecapi.pchome.com.tw/ecshop/prodapi/v2/store/' + id + '/prod&offset=1&limit=200&fields=Id,Name,Price,Pic');
+                return STORE[id];
+            }
+            async function stockOf(pids) {
+                var out = {};
+                for (var i = 0; i < pids.length; i += 15) {
+                    var res = await jsonp('https://ecapi.pchome.com.tw/ecshop/prodapi/v2/prod/button&id=' +
+                        pids.slice(i, i + 15).join(',') + '&fields=Id,Qty,ButtonType');
+                    (res || []).forEach(function (b) {
+                        out[String(b.Id).replace(/-\d{3}$/, '')] = (b.ButtonType === 'ForSale' && (b.Qty || 0) > 0);
+                    });
+                }
+                return out;
+            }
+            async function priceOf(pids) {
+                var out = {};
+                for (var i = 0; i < pids.length; i += 20) {
+                    var res = await jsonp('https://ecapi.pchome.com.tw/ecshop/prodapi/v2/prod&id=' +
+                        pids.slice(i, i + 20).join(',') + '&fields=Id,Price');
+                    var arr = Array.isArray(res) ? res : [];
+                    arr.forEach(function (d) {
+                        if (d && d.Price && d.Price.P) out[String(d.Id).replace(/-\d{3}$/, '')] = d.Price.P;
+                    });
+                }
+                return out;
+            }
+
+            function prodImg(it) {
+                var pic = it.Pic || {}, w = pic.W || pic.B || '';
+                return w ? 'https://img.pchome.com.tw/cs' + w : '';
+            }
+
+            function blockHead(title, editable, jumpTab, jumpLabel) {
+                return '<div class="pv-head"><h3>' + title + '</h3>' +
+                    (editable ? '<span class="pv-tag edit">可維護</span>' : '<span class="pv-tag ro">賣場維護</span>') +
+                    (jumpTab ? '<button class="pv-jump" onclick="' + jumpTab + '">' + jumpLabel + '</button>' : '') +
+                    '</div>';
+            }
+
+            function bannerStrip(list) {
+                if (!list.length) return '<div class="pv-empty">（沒有資料，前台這區會整塊隱藏）</div>';
+                return '<div class="pv-strip">' + list.map(function (b, i) {
+                    return '<div class="pv-banner"><img src="' + esc(imgUrl(b.img_pc)) + '" onerror="this.style.opacity=.2">' +
+                        '<div class="pv-cap">' + (i + 1) + '. ' + badge(b) + '</div>' +
+                        '<div class="pv-cap">' + esc(b.title || '（無標題）') + '</div></div>';
+                }).join('') + '</div>';
+            }
+
+            async function renderPreview(force) {
+                var box = document.getElementById('pv-wrap');
+                if (!opened) { loadPending(); opened = true; }
+                if (!rows.length || force) syncFromData();
+                if (force) STORE = {};
+                box.innerHTML = '<div class="pv-block"><div class="pv-empty">讀取賣場中…</div></div>';
+
+                var now = Date.now();
+                var visible = rows.filter(function (r) {
+                    if (r.pending) return false;
+                    if (r.start_time && new Date(r.start_time).getTime() > now) return false;
+                    if (r.end_time && new Date(r.end_time).getTime() < now) return false;
+                    return true;
+                });
+                var hero = visible.filter(function (r) { return r.zone === 'hero'; });
+                var more = visible.filter(function (r) { return r.zone === 'more'; });
+
+                var ctrl = (await storeProds('DGBJAH')).filter(function (it) {
+                    return !/^DGBJI3/i.test(it.Id || '') && !/Game\s*Pass/i.test(it.Name || '');
+                });
+                var gift = await storeProds('DGBJI4');
+                var stock = await stockOf(ctrl.concat(gift).map(function (it) { return it.Id; }));
+                var gpPids = Object.keys(gpData || {}).map(function (k) { return (gpData[k] || {}).pchome_pid; }).filter(Boolean);
+                var gpLive = await priceOf(gpPids);
+
+                function prodCard(it) {
+                    var pid = String(it.Id).replace(/-\d{3}$/, '');
+                    var out = stock[pid] === false;
+                    return '<div class="pv-card' + (out ? ' oos' : '') + '">' +
+                        '<img src="' + esc(prodImg(it)) + '" onerror="this.style.opacity=.2">' +
+                        '<div class="pv-nm">' + esc(it.Name) + '</div>' +
+                        '<div class="pv-pr">NT$ ' + Number((it.Price || {}).P || 0).toLocaleString() +
+                        (out ? ' <span class="oosmark">補貨中</span>' : '') + '</div></div>';
+                }
+                var isElite = function (it) { return /Elite|菁英|配件/i.test(it.Name || ''); };
+
+                // Game Pass：同 plan_name 收成一張卡（與前台同邏輯）
+                var gps = Object.keys(gpData || {}).map(function (k) { return gpData[k]; })
+                    .filter(function (p) { return p.is_visible !== false && !p.hidden; })
+                    .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+                var gpGroups = [];
+                gps.forEach(function (p) {
+                    var g = gpGroups.filter(function (x) { return x.name === (p.plan_name || ''); })[0];
+                    if (!g) { g = { name: p.plan_name || '', vs: [] }; gpGroups.push(g); }
+                    g.vs.push(p);
+                });
+
+                var giftGroups = [
+                    { t: 'Xbox 數位禮品卡', f: function (nm) { return /禮品卡|Gift\s*Card/i.test(nm); } },
+                    { t: 'Minecraft 遊戲貨幣', f: function (nm) { return /Minecraft|Minecoins?|遊戲貨幣/i.test(nm); } },
+                    { t: '其他數位商品', f: function () { return true; } }
+                ].map(function (g) { return { t: g.t, f: g.f, list: [] }; });
+                gift.forEach(function (it) {
+                    for (var i = 0; i < giftGroups.length; i++) {
+                        if (giftGroups[i].f(it.Name || '')) { giftGroups[i].list.push(it); return; }
+                    }
+                });
+                giftGroups = giftGroups.filter(function (g) { return g.list.length; });
+                giftGroups.forEach(function (g) {
+                    g.list.sort(function (a, b) { return ((a.Price || {}).P || 0) - ((b.Price || {}).P || 0); });
+                });
+
+                var yts = Object.keys(ytData || {}).map(function (k) { return ytData[k]; })
+                    .filter(function (v) { return v.is_visible !== false; })
+                    .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+
+                var h = '';
+                h += '<div class="pv-block">' + blockHead('① 首屏輪播 Banner', true, "xbSwitchTab('bannerlab')", '✏ 去工作台') + bannerStrip(hero) + '</div>';
+
+                h += '<div class="pv-block">' + blockHead('② 🎮 Xbox 無線控制器系列', false, "window.open('https://24h.pchome.com.tw/store/DGBJAH')", '↗ 賣場 DGBJAH') +
+                    '<div class="pv-grid">' + ctrl.filter(function (it) { return !isElite(it); }).map(prodCard).join('') + '</div>' +
+                    '<div style="margin:.8rem 0 .4rem;color:#888;font-size:.8rem">⭐ Elite 菁英系列與配件</div>' +
+                    '<div class="pv-grid">' + ctrl.filter(isElite).map(prodCard).join('') + '</div></div>';
+
+                h += '<div class="pv-block">' + blockHead('③ 💳 Xbox Game Pass 訂閱方案', true, "xbSwitchTab('gamepass')", '✏ 去編輯') +
+                    '<div style="color:#666;font-size:.75rem;margin:-.4rem 0 .7rem">價格顯示 PChome 現售價（前台一樣即時抓）；後台欄位裡的價只是建議售價，兩者不同是正常的。</div>' +
+                    '<div class="pv-grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr))">' +
+                    (gpGroups.length ? gpGroups.map(function (g) {
+                        var d = g.vs.filter(function (v) { return v.is_featured; })[0] || g.vs[0];
+                        return '<div class="pv-plan"><div class="pv-pn">' + esc(g.name) + '</div>' +
+                            '<div class="pv-pills">' + g.vs.map(function (v) {
+                                return '<span class="pv-pill' + (v === d ? ' on' : '') + '">' + (v.is_featured ? '★ ' : '') + esc(v.duration || '') + '</span>';
+                            }).join('') + '</div>' +
+                            '<div class="pv-amt">NT$ ' + Number(gpLive[String(d.pchome_pid || '').replace(/-\d{3}$/, '')] || d.price || 0).toLocaleString() + '</div>' +
+                            '<ul>' + (Array.isArray(d.features) ? d.features : []).map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('') + '</ul></div>';
+                    }).join('') : '<div class="pv-empty">（沒有資料）</div>') + '</div></div>';
+
+                h += '<div class="pv-block">' + blockHead('④ 🎁 禮品卡與遊戲貨幣', false, "window.open('https://24h.pchome.com.tw/store/DGBJI4')", '↗ 賣場 DGBJI4') +
+                    '<div style="color:#666;font-size:.75rem;margin:-.4rem 0 .7rem">卡片敘述文案寫死在前台 index.html 的 GIFT_GROUPS，要改文案才需要重傳 zip；面額由賣場決定。</div>' +
+                    '<div class="pv-grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr))">' +
+                    giftGroups.map(function (g) {
+                        var d = g.list[0];
+                        return '<div class="pv-plan"><div class="pv-pn">' + esc(g.t) + '</div>' +
+                            '<div class="pv-pills">' + g.list.map(function (v, i) {
+                                var pid = String(v.Id).replace(/-\d{3}$/, '');
+                                return '<span class="pv-pill' + (i === 0 ? ' on' : '') + '"' +
+                                    (stock[pid] === false ? ' style="text-decoration:line-through;color:#555"' : '') + '>' +
+                                    Number((v.Price || {}).P || 0).toLocaleString() + '</span>';
+                            }).join('') + '</div>' +
+                            '<div class="pv-amt">NT$ ' + Number((d.Price || {}).P || 0).toLocaleString() + '</div></div>';
+                    }).join('') + '</div></div>';
+
+                h += '<div class="pv-block">' + blockHead('⑤ 🎬 Xbox 官方精選影片', true, "xbSwitchTab('youtube')", '✏ 去編輯') +
+                    '<div style="color:#666;font-size:.75rem;margin:-.4rem 0 .7rem">每日 GAS 自動抓 Xbox Taiwan 頻道最新 6 支（auto_ 開頭），手動加的排前面。</div>' +
+                    '<div class="pv-strip">' + (yts.length ? yts.map(function (v) {
+                        return '<div class="pv-yt"><img src="https://img.youtube.com/vi/' + esc(v.video_id) + '/mqdefault.jpg">' +
+                            '<div class="pv-cap">' + esc((v.title || '').slice(0, 28)) + '</div></div>';
+                    }).join('') : '<div class="pv-empty">（沒有資料）</div>') + '</div></div>';
+
+                h += '<div class="pv-block" style="border-bottom:none">' + blockHead('⑥ 🖼 底部「更多精選活動」', true, "xbSwitchTab('bannerlab')", '✏ 去工作台') + bannerStrip(more) + '</div>';
+
+                box.innerHTML = h;
+                document.getElementById('pv-updated').textContent =
+                    '更新於 ' + new Date().toLocaleTimeString('zh-TW') + '（banner 依現在時間套用上下架，待上傳的不顯示）';
+            }
+
+            return {
+                open: open, save: save, makeZip: makeZip, markUploaded: markUploaded,
+                move: move, swapZone: swapZone, remove: remove, set: set, pickMobile: pickMobile,
+                renderPreview: renderPreview, syncFromData: syncFromData, imgUrl: imgUrl
+            };
+        })();
+
         // ── Xbox 開機載入 ──
         var xbLoaded = false;
         XB.loadAll = async function() {
             await Promise.all([loadXbBanners(), loadControllers(), loadGamePass(), loadYoutube()]);
             renderOverview();
+            XBLAB.syncFromData();
             xbLoaded = true;
         };
 

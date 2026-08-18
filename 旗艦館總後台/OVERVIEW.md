@@ -16,8 +16,8 @@
 | 區塊 | 說明 |
 |------|------|
 | 共用層 | Firebase compat SDK 單一初始化、共用登入/登出、館別切換（記住上次停留館別 localStorage）、PChome 透視鏡、jspreadsheet 小工具（右鍵選單、自適應欄寬） |
-| `#brand-ps` ＋ `var PS = (…)()` | PS 館：試算表直編（輪播/遊戲/周邊 批次新增＋全量清單）＋**⭐ 特別推薦挑選器**＋三欄前台模擬預覽。Firebase 路徑：`site_banners` / `pchome_games` / `pchome_hardware` / `ps_featured` |
-| `#brand-xbox` ＋ Xbox 全域函式群 | Xbox 館：深色表單分頁（總覽拖曳排序/Banner/控制器/Game Pass/YouTube）。Firebase 路徑：`xbox_site_banners` / `xbox_controllers` / `xbox_gamepass` / `xbox_youtube`。深色 CSS 全部限定在 `#brand-xbox` 下，不影響其他館 |
+| `#brand-ps` ＋ `var PS = (…)()` | PS 館：試算表直編（輪播/遊戲/周邊 批次新增＋全量清單）＋**⭐ 館長推薦與 🔥 期待遊戲挑選器**＋三欄前台模擬預覽。Firebase 路徑：`site_banners` / `pchome_games` / `pchome_hardware` / `ps_featured` / `ps_expected` |
+| `#brand-xbox` ＋ Xbox 全域函式群 ＋ `XBLAB` | Xbox 館：深色表單分頁（總覽拖曳排序/**前台模擬**/**版頭工作台**/Banner 舊表單/控制器/Game Pass/YouTube）。Firebase 路徑：`xbox_site_banners` / `xbox_controllers` / `xbox_gamepass` / `xbox_youtube`。深色 CSS 全部限定在 `#brand-xbox` 下，不影響其他館 |
 | `#brand-nintendo` ＋ `var NN = (…)()` | 任天堂館：試算表直編（輪播/遊戲庫 NS2+NS/周邊庫，合併寫回不洗掉新欄位）＋前台分組預覽。Firebase 路徑：`nintendo_banners` / `nintendo_games` / `nintendo_hardware` |
 
 **寫入邏輯與各館原版 admin.html 完全相同**（PS/NN 的 set() 全量同步、NN 的 mergeRow 合併寫回、Xbox 的 push/update/remove），資料結構沒有任何變動。
@@ -45,7 +45,7 @@
 前提：新館的資料也放在同一個 Firebase 專案（各館用自己的節點前綴，如 `pokemon_*`），登入就能共用。
 Pokemon 旗艦館目前是純靜態頁（改完打 zip 上傳 PChome、無 Firebase），要納入前得先幫它做 Firebase 化的前台＋資料節點。
 
-## PS 館「⭐ 特別推薦」挑選器（v3 新增）
+## PS 館「⭐ 館長推薦」挑選器（v3 新增）
 
 前台 PS 館左欄最上方那塊輪播的內容來源，寫進 Firebase `ps_featured`。
 
@@ -55,8 +55,65 @@ Pokemon 旗艦館目前是純靜態頁（改完打 zip 上傳 PChome、無 Fireb
 - **只存 PID 與人工覆寫欄位**；品名、白圖、售價、缺貨狀態前台都自己抓，所以不必維護圖片。
 - 改完前台重整即生效，**不用打 zip 重傳 PChome**。
 
+## PS 館「🔥 期待遊戲」挑選器（v4 新增）
+
+前台 PS 館左欄那個**純文字榜**的內容來源，寫進 Firebase `ps_expected`。
+
+- **候選只有遊戲**（`pchome_games` 全部，含還沒建商品、沒有 PID 的），預設只列「尚未開放訂購」的，
+  可切「全部遊戲」。每列標可訂購狀態：綠＝可訂購、紫＝尚未開放（顯示實際 `ButtonType`）、灰＝無 PID。
+  狀態靠開頁時 JSONP 打 `prod/button` 取得。
+- **存的是 `game_id`（Firebase key）不是 PID**，所以 GTA6、王國之心4 這種還沒建商品的也選得到。
+- 右側已選清單 `▲▼` 調序、`✕` 移除；每筆可填自訂標題、期待語、上下架時間。**沒有圖片欄位**（前台是純文字榜）。
+- 存檔用 `set()` 整包覆蓋，key 為 `e_000` 遞增、`sort_order` 即列序。
+
+## Xbox 館「👁 前台模擬」與「🖼 版頭工作台」（v5 新增）
+
+程式都在 `var XBLAB = (function(){…})()` 這個命名空間裡。
+
+### 👁 前台模擬
+
+照前台真實順序把整頁畫出來，**每塊都標可維護／賣場維護**，右上角一顆鈕直接跳到該區的維護分頁或賣場：
+
+| 區塊 | 資料源 | 標示 |
+|------|--------|------|
+| ① 首屏輪播 Banner | Firebase `xbox_site_banners`（`sort_order` 1–5） | 可維護 → 版頭工作台 |
+| ② 控制器牆＋Elite 分區 | **賣場 `DGBJAH`**（JSONP 即時） | 賣場維護 → 開賣場 |
+| ③ Game Pass | Firebase `xbox_gamepass`，**價格顯示 PChome 現售價** | 可維護 → Game Pass 分頁 |
+| ④ 禮品卡與遊戲貨幣 | **賣場 `DGBJI4`**（JSONP 即時） | 賣場維護 → 開賣場 |
+| ⑤ 精選影片 | Firebase `xbox_youtube`（GAS 每日自動更新） | 可維護 → YouTube 分頁 |
+| ⑥ 底部「更多精選活動」 | Firebase `xbox_site_banners`（`sort_order` 6+） | 可維護 → 版頭工作台 |
+
+- banner 依**現在時間**套用上下架、`pending` 的不顯示——所見即前台所見。
+- 缺貨商品淡化並標「補貨中」（打 `prod/button` 判定），與前台同一套規則。
+
+### 🖼 版頭工作台
+
+取代「先改圖 → 自己命名 → 打 zip → 上傳 → 回後台貼路徑」那一串。
+
+1. **拖圖進來**（可多張）→ 瀏覽器內 canvas 置中裁切成 PC `1644×604` 與手機 `1200×450`，
+   jpg 由 q .86 起往下壓到單張 < 700KB，**自動命名 `xb-YYYYMMDD-NN.jpg`／手機版 `-m.jpg`**（純英數、不與既有檔名重複）。
+   只拖一張就自動裁手機版；不滿意可對該列按「🖼 換手機圖」單獨換。
+2. **兩個區塊分開排**：①首屏輪播（最多 5 張，超過存檔時自動推到②）②底部更多精選。
+   卡片可**拖曳**，也有 ▲▼ 與「移到另一區」；存檔時 `sort_order` 自動重算成 1–5 / 6+，**不用再自己填數字**。
+3. **💾 儲存**：逐筆 `update()`／`push()` 寫 `xbox_site_banners`，刪除的才 `remove()`。
+4. **📦 產生上傳包**：JSZip 把待上傳的圖打成 `xbox_YYYYMMDD.zip`（zip 內路徑 `img/banner/*.jpg`），
+   瀏覽器直接下載。超過 9.5MB 會警告（PChome 單次上限 10MB）。
+5. **✅ 標記已上傳**：把那批 banner 的 `pending` 解除，前台才開始顯示。
+
+**關鍵限制：後台無法把圖送上 PChome**（沒有 API，一定要人工登入上傳），所以才有 `pending` 這個機制。
+
+- **新欄位 `pending`（boolean）**：`true` ＝ 資料已建、圖還沒上傳。
+  **前台 `xbox/index.html` 的 `loadBanners()` 會直接跳過 `pending` 的 banner**，避免圖沒上傳就開天窗。
+  這個欄位是本工作台與前台的約定，改前台過濾邏輯時要一起考慮。
+- 還沒上傳的圖以 dataURL 暫存在 `localStorage['xblab_pending_v1']`，換電腦或清快取就沒了
+  （Firebase 記錄還在，重新拖一次圖即可）。按「標記已上傳」後會清掉暫存。
+- PChome 的圖**一律用新檔名、不覆蓋舊檔**（css/js 確定不能覆蓋，圖檔沒驗證過，用日期序號最保險）。
+
 ## 版本紀錄
 
 - v1（2026-07-17）：初版——PS/Xbox/Nintendo 三館後台合併、單一登入、館別頁籤、共用透視鏡。
 - v2：PS/Xbox/Nintendo 各館維護項目補齊（任天堂區塊加非本家頁「Switch 全部遊戲」管理）。
-- v3（2026-08-17）：PS 館新增「⭐ 特別推薦」挑選器（候選＝遊戲庫＋四賣場，寫入 `ps_featured`）。
+- v3（2026-08-17）：PS 館新增「⭐ 館長推薦」挑選器（候選＝遊戲庫＋四賣場，寫入 `ps_featured`）。
+- v4（2026-08-18）：「特別推薦」更名為「館長推薦」；PS 館新增「🔥 期待遊戲」挑選器（寫入 `ps_expected`，以 `game_id` 為主鍵，支援無 PID 的遊戲）。
+- v5（2026-08-18）：Xbox 館新增「👁 前台模擬」與「🖼 版頭工作台」（拖圖→自動裁切命名→拖曳排序→產生上傳 zip→標記已上傳，新增 `pending` 欄位）；
+  控制器分頁加註「賣場維護」警語（前台已改吃賣場 DGBJAH）；修掉總覽／Banner 舊表單縮圖用相對路徑看不到圖的問題。
