@@ -16,7 +16,7 @@
 | 區塊 | 說明 |
 |------|------|
 | 共用層 | Firebase compat SDK 單一初始化、共用登入/登出、館別切換（記住上次停留館別 localStorage）、PChome 透視鏡、jspreadsheet 小工具（右鍵選單、自適應欄寬） |
-| `#brand-ps` ＋ `var PS = (…)()` | PS 館：試算表直編（輪播/遊戲/周邊 批次新增＋全量清單）＋**⭐ 館長推薦與 🔥 期待遊戲挑選器**＋三欄前台模擬預覽。Firebase 路徑：`site_banners` / `pchome_games` / `pchome_hardware` / `ps_featured` / `ps_expected` |
+| `#brand-ps` ＋ `var PS = (…)()` | PS 館：試算表直編（輪播/遊戲/周邊 批次新增＋全量清單）＋**⭐ 館長推薦與 🔥 期待遊戲挑選器**＋三欄前台模擬預覽。Firebase 路徑：`site_banners`（版頭工作台）/ `pchome_games` / `pchome_hardware` / `ps_featured` / `ps_expected` |
 | `#brand-xbox` ＋ Xbox 全域函式群 ＋ `XBLAB` | Xbox 館：深色表單分頁（總覽拖曳排序/**前台模擬**/**版頭工作台**/Banner 舊表單/控制器/Game Pass/YouTube）。Firebase 路徑：`xbox_site_banners` / `xbox_controllers` / `xbox_gamepass` / `xbox_youtube`。深色 CSS 全部限定在 `#brand-xbox` 下，不影響其他館 |
 | `#brand-nintendo` ＋ `var NN = (…)()` | 任天堂館：試算表直編（輪播/遊戲庫 NS2+NS/周邊庫，合併寫回不洗掉新欄位）＋前台分組預覽。Firebase 路徑：`nintendo_banners` / `nintendo_games` / `nintendo_hardware` |
 
@@ -114,6 +114,20 @@ Xbox 館**沒有分頁了**，整館就是一頁：捲一頁看完前台六個�
 - 還沒上傳的圖以 dataURL 暫存在 `localStorage['xblab_pending_v1']`，換電腦或清快取就沒了
   （Firebase 記錄還在，重拖一次圖即可）。按「標記已上傳」後清掉暫存。
 
+## PS 館「🖼 版頭工作台」（v7 新增）
+
+比照 Xbox 的版頭工作台，但**只做 PC 圖 1644×604**——PS 前台不吃手機版 banner
+（`site_banners.img_mobile_url` 欄位存在，前台 `bootData` 只讀 `img_url`），做了也用不到。
+
+- 把圖**拖進虛線框**（或點一下選檔）→ 自動置中裁成 1644×604 jpg，超過 700KB 逐級降畫質；
+  檔名自動編 `ps-YYYYMMDD-NN.jpg`，卡片可**拖曳排序**，點卡片展開設定（標題／圖檔或網址／連結／上下架／裁切水平位置）。
+- **關鍵差異：待上傳的列不寫進 Firebase。** PS 前台不認得 Xbox 那個 `pending` 欄位，
+  若先寫進去，圖還沒上 PChome 前台就會破圖。所以新圖只留在瀏覽器 `localStorage`（`psban_pending_v1`），
+  按「儲存順序與設定」只寫非待上傳的列；按「✅ 標記已上傳」才把它們一併寫入。**因此前台完全不用改、不用重傳 index.html。**
+- 流程：拖圖 → 設定 → 📦 產生上傳包（下載 `playstation_YYYYMMDD.zip`，圖放 zip 根目錄，比照 PS 站台圖檔放站台根的慣例）
+  → 上傳 PChome → 回來按「✅ 標記已上傳」。
+- 舊的試算表表單收在下方 `<details>` 裡留作備援（貼外部圖網址用）。**兩邊都是 `set()` 整包覆蓋，一次只用一邊。**
+
 ## 版本紀錄
 
 - v1（2026-07-17）：初版——PS/Xbox/Nintendo 三館後台合併、單一登入、館別頁籤、共用透視鏡。
@@ -124,3 +138,4 @@ Xbox 館**沒有分頁了**，整館就是一頁：捲一頁看完前台六個�
   控制器分頁加註「賣場維護」警語（前台已改吃賣場 DGBJAH）；修掉總覽／Banner 舊表單縮圖用相對路徑看不到圖的問題。
 - v6（2026-08-18）：Xbox 館**改成一頁式**——取消分頁，前台模擬即主畫面，點區塊才從側邊抽屜開細節（舊表單整個節點搬進抽屜重用）；
   版頭與底部「更多精選」併成同一區塊、可互拖；**手機版圖從 1200×450 改成 900×900 正方形**並加裁切位置滑桿（舊尺寸與 PC 版同比例、等於沒有手機版）。
+- v7（2026-08-18）：PS 館版頭改成拖拉工作台（比照 Xbox，只做 PC 1644×604）；待上傳的圖不寫 Firebase，前台因此免改。
