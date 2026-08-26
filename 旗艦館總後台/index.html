@@ -220,6 +220,31 @@
         #brand-ps .psb-edit label { display: block; font-size: .65rem; font-weight: 800; color: #64748b; margin: .4rem 0 .15rem; }
         #brand-ps .psb-edit input { width: 100%; font-size: .75rem; border: 1px solid #cbd5e1; border-radius: .3rem; padding: .35rem .5rem; }
 
+        /* ── 任天堂 版頭工作台＋皮克敏維護（v8，比照 PS 拖拉工作台、紅色調）── */
+        #brand-nintendo .nnb-drop { border: 2px dashed #d8b9b9; border-radius: .75rem; padding: 1.75rem 1rem; text-align: center; color: #64748b; background: #fdf8f8; cursor: pointer; transition: all .15s; font-size: .8rem; font-weight: 700; }
+        #brand-nintendo .nnb-drop:hover, #brand-nintendo .nnb-drop.hot { border-color: #dc2626; background: #fef2f2; color: #dc2626; }
+        #brand-nintendo .nnb-grid { display: flex; flex-direction: column; gap: .5rem; margin-top: .75rem; }
+        #brand-nintendo .nnb-card { display: flex; align-items: center; gap: .6rem; background: #fff; border: 1px solid #e2e8f0; border-radius: .6rem; padding: .5rem .6rem; cursor: pointer; transition: all .12s; }
+        #brand-nintendo .nnb-card:hover { border-color: #dc2626; box-shadow: 0 2px 8px rgba(220,38,38,.12); }
+        #brand-nintendo .nnb-card.dragging { opacity: .4; }
+        #brand-nintendo .nnb-card.drag-over { border-color: #dc2626; border-style: dashed; }
+        #brand-nintendo .nnb-idx { font-size: .7rem; font-weight: 900; color: #dc2626; width: 1.4rem; text-align: center; flex: 0 0 auto; }
+        #brand-nintendo .nnb-grip { cursor: grab; color: #94a3b8; font-size: .95rem; flex: 0 0 auto; }
+        #brand-nintendo .nnb-thumb { width: 120px; height: 44px; object-fit: cover; border-radius: .3rem; background: #f1f5f9; flex: 0 0 auto; }
+        #brand-nintendo .nnb-thumb-mo { width: 48px; height: 44px; object-fit: cover; border-radius: .3rem; background: #f1f5f9; flex: 0 0 auto; }
+        #brand-nintendo .nnb-thumb-sq { width: 44px; height: 44px; object-fit: contain; border-radius: .3rem; background: #f8fafc; flex: 0 0 auto; }
+        #brand-nintendo .nnb-meta { flex: 1 1 auto; min-width: 0; }
+        #brand-nintendo .nnb-name { font-size: .75rem; font-weight: 800; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        #brand-nintendo .nnb-sub { font-size: .65rem; color: #94a3b8; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        #brand-nintendo .nnb-badge { font-size: .6rem; font-weight: 800; padding: .15rem .45rem; border-radius: 999px; flex: 0 0 auto; }
+        #brand-nintendo .nnb-badge.pend { background: #fef3c7; color: #92400e; }
+        #brand-nintendo .nnb-badge.live { background: #dcfce7; color: #166534; }
+        #brand-nintendo .nnb-badge.sched { background: #dbeafe; color: #1e40af; }
+        #brand-nintendo .nnb-badge.expired { background: #fee2e2; color: #991b1b; }
+        #brand-nintendo .nnb-edit { background: #f8fafc; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 .6rem .6rem; padding: .7rem; margin-top: -.5rem; }
+        #brand-nintendo .nnb-edit label { display: block; font-size: .65rem; font-weight: 800; color: #64748b; margin: .4rem 0 .15rem; }
+        #brand-nintendo .nnb-edit input { width: 100%; font-size: .75rem; border: 1px solid #cbd5e1; border-radius: .3rem; padding: .35rem .5rem; }
+
         #brand-xbox .tabs { display: flex; gap: 0; border-bottom: 2px solid #222; background: #141414; padding: 0 1rem; overflow-x: auto; }
         #brand-xbox .tab-btn { padding: .75rem 1.25rem; background: none; border: none; color: #888; cursor: pointer; font-size: .9rem; white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color .15s; }
         #brand-xbox .tab-btn.active { color: #52b043; border-bottom-color: #107C10; font-weight: 600; }
@@ -459,7 +484,7 @@
 
         <!-- 全域頂欄：館別切換 -->
         <header class="sticky top-0 z-50 bg-slate-900 text-white px-4 py-2 flex items-center gap-3 shadow-lg" style="height:56px">
-            <span class="font-black tracking-wide text-sm hidden md:inline">🏬 旗艦館總後台 <span class="text-slate-500 font-bold">v7</span></span>
+            <span class="font-black tracking-wide text-sm hidden md:inline">🏬 旗艦館總後台 <span class="text-slate-500 font-bold">v8</span></span>
             <nav class="flex gap-1.5">
                 <button id="brand-btn-ps" class="brand-btn" onclick="switchBrand('ps')">🕹️ PlayStation</button>
                 <button id="brand-btn-xb" class="brand-btn" onclick="switchBrand('xb')">🎮 Xbox</button>
@@ -1006,16 +1031,34 @@
 
                     <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
                         <div class="flex justify-between items-center border-b pb-2">
-                            <h2 class="text-sm font-black text-slate-800">🖼️ 版頭大輪播與檔期排程（上下架時間留空＝長期顯示）</h2>
-                            <button onclick="NN.saveBanners()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">⚡ 同步儲存輪播 (含刪除)</button>
+                            <h2 class="text-sm font-black text-slate-800">🖼️ 頂部大輪播（拖圖進來自動裁 電腦1732×626＋手機768×698）</h2>
+                            <div class="flex gap-2">
+                                <button onclick="NN.banSave()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">💾 儲存順序與設定</button>
+                                <button onclick="NN.banMakeZip()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">📦 產生上傳包</button>
+                                <button onclick="NN.banMarkUploaded()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">✅ 標記已上傳</button>
+                            </div>
                         </div>
-                        <div class="resizable-container">
-                            <div id="nn-banner-spreadsheet"></div>
+                        <div id="nn-ban-drop" class="nnb-drop">
+                            📁 把圖拖進來（或點這裡選檔）—— 自動產生 電腦 1732×626 ＋ 手機 768×698 兩張 jpg
+                            <div class="text-[10px] font-normal text-slate-400 mt-1">圖檔沒辦法從後台直接上 PChome：新圖會標「待上傳」且不寫入資料庫，按「產生上傳包」下載 zip 上傳後，再按「標記已上傳」才會上前台</div>
                         </div>
-                        <div class="text-[10px] text-slate-500 flex justify-between">
-                            <button onclick="NN.bannerTable.insertRow()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-extrabold px-3 py-1 rounded transition">➕ 追加輪播列</button>
-                            <span>💡 圖片填相對路徑（img/banner/xxx.jpg）或完整網址；右鍵可刪除列，刪後記得按儲存。</span>
-                        </div>
+                        <input type="file" id="nn-ban-file" accept="image/*" multiple style="display:none">
+                        <div id="nn-ban-grid" class="nnb-grid"></div>
+                        <details class="text-[11px] text-slate-500">
+                            <summary class="cursor-pointer font-bold py-1">舊試算表式表單（貼外部圖網址用，備援）</summary>
+                            <div class="pt-2">
+                                <div class="flex justify-end mb-2">
+                                    <button onclick="NN.saveBanners()" class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg">儲存（舊表單）</button>
+                                </div>
+                                <div class="resizable-container">
+                                    <div id="nn-banner-spreadsheet"></div>
+                                </div>
+                                <div class="text-[10px] text-slate-500 flex justify-between mt-1">
+                                    <button onclick="NN.bannerTable.insertRow()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-extrabold px-3 py-1 rounded transition">➕ 追加輪播列</button>
+                                    <span>⚠ 舊表單儲存會整包覆蓋，與上方卡片一次只用一邊。</span>
+                                </div>
+                            </div>
+                        </details>
                     </section>
 
                     <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
@@ -1044,6 +1087,38 @@
                             <button onclick="NN.hwTable.insertRow()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-extrabold px-3 py-1 rounded transition">➕ 插入新周邊</button>
                             <span>💡 周邊卡目前多連 store 頁 → 填「連結覆蓋」；連單品就填 PID。</span>
                         </div>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h2 class="text-sm font-black text-green-700">🌱 皮克敏專頁（pikmin.htm；存檔即生效，不用重傳 zip）</h2>
+                            <span class="text-[10px] text-slate-400">貼 PID／商品網址自動抓品名價格圖；遊戲片品名有原廠規範，抓完記得改寫</span>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div class="border rounded-lg p-3 bg-green-50/40 flex flex-col">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-[11px] font-black text-green-800">🧸 第一列：授權商品（nintendo_pikmin）</span>
+                                    <button onclick="NN.pkSave('goods')" class="bg-green-600 hover:bg-green-700 text-white text-[11px] font-bold px-3 py-1 rounded-lg">💾 儲存</button>
+                                </div>
+                                <div class="flex gap-1.5 mb-1">
+                                    <input id="nn-pk-add-goods" type="text" placeholder="貼 PID 或商品網址後按 Enter 加入…" class="flex-1 text-xs border border-slate-300 rounded px-2 py-1.5" onkeydown="if(event.key==='Enter')NN.pkAdd('goods')">
+                                    <button onclick="NN.pkAdd('goods')" class="bg-green-100 hover:bg-green-200 text-green-800 text-xs font-black px-3 rounded">＋</button>
+                                </div>
+                                <div id="nn-pk-goods" class="nnb-grid overflow-y-auto" style="max-height:420px"></div>
+                            </div>
+                            <div class="border rounded-lg p-3 bg-lime-50/40 flex flex-col">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-[11px] font-black text-lime-800">💿 第二列：系列遊戲商品（nintendo_pikmin_game）</span>
+                                    <button onclick="NN.pkSave('game')" class="bg-lime-600 hover:bg-lime-700 text-white text-[11px] font-bold px-3 py-1 rounded-lg">💾 儲存</button>
+                                </div>
+                                <div class="flex gap-1.5 mb-1">
+                                    <input id="nn-pk-add-game" type="text" placeholder="貼 PID 或商品網址後按 Enter 加入…" class="flex-1 text-xs border border-slate-300 rounded px-2 py-1.5" onkeydown="if(event.key==='Enter')NN.pkAdd('game')">
+                                    <button onclick="NN.pkAdd('game')" class="bg-lime-100 hover:bg-lime-200 text-lime-800 text-xs font-black px-3 rounded">＋</button>
+                                </div>
+                                <div id="nn-pk-game" class="nnb-grid overflow-y-auto" style="max-height:420px"></div>
+                            </div>
+                        </div>
+                        <div class="text-[10px] text-slate-500">💡 拖卡片排順序、點卡片改品名/價格/連結，改完按該欄「儲存」整列覆蓋寫回。加入時自動優先用賣場白圖（000007），抓不到資料（未開賣）會建空卡讓你手動填。</div>
                     </section>
 
                     <div class="p-4 bg-indigo-900 text-white rounded-xl font-bold text-sm tracking-wide shadow">
@@ -2714,8 +2789,23 @@
                     });
                     autoFitColumns(ns.bannerTable, 60, 420);
                     renderPreview();
+
+                    // 新版卡片工作台（v8）：同一份資料同步進卡片列
+                    nbSyncFromData(list);
+                    nbBindDrop();
+                    ns.banRender();
                 });
                 // （介紹卡已於 2026-07-15 併入遊戲庫：video_id / img_wide / text 欄位；nintendo_showcase 節點保留備援不再讀寫）
+
+                // ---------- 皮克敏專頁（陣列節點，前台 pikmin.htm 直讀）----------
+                database.ref('nintendo_pikmin').on('value', function(snap) {
+                    pkRows.goods = pkFromSnap(snap);
+                    ns.pkRender('goods');
+                });
+                database.ref('nintendo_pikmin_game').on('value', function(snap) {
+                    pkRows.game = pkFromSnap(snap);
+                    ns.pkRender('game');
+                });
 
                 // ---------- 遊戲庫 ----------
                 database.ref('nintendo_games').on('value', function(snap) {
@@ -3023,6 +3113,486 @@
                 database.ref('nintendo_tp_genres').set(o).then(function() {
                     alert("🎯 類型微調已儲存！非本家頁重新整理生效。");
                 }).catch(function(err) { alert("儲存失敗：" + err.message); });
+            };
+
+            // ══ 版頭工作台（v8，比照 PS.ban*）═════════════════════════════════
+            // 與 PS 的差異：任天堂前台吃手機版圖（<picture> max-width:768px），
+            // 所以一張來源圖自動裁 電腦 1732×626（topBanner_l-N）＋手機 768×698
+            // （topBanner_s-N）兩張，檔名沿用前台既有 img/banner/ 慣例接最大號往後編。
+            // 寫回 nintendo_banners 物件節點（sort_order 排序），透過 mergeRow 保留
+            // 表格沒顯示的欄位。圖上不了 PChome（沒 API）→「待上傳」不寫資料庫。
+            var NNB_PC = { w: 1732, h: 626 }, NNB_MO = { w: 768, h: 698 };
+            var NNB_LS = 'nnban_pending_v1', NNB_DIR = 'img/banner/';
+            var NNB_SITE = 'https://24h.pchome.com.tw/sites/nintendo/';
+            var nbRows = [];        // [{__id,key,note,img_url,img_url_mb,link_url,start_time,end_time,pending,focus}]
+            var nbFiles = {};       // 檔名 → dataURL（待上傳）
+            var nbOrig = {};        // 電腦版檔名 → 原始 Image（本次載入才有，供裁切滑桿重算）
+            var nbUid = 0, nbDragId = null, nbEditId = null;
+
+            function nbPad(v) { return v < 10 ? '0' + v : '' + v; }
+            function nbToday() { var d = new Date(); return '' + d.getFullYear() + nbPad(d.getMonth() + 1) + nbPad(d.getDate()); }
+            function nbBase(u) { return String(u || '').split('/').pop(); }
+
+            function nbImgSrc(u) {
+                if (!u) return '';
+                if (/^(https?:)?\/\//.test(u)) return u;
+                var f = nbFiles[nbBase(u)];
+                return f ? f : NNB_SITE + String(u).replace(/^\//, '');
+            }
+
+            function nbLoadLocal() {
+                try {
+                    var o = JSON.parse(localStorage.getItem(NNB_LS) || '{}');
+                    nbFiles = o.files || {};
+                    return o.pending || [];
+                } catch (e) { nbFiles = {}; return []; }
+            }
+            function nbSaveLocal() {
+                var pend = nbRows.filter(function (r) { return r.pending; }).map(function (r) {
+                    return {
+                        note: r.note, img_url: r.img_url, img_url_mb: r.img_url_mb, link_url: r.link_url,
+                        start_time: r.start_time, end_time: r.end_time, pos: nbRows.indexOf(r)
+                    };
+                });
+                try { localStorage.setItem(NNB_LS, JSON.stringify({ files: nbFiles, pending: pend })); }
+                catch (e) { showStatus('⚠ 瀏覽器暫存不足，請盡快按「產生上傳包」把圖存下來', true); }
+            }
+
+            function nbToJpeg(img, size, focusX) {
+                var c = document.createElement('canvas');
+                c.width = size.w; c.height = size.h;
+                var ctx = c.getContext('2d');
+                ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, size.w, size.h);
+                var sc = Math.max(size.w / img.width, size.h / img.height);
+                var dw = img.width * sc, dh = img.height * sc;
+                var fx = (focusX == null ? 0.5 : focusX);
+                ctx.drawImage(img, (size.w - dw) * fx, (size.h - dh) / 2, dw, dh);
+                var qs = [0.86, 0.75, 0.65, 0.55], out = '';
+                for (var i = 0; i < qs.length; i++) {
+                    out = c.toDataURL('image/jpeg', qs[i]);
+                    if (out.length * 0.75 < 700 * 1024) break;
+                }
+                return out;
+            }
+
+            function nbReadImage(file) {
+                return new Promise(function (resolve, reject) {
+                    var fr = new FileReader();
+                    fr.onload = function () {
+                        var im = new Image();
+                        im.onload = function () { resolve(im); };
+                        im.onerror = reject;
+                        im.src = fr.result;
+                    };
+                    fr.onerror = reject;
+                    fr.readAsDataURL(file);
+                });
+            }
+
+            // 檔名接前台既有慣例：topBanner_l-N / topBanner_s-N，掃現有列＋暫存圖取最大號+1
+            function nbNextNum() {
+                var mx = 0;
+                function scan(s) {
+                    var m = String(s || '').match(/topBanner_[ls]-(\d+)/);
+                    if (m) mx = Math.max(mx, parseInt(m[1], 10));
+                }
+                nbRows.forEach(function (r) { scan(r.img_url); scan(r.img_url_mb); });
+                Object.keys(nbFiles).forEach(scan);
+                return mx + 1;
+            }
+
+            ns.banAddFiles = async function (fileList) {
+                var list = Array.prototype.slice.call(fileList || []).filter(function (f) { return /^image\//.test(f.type); });
+                if (!list.length) return;
+                for (var i = 0; i < list.length; i++) {
+                    try {
+                        var im = await nbReadImage(list[i]);
+                        var n = nbNextNum();
+                        var nmL = 'topBanner_l-' + n + '.jpg', nmS = 'topBanner_s-' + n + '.jpg';
+                        nbFiles[nmL] = nbToJpeg(im, NNB_PC, 0.5);
+                        nbFiles[nmS] = nbToJpeg(im, NNB_MO, 0.5);
+                        nbOrig[nmL] = im;
+                        nbRows.push({
+                            __id: ++nbUid, key: null,
+                            note: list[i].name.replace(/\.[^.]+$/, ''),
+                            img_url: NNB_DIR + nmL, img_url_mb: NNB_DIR + nmS,
+                            link_url: '', start_time: '', end_time: '', pending: true, focus: 0.5
+                        });
+                    } catch (e) { showStatus('❌ ' + list[i].name + ' 讀取失敗', true); }
+                }
+                nbSaveLocal(); ns.banRender();
+                showStatus('已加入 ' + list.length + ' 張 → 點卡片設連結/檔期，再按「產生上傳包」');
+            };
+
+            function nbSyncFromData(list) {
+                var pend = nbLoadLocal();
+                nbRows = (list || []).map(function (v) {
+                    return {
+                        __id: ++nbUid, key: v._key, note: v.internal_note || '',
+                        img_url: v.img_url || '', img_url_mb: v.img_url_mb || '',
+                        link_url: v.link_url || '', start_time: v.start_time || '',
+                        end_time: v.end_time || '', pending: false, focus: 0.5
+                    };
+                });
+                pend.forEach(function (p) {
+                    var r = {
+                        __id: ++nbUid, key: null, note: p.note || '', img_url: p.img_url || '',
+                        img_url_mb: p.img_url_mb || '', link_url: p.link_url || '', start_time: p.start_time || '',
+                        end_time: p.end_time || '', pending: true, focus: 0.5
+                    };
+                    var at = (p.pos == null || p.pos > nbRows.length) ? nbRows.length : p.pos;
+                    nbRows.splice(at, 0, r);
+                });
+            }
+
+            function nbIdx(id) { for (var i = 0; i < nbRows.length; i++) if (nbRows[i].__id === id) return i; return -1; }
+
+            function nbBadge(r) {
+                if (r.pending) return '<span class="nnb-badge pend">⏳ 待上傳</span>';
+                var now = Date.now();
+                if (r.start_time && new Date(String(r.start_time).replace(/-/g, '/')).getTime() > now) return '<span class="nnb-badge sched">🕐 未到上架</span>';
+                if (r.end_time && new Date(String(r.end_time).replace(/-/g, '/')).getTime() < now) return '<span class="nnb-badge expired">⛔ 已過期</span>';
+                return '<span class="nnb-badge live">✅ 顯示中</span>';
+            }
+
+            ns.banRender = function () {
+                var el = document.getElementById('nn-ban-grid');
+                if (!el) return;
+                if (!nbRows.length) {
+                    el.innerHTML = '<div class="text-[11px] text-slate-400 text-center py-4">還沒有任何版頭，把圖拖進上面的框</div>';
+                    return;
+                }
+                el.innerHTML = nbRows.map(function (r, i) {
+                    var card = '<div class="nnb-card" draggable="true" data-id="' + r.__id + '" title="點一下開設定">' +
+                        '<span class="nnb-idx">' + (i + 1) + '</span>' +
+                        '<span class="nnb-grip">⠿</span>' +
+                        '<img class="nnb-thumb" src="' + esc(nbImgSrc(r.img_url)) + '" onerror="this.style.opacity=.25">' +
+                        (r.img_url_mb ? '<img class="nnb-thumb-mo" title="手機版" src="' + esc(nbImgSrc(r.img_url_mb)) + '" onerror="this.style.opacity=.25">' : '') +
+                        '<span class="nnb-meta"><span class="nnb-name">' + esc(r.note || '(未命名)') + '</span>' +
+                        '<span class="nnb-sub">' + esc(nbBase(r.img_url) || '無圖') + (r.link_url ? ' → ' + esc(r.link_url.slice(0, 42)) : '') + '</span></span>' +
+                        nbBadge(r) + '</div>';
+                    if (nbEditId !== r.__id) return card;
+                    return card + '<div class="nnb-edit">' +
+                        '<label>名稱備註</label><input type="text" value="' + esc(r.note) + '" oninput="NN.banEdit(' + r.__id + ',\'note\',this.value)">' +
+                        '<label>電腦版圖（相對路徑或完整網址）</label><input type="text" value="' + esc(r.img_url) + '" oninput="NN.banEdit(' + r.__id + ',\'img_url\',this.value)">' +
+                        '<label>手機版圖（留空＝手機也用電腦版圖）</label><input type="text" value="' + esc(r.img_url_mb) + '" oninput="NN.banEdit(' + r.__id + ',\'img_url_mb\',this.value)">' +
+                        '<label>導購連結</label><input type="text" value="' + esc(r.link_url) + '" oninput="NN.banEdit(' + r.__id + ',\'link_url\',this.value)">' +
+                        '<div class="grid grid-cols-2 gap-2">' +
+                        '<div><label>上架時間（留空＝立即）</label><input type="text" placeholder="2026-08-24 09:00" value="' + esc(r.start_time) + '" oninput="NN.banEdit(' + r.__id + ',\'start_time\',this.value)"></div>' +
+                        '<div><label>下架時間（留空＝長期）</label><input type="text" placeholder="2026-09-30 23:59" value="' + esc(r.end_time) + '" oninput="NN.banEdit(' + r.__id + ',\'end_time\',this.value)"></div>' +
+                        '</div>' +
+                        (nbOrig[nbBase(r.img_url)] ? '<label>裁切水平位置（' + Math.round(r.focus * 100) + '%，電腦手機一起重裁）</label><input type="range" min="0" max="100" value="' + Math.round(r.focus * 100) + '" oninput="NN.banFocus(' + r.__id + ',this.value)">' : '') +
+                        '<div class="flex justify-between items-center mt-2">' +
+                        '<button onclick="NN.banRemove(' + r.__id + ')" class="bg-red-100 hover:bg-red-200 text-red-600 text-[11px] font-bold px-3 py-1 rounded">🗑 刪除這張</button>' +
+                        '<button onclick="NN.banCloseEdit()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-[11px] font-bold px-3 py-1 rounded">收起</button>' +
+                        '</div></div>';
+                }).join('');
+
+                Array.prototype.forEach.call(el.querySelectorAll('.nnb-card'), function (card) {
+                    var id = parseInt(card.getAttribute('data-id'), 10);
+                    card.addEventListener('click', function (e) {
+                        if (e.target.closest('.nnb-grip')) return;
+                        nbEditId = (nbEditId === id) ? null : id;
+                        ns.banRender();
+                    });
+                    card.addEventListener('dragstart', function (e) {
+                        nbDragId = id; card.classList.add('dragging');
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', String(id));
+                    });
+                    card.addEventListener('dragend', function () { nbDragId = null; card.classList.remove('dragging'); });
+                    card.addEventListener('dragover', function (e) { if (nbDragId != null) { e.preventDefault(); card.classList.add('drag-over'); } });
+                    card.addEventListener('dragleave', function () { card.classList.remove('drag-over'); });
+                    card.addEventListener('drop', function (e) {
+                        e.preventDefault(); e.stopPropagation();
+                        card.classList.remove('drag-over');
+                        if (nbDragId == null || nbDragId === id) return;
+                        var from = nbIdx(nbDragId), to = nbIdx(id);
+                        if (from < 0 || to < 0) return;
+                        var moved = nbRows.splice(from, 1)[0];
+                        nbRows.splice(to, 0, moved);
+                        nbDragId = null;
+                        nbSaveLocal(); ns.banRender();
+                    });
+                });
+            };
+
+            ns.banEdit = function (id, field, val) {
+                var i = nbIdx(id);
+                if (i < 0) return;
+                nbRows[i][field] = val;
+                if (field === 'note' || field === 'link_url' || field === 'img_url') {
+                    // 只更新卡片摘要，不整個重畫，避免游標跳掉
+                    var card = document.querySelector('#nn-ban-grid .nnb-card[data-id="' + id + '"]');
+                    if (card) {
+                        var nm = card.querySelector('.nnb-name'), sb = card.querySelector('.nnb-sub');
+                        if (nm) nm.textContent = nbRows[i].note || '(未命名)';
+                        if (sb) sb.textContent = (nbBase(nbRows[i].img_url) || '無圖') + (nbRows[i].link_url ? ' → ' + nbRows[i].link_url.slice(0, 42) : '');
+                    }
+                }
+                nbSaveLocal();
+            };
+
+            ns.banFocus = function (id, v) {
+                var i = nbIdx(id);
+                if (i < 0) return;
+                var r = nbRows[i], nmL = nbBase(r.img_url), nmS = nbBase(r.img_url_mb), im = nbOrig[nmL];
+                if (!im) return;
+                r.focus = Math.max(0, Math.min(1, parseInt(v, 10) / 100));
+                nbFiles[nmL] = nbToJpeg(im, NNB_PC, r.focus);
+                if (nmS && nbFiles[nmS]) nbFiles[nmS] = nbToJpeg(im, NNB_MO, r.focus);
+                nbSaveLocal();
+                var card = document.querySelector('#nn-ban-grid .nnb-card[data-id="' + id + '"]');
+                if (card) {
+                    var tL = card.querySelector('.nnb-thumb'), tS = card.querySelector('.nnb-thumb-mo');
+                    if (tL) tL.src = nbFiles[nmL];
+                    if (tS && nbFiles[nmS]) tS.src = nbFiles[nmS];
+                }
+            };
+
+            ns.banCloseEdit = function () { nbEditId = null; ns.banRender(); };
+
+            ns.banRemove = function (id) {
+                var i = nbIdx(id);
+                if (i < 0) return;
+                if (!confirm('確定刪除「' + (nbRows[i].note || '這張') + '」？\n（按「儲存順序與設定」後才會真的從資料庫移除）')) return;
+                if (nbRows[i].pending) {
+                    delete nbFiles[nbBase(nbRows[i].img_url)];
+                    delete nbFiles[nbBase(nbRows[i].img_url_mb)];
+                }
+                nbRows.splice(i, 1);
+                nbEditId = null;
+                nbSaveLocal(); ns.banRender();
+            };
+
+            // 只寫非 pending 的列（pending 圖還沒上 PChome，寫進去前台會破圖）；
+            // 卡片順序 → sort_order（前台與舊表單都照它排）
+            ns.banSave = function () {
+                var up = {}, n = 0;
+                nbRows.forEach(function (r, i) {
+                    if (r.pending || !r.img_url) return;
+                    var key = r.key || ('b_' + Date.now() + '_' + i);
+                    up[key] = mergeRow(bannerRaw[key], {
+                        sort_order: (n + 1) * 10,
+                        internal_note: r.note || '',
+                        img_url: r.img_url.trim(),
+                        img_url_mb: (r.img_url_mb || '').trim(),
+                        link_url: (r.link_url || '').trim(),
+                        start_time: cleanDate(r.start_time),
+                        end_time: cleanDate(r.end_time)
+                    });
+                    n++;
+                });
+                database.ref('nintendo_banners').set(up).then(function () {
+                    var pend = nbRows.filter(function (r) { return r.pending; }).length;
+                    showStatus('💾 已儲存 ' + n + ' 張' + (pend ? '（另有 ' + pend + ' 張待上傳，尚未寫入資料庫）' : '') + '，前台重整即生效');
+                }).catch(function () { showStatus('❌ 儲存失敗：您可能沒有權限', true); });
+            };
+
+            ns.banMakeZip = async function () {
+                var names = [];
+                nbRows.filter(function (r) { return r.pending; }).forEach(function (r) {
+                    [nbBase(r.img_url), nbBase(r.img_url_mb)].forEach(function (f) {
+                        if (f && nbFiles[f] && names.indexOf(f) < 0) names.push(f);
+                    });
+                });
+                if (!names.length) { showStatus('沒有待上傳的新圖（拖圖進來後才會有）', true); return; }
+                if (typeof JSZip === 'undefined') { showStatus('❌ JSZip 沒載入，請重整頁面', true); return; }
+                var zip = new JSZip();
+                names.forEach(function (f) { zip.file(NNB_DIR + f, nbFiles[f].split(',')[1], { base64: true }); });
+                var blob = await zip.generateAsync({ type: 'blob' });
+                if (blob.size > 9.5 * 1024 * 1024) showStatus('⚠ zip ' + (blob.size / 1024 / 1024).toFixed(1) + 'MB，PChome 單次上限 10MB，請分批', true);
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'nintendo_' + nbToday() + '.zip';
+                a.click();
+                setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+                showStatus('📦 已下載 nintendo_' + nbToday() + '.zip（' + names.length + ' 檔，含 img/banner/ 路徑）→ 上傳 PChome 後回來按「標記已上傳」');
+            };
+
+            ns.banMarkUploaded = function () {
+                var pend = nbRows.filter(function (r) { return r.pending; });
+                if (!pend.length) { showStatus('目前沒有待上傳的版頭'); return; }
+                if (!confirm('確定這 ' + pend.length + ' 張圖已經上傳到 PChome 了嗎？\n按確定後才會寫進資料庫並出現在前台。')) return;
+                pend.forEach(function (r) { r.pending = false; });
+                nbFiles = {};
+                nbSaveLocal();
+                ns.banSave();
+                ns.banRender();
+            };
+
+            function nbBindDrop() {
+                var zone = document.getElementById('nn-ban-drop');
+                var input = document.getElementById('nn-ban-file');
+                if (!zone || !input || zone.__bound) return;
+                zone.__bound = true;
+                zone.addEventListener('click', function () { input.click(); });
+                input.addEventListener('change', function () { ns.banAddFiles(input.files); input.value = ''; });
+                ['dragenter', 'dragover'].forEach(function (ev) {
+                    zone.addEventListener(ev, function (e) { e.preventDefault(); zone.classList.add('hot'); });
+                });
+                ['dragleave', 'drop'].forEach(function (ev) {
+                    zone.addEventListener(ev, function (e) { e.preventDefault(); zone.classList.remove('hot'); });
+                });
+                zone.addEventListener('drop', function (e) {
+                    e.preventDefault();
+                    ns.banAddFiles(e.dataTransfer.files);
+                });
+            }
+
+            // ══ 皮克敏專頁維護（nintendo_pikmin／nintendo_pikmin_game）═════════
+            // 前台 pikmin.htm 直讀這兩個「陣列」節點（[{name,price,pic,link}]），
+            // 儲存＝整列覆蓋寫回。加入走 ecapi JSONP（瀏覽器可跨域）自動抓
+            // 品名/價格/圖（白圖 Pic.W 優先）；抓不到（未開賣）就建空卡手動填。
+            var PK_NODES = { goods: 'nintendo_pikmin', game: 'nintendo_pikmin_game' };
+            var pkRows = { goods: [], game: [] };
+            var pkUid = 0, pkDragId = null, pkEditId = null;   // drag/edit 都存 __id（兩欄共用不衝突）
+
+            function pkFromSnap(snap) {
+                var raw = snap.val() || [];
+                if (!Array.isArray(raw)) raw = Object.keys(raw).sort().map(function (k) { return raw[k]; });
+                return raw.filter(Boolean).map(function (x) {
+                    return { __id: ++pkUid, name: x.name || '', price: x.price || 0, pic: x.pic || '', link: x.link || '' };
+                });
+            }
+
+            function pkIdx(listKey, id) {
+                var a = pkRows[listKey];
+                for (var i = 0; i < a.length; i++) if (a[i].__id === id) return i;
+                return -1;
+            }
+
+            function pkPidOf(link) {
+                var m = String(link || '').match(/\/prod\/([A-Z0-9-]+)/i);
+                return m ? m[1] : '';
+            }
+
+            ns.pkRender = function (listKey) {
+                var el = document.getElementById('nn-pk-' + listKey);
+                if (!el) return;
+                var rows = pkRows[listKey];
+                if (!rows.length) {
+                    el.innerHTML = '<div class="text-[11px] text-slate-400 text-center py-4">目前沒有商品，貼 PID 加入</div>';
+                    return;
+                }
+                el.innerHTML = rows.map(function (r, i) {
+                    var card = '<div class="nnb-card" draggable="true" data-id="' + r.__id + '" title="點一下開設定">' +
+                        '<span class="nnb-idx">' + (i + 1) + '</span>' +
+                        '<span class="nnb-grip">⠿</span>' +
+                        '<img class="nnb-thumb-sq" src="' + esc(r.pic) + '" onerror="this.style.opacity=.25">' +
+                        '<span class="nnb-meta"><span class="nnb-name">' + esc(r.name || '(未命名)') + '</span>' +
+                        '<span class="nnb-sub">$' + esc(r.price) + (pkPidOf(r.link) ? ' ・ ' + esc(pkPidOf(r.link)) : '') + '</span></span></div>';
+                    if (pkEditId !== r.__id) return card;
+                    return card + '<div class="nnb-edit">' +
+                        '<label>品名（遊戲片要用原廠規範寫法，勿抓賣場品名）</label><input type="text" value="' + esc(r.name) + '" oninput="NN.pkEditField(\'' + listKey + '\',' + r.__id + ',\'name\',this.value)">' +
+                        '<label>價格</label><input type="number" value="' + esc(r.price) + '" oninput="NN.pkEditField(\'' + listKey + '\',' + r.__id + ',\'price\',this.value)">' +
+                        '<label>圖片網址</label><input type="text" value="' + esc(r.pic) + '" oninput="NN.pkEditField(\'' + listKey + '\',' + r.__id + ',\'pic\',this.value)">' +
+                        '<label>商品連結</label><input type="text" value="' + esc(r.link) + '" oninput="NN.pkEditField(\'' + listKey + '\',' + r.__id + ',\'link\',this.value)">' +
+                        '<div class="flex justify-between items-center mt-2">' +
+                        '<button onclick="NN.pkRemove(\'' + listKey + '\',' + r.__id + ')" class="bg-red-100 hover:bg-red-200 text-red-600 text-[11px] font-bold px-3 py-1 rounded">🗑 移除</button>' +
+                        '<button onclick="NN.pkCloseEdit(\'' + listKey + '\')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-[11px] font-bold px-3 py-1 rounded">收起</button>' +
+                        '</div></div>';
+                }).join('');
+
+                Array.prototype.forEach.call(el.querySelectorAll('.nnb-card'), function (card) {
+                    var id = parseInt(card.getAttribute('data-id'), 10);
+                    card.addEventListener('click', function (e) {
+                        if (e.target.closest('.nnb-grip')) return;
+                        pkEditId = (pkEditId === id) ? null : id;
+                        ns.pkRender(listKey);
+                    });
+                    card.addEventListener('dragstart', function (e) {
+                        pkDragId = id; card.classList.add('dragging');
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', String(id));
+                    });
+                    card.addEventListener('dragend', function () { pkDragId = null; card.classList.remove('dragging'); });
+                    card.addEventListener('dragover', function (e) { if (pkDragId != null) { e.preventDefault(); card.classList.add('drag-over'); } });
+                    card.addEventListener('dragleave', function () { card.classList.remove('drag-over'); });
+                    card.addEventListener('drop', function (e) {
+                        e.preventDefault(); e.stopPropagation();
+                        card.classList.remove('drag-over');
+                        if (pkDragId == null || pkDragId === id) return;
+                        var from = pkIdx(listKey, pkDragId), to = pkIdx(listKey, id);
+                        if (from < 0 || to < 0) return;   // 跨欄拖曳不支援
+                        var moved = pkRows[listKey].splice(from, 1)[0];
+                        pkRows[listKey].splice(to, 0, moved);
+                        pkDragId = null;
+                        ns.pkRender(listKey);
+                    });
+                });
+            };
+
+            ns.pkEditField = function (listKey, id, field, val) {
+                var i = pkIdx(listKey, id);
+                if (i < 0) return;
+                pkRows[listKey][i][field] = (field === 'price') ? (parseInt(val, 10) || 0) : val;
+                if (field === 'name' || field === 'price' || field === 'link') {
+                    var card = document.querySelector('#nn-pk-' + listKey + ' .nnb-card[data-id="' + id + '"]');
+                    if (card) {
+                        var r = pkRows[listKey][i];
+                        var nm = card.querySelector('.nnb-name'), sb = card.querySelector('.nnb-sub');
+                        if (nm) nm.textContent = r.name || '(未命名)';
+                        if (sb) sb.textContent = '$' + r.price + (pkPidOf(r.link) ? ' ・ ' + pkPidOf(r.link) : '');
+                    }
+                }
+            };
+
+            ns.pkCloseEdit = function (listKey) { pkEditId = null; ns.pkRender(listKey); };
+
+            ns.pkRemove = function (listKey, id) {
+                var i = pkIdx(listKey, id);
+                if (i < 0) return;
+                if (!confirm('確定移除「' + (pkRows[listKey][i].name || '這筆') + '」？\n（按該欄「儲存」後才會真的寫回資料庫）')) return;
+                pkRows[listKey].splice(i, 1);
+                pkEditId = null;
+                ns.pkRender(listKey);
+            };
+
+            ns.pkSave = function (listKey) {
+                var arr = pkRows[listKey].map(function (r) {
+                    return { name: r.name || '', price: r.price || 0, pic: r.pic || '', link: r.link || '' };
+                });
+                database.ref(PK_NODES[listKey]).set(arr).then(function () {
+                    showStatus('💾 皮克敏' + (listKey === 'goods' ? '授權商品' : '遊戲') + '已儲存 ' + arr.length + ' 筆，前台重整即生效');
+                }).catch(function () { showStatus('❌ 儲存失敗：您可能沒有權限', true); });
+            };
+
+            function pkJsonp(url, cb) {
+                var name = '__nnPkCb' + (++pkUid);
+                var s = document.createElement('script');
+                var done = false;
+                window[name] = function (d) { done = true; delete window[name]; s.remove(); cb(d); };
+                s.onerror = function () { if (!done) { delete window[name]; s.remove(); cb(null); } };
+                s.src = url + name;
+                document.body.appendChild(s);
+            }
+
+            ns.pkAdd = function (listKey) {
+                var inp = document.getElementById('nn-pk-add-' + listKey);
+                var v = (inp.value || '').trim().toUpperCase();
+                var m = v.match(/([A-Z0-9]{6})-?([A-Z0-9]{9})/);
+                if (!m) { showStatus('❌ 看不出 PID，貼商品網址或 XXXXXX-XXXXXXXXX', true); return; }
+                var pid = m[1] + '-' + m[2];
+                var link = 'https://24h.pchome.com.tw/prod/' + pid;
+                pkJsonp('https://ecapi.pchome.com.tw/ecshop/prodapi/v2/prod&id=' + pid + '&fields=Id,Name,Price,Pic&_callback=', function (d) {
+                    var row = { __id: ++pkUid, name: '（抓不到資料，未開賣？手動填品名）', price: 0, pic: '', link: link };
+                    var key = d && d[pid + '-000'] ? pid + '-000' : null;
+                    if (key) {
+                        var p = d[key];
+                        var pic = (p.Pic && (p.Pic.W || p.Pic.B)) || '';
+                        row.name = p.Name || row.name;
+                        row.price = (p.Price && p.Price.P) || 0;
+                        row.pic = pic ? 'https://cs-a.ecimg.tw' + pic : '';
+                    }
+                    pkRows[listKey].push(row);
+                    inp.value = '';
+                    pkEditId = row.__id;   // 直接展開讓人改品名
+                    ns.pkRender(listKey);
+                    showStatus(key
+                        ? '已加入「' + row.name.slice(0, 24) + '」→ 確認品名（原廠規範）後按「儲存」'
+                        : '⚠ prod API 查不到（可能未開賣），已建空卡請手動填', !key);
+                });
             };
 
             function parseCustomImageUrl(rawUrl) {
