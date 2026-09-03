@@ -252,6 +252,37 @@
         #brand-nintendo .nnb-eye:hover { background: #e2e8f0; }
         #brand-nintendo .nnb-card.is-hidden { opacity: .45; }
         #brand-nintendo .nnb-card.is-hidden:hover { opacity: .8; }
+        /* v10 非本家遊戲牆工作台 */
+        #brand-nintendo .nn-tpw-wall { display: flex; flex-direction: column; gap: 14px; max-height: 72vh; overflow-y: auto; padding: 2px; }
+        #brand-nintendo .nn-tpw-sechead { position: sticky; top: 0; z-index: 3; font-size: .75rem; font-weight: 900; color: #334155; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: .5rem; padding: .35rem .8rem; display: flex; justify-content: space-between; align-items: center; }
+        #brand-nintendo .nn-tpw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; }
+        #brand-nintendo .nn-tpw-card { position: relative; border: 2px solid #e2e8f0; border-radius: .75rem; background: #fff; padding: 6px; font-size: 11px; display: flex; flex-direction: column; gap: 3px; }
+        #brand-nintendo .nn-tpw-card.is-feat { border-color: #f59e0b; box-shadow: 0 0 0 2px #fde68a; }
+        #brand-nintendo .nn-tpw-card.is-hide { opacity: .5; }
+        #brand-nintendo .nn-tpw-card.is-hide .nn-tpw-img img { filter: grayscale(.8); }
+        #brand-nintendo .nn-tpw-img { aspect-ratio: 1 / 1; background: #f8fafc; border-radius: .5rem; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        #brand-nintendo .nn-tpw-img img { max-width: 92%; max-height: 92%; object-fit: contain; }
+        #brand-nintendo .nn-tpw-title { font-weight: 800; color: #1e293b; line-height: 1.3; height: 2.6em; overflow: hidden; }
+        #brand-nintendo .nn-tpw-date { font-weight: 800; color: #2563eb; cursor: pointer; }
+        #brand-nintendo .nn-tpw-date.miss { color: #dc2626; }
+        #brand-nintendo .nn-tpw-date:hover { text-decoration: underline; }
+        #brand-nintendo .nn-tpw-meta { color: #64748b; display: flex; justify-content: space-between; gap: 4px; }
+        #brand-nintendo .nn-tpw-genres { color: #0f766e; font-weight: 700; min-height: 1.2em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #brand-nintendo .nn-tpw-acts { display: flex; gap: 4px; margin-top: auto; }
+        #brand-nintendo .nn-tpw-acts button { flex: 1; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: .4rem; padding: 3px 0; cursor: pointer; font-size: 11px; }
+        #brand-nintendo .nn-tpw-acts button:hover { background: #e2e8f0; }
+        #brand-nintendo .nn-tpw-acts button.on { background: #0f172a; color: #fff; border-color: #0f172a; }
+        #brand-nintendo .nn-tpw-featno { position: absolute; top: 6px; left: 6px; background: #f59e0b; color: #fff; font-weight: 900; border-radius: 999px; min-width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; z-index: 2; }
+        #brand-nintendo .nn-tpw-badge { position: absolute; top: 6px; right: 6px; color: #fff; font-weight: 900; border-radius: 999px; padding: 1px 7px; font-size: 10px; z-index: 2; }
+        #brand-nintendo .nn-tpw-badge.hide { background: #dc2626; }
+        #brand-nintendo .nn-tpw-badge.oos { background: #64748b; }
+        #brand-nintendo .nn-tpw-gpanel { position: absolute; inset: 4px; background: rgba(255, 255, 255, .97); border: 2px solid #0d9488; border-radius: .6rem; padding: 6px; z-index: 5; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+        #brand-nintendo .nn-tpw-gpanel label { display: flex; gap: 4px; align-items: center; font-size: 10px; font-weight: 700; color: #134e4a; cursor: pointer; }
+        #brand-nintendo .nn-tpw-gpanel .gp-acts { display: flex; gap: 4px; margin-top: auto; padding-top: 4px; }
+        #brand-nintendo .nn-tpw-gpanel .gp-acts button { flex: 1; font-size: 10px; font-weight: 800; border-radius: .35rem; border: none; padding: 3px 0; cursor: pointer; }
+        #brand-nintendo .nn-tpw-tab { border: 1px solid #e2e8f0; background: #fff; color: #64748b; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px; cursor: pointer; }
+        #brand-nintendo .nn-tpw-tab.on { background: #059669; color: #fff; border-color: transparent; }
+        #brand-nintendo .nn-tpw-date input { font-size: 11px; border: 1px solid #cbd5e1; border-radius: .3rem; padding: 1px 3px; width: 100%; }
 
         #brand-xbox .tabs { display: flex; gap: 0; border-bottom: 2px solid #222; background: #141414; padding: 0 1rem; overflow-x: auto; }
         #brand-xbox .tab-btn { padding: .75rem 1.25rem; background: none; border: none; color: #888; cursor: pointer; font-size: .9rem; white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color .15s; }
@@ -492,7 +523,7 @@
 
         <!-- 全域頂欄：館別切換 -->
         <header class="sticky top-0 z-50 bg-slate-900 text-white px-4 py-2 flex items-center gap-3 shadow-lg" style="height:56px">
-            <span class="font-black tracking-wide text-sm hidden md:inline">🏬 旗艦館總後台 <span class="text-slate-500 font-bold">v9</span></span>
+            <span class="font-black tracking-wide text-sm hidden md:inline">🏬 旗艦館總後台 <span class="text-slate-500 font-bold">v10</span></span>
             <nav class="flex gap-1.5">
                 <button id="brand-btn-ps" class="brand-btn" onclick="switchBrand('ps')">🕹️ PlayStation</button>
                 <button id="brand-btn-xb" class="brand-btn" onclick="switchBrand('xb')">🎮 Xbox</button>
@@ -1164,7 +1195,7 @@
 
                     <div id="nn-sub-tp" class="space-y-6" style="display:none">
                     <div class="p-4 bg-indigo-900 text-white rounded-xl font-bold text-sm tracking-wide shadow">
-                        🔄 翻面・非本家頁「Switch 全部遊戲」（game/game.html）管理 — 遊戲牆<b>即時自動抓賣場</b>（免維護），這裡只管「三廠廣告」「置頂/隱藏」「類型微調」
+                        🔄 翻面・非本家頁「Switch 全部遊戲」（game.htm）管理 — 遊戲牆<b>即時自動抓賣場</b>（免維護）；下方工作台直接在卡片上 ⭐置頂／🚫隱藏／🎯類型／📅補發售日
                     </div>
 
                     <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
@@ -1201,6 +1232,27 @@
                     </section>
 
                     <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2 flex-wrap gap-2">
+                            <h2 class="text-sm font-black text-emerald-700">🧱 遊戲牆工作台（與前台同一套即時資料，分區所見即所得）</h2>
+                            <div class="flex gap-2 items-center">
+                                <span id="nn-tpw-dirty" class="text-[11px] font-black text-rose-600" style="display:none">● 有未儲存變更</span>
+                                <button onclick="NN.tpwReload()" class="bg-slate-500 hover:bg-slate-600 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">🔄 重新抓取</button>
+                                <button onclick="NN.tpwSave()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-5 py-1.5 rounded-lg shadow-sm">⚡ 同步儲存（精選/隱藏/類型/日期）</button>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <input id="nn-tpw-q" type="search" placeholder="🔍 搜尋品名…" class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs w-48">
+                            <div id="nn-tpw-tabs" class="flex flex-wrap gap-1.5"></div>
+                            <span id="nn-tpw-count" class="text-[11px] font-bold text-slate-400 ml-auto"></span>
+                        </div>
+                        <div id="nn-tpw-wall" class="nn-tpw-wall"><div class="text-xs text-slate-400 py-10 text-center">切到本分頁會自動抓取；也可按「🔄 重新抓取」。</div></div>
+                        <div class="text-[10px] text-slate-500">💡 卡片鈕：<b>⭐置頂</b>＝排「店長精選」（依點選順序）、<b>🚫隱藏</b>＝前台不曝光、<b>🎯類型</b>＝覆蓋自動歸類、<b>📅補日期</b>＝賣場抓不到發售日時手動補登（<span class="text-rose-600 font-bold">紅字＝缺日期，前台會掉到「全部遊戲」區尾，要補</span>）。改完記得按上方「⚡ 同步儲存」。</div>
+                    </section>
+
+                    <details class="bg-white p-5 rounded-xl border shadow-sm">
+                        <summary class="cursor-pointer text-xs font-black text-slate-500 select-none">🛠 進階：純文字備援表單（置頂/隱藏、類型微調——工作台壞掉時用）</summary>
+                        <div class="space-y-6 pt-4">
+                    <section class="space-y-3">
                         <div class="flex justify-between items-center border-b pb-2">
                             <h2 class="text-sm font-black text-amber-600">⭐ 置頂精選 / 🚫 隱藏（依 PChome PID，一行一個）</h2>
                             <button onclick="NN.saveTpOverrides()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-5 py-1.5 rounded-lg shadow-sm">⚡ 儲存精選/隱藏</button>
@@ -1218,7 +1270,7 @@
                         <div class="text-[10px] text-slate-500">💡 PID＝商品頁網址末段（可含或不含 -000）。遊戲牆本身自動抓賣場，這裡只做少量人工微調。</div>
                     </section>
 
-                    <section class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                    <section class="space-y-3">
                         <div class="flex justify-between items-center border-b pb-2">
                             <h2 class="text-sm font-black text-teal-600">🎯 類型微調（自動關鍵字歸類為底，這裡覆蓋特定款）</h2>
                             <button onclick="NN.saveTpGenres()" class="bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold px-5 py-1.5 rounded-lg shadow-sm">⚡ 儲存類型</button>
@@ -1226,6 +1278,8 @@
                         <textarea id="nn-tp-genres" rows="6" class="w-full px-3 py-2 rounded-xl border border-teal-200 bg-teal-50 text-xs font-mono" placeholder="一行一筆：PID=類型　或　關鍵詞=類型&#10;DGBJBH-1900XXXXX=動作冒險&#10;瑪利歐=派對同樂,兒童親子"></textarea>
                         <div class="text-[10px] text-slate-500">💡 前端先套自動關鍵字（多標籤）；這裡填的優先覆蓋。可用 <b>PID</b>（單款）或 <b>品名關鍵詞</b>（整批）。多類型用逗號分隔。</div>
                     </section>
+                        </div>
+                    </details>
 
                     </div><!-- /nn-sub-tp -->
                 </div>
@@ -3021,6 +3075,7 @@
                     var f = document.getElementById('nn-tp-feature'), h = document.getElementById('nn-tp-hide');
                     if (f) f.value = (o.feature || []).join('\n');
                     if (h) h.value = (o.hide || []).join('\n');
+                    TPW.onServer('overrides', o);
                 });
 
                 // ---------- 非本家頁：類型微調 ----------
@@ -3028,6 +3083,12 @@
                     var o = snap.val() || {};
                     var el = document.getElementById('nn-tp-genres');
                     if (el) el.value = Object.keys(o).map(function(k) { return k + '=' + o[k]; }).join('\n');
+                    TPW.onServer('genres', o);
+                });
+
+                // ---------- 非本家頁：手動補登發售日（v10 工作台專用節點）----------
+                database.ref('nintendo_tp_dates').on('value', function(snap) {
+                    TPW.onServer('dates', snap.val());
                 });
             }
 
@@ -3171,6 +3232,432 @@
                     alert("🎯 類型微調已儲存！非本家頁重新整理生效。");
                 }).catch(function(err) { alert("儲存失敗：" + err.message); });
             };
+
+            // ══ 非本家遊戲牆工作台（v10）════════════════════════════════════════
+            // ⚠ 抓取／去重（CANON／normTitle／isBundle）與前台 game.htm 是同一套邏輯，
+            //    改任一邊記得同步另一邊。類型「自動歸類」只在前台跑，後台顯示覆蓋值或「自動」。
+            // 寫三個節點：nintendo_tp_overrides（feature/hide）、nintendo_tp_genres、nintendo_tp_dates。
+            var TPW = (function () {
+                var TPW_STORES = ['DGBJCW', 'DGBJRE', 'DGBJBH'];
+                var PAGE_SIZE = 40, PAGES = 4, NEW_DAYS = 30;
+                var GENRE_VOCAB = ['RPG', '動作冒險', '運動健身', '派對同樂', '射擊', '競速賽車', '格鬥', '策略模擬', '解謎益智', '音樂節奏', '文字冒險', '恐怖驚悚', '親子兒童', '成人向'];
+                var st = { loaded: false, loading: false, dirty: false, items: [], feature: [], hide: {}, genres: {}, dates: {}, q: '', tab: 'all' };
+
+                function jp(url) {   // JSONP（物件或陣列回應都收；8 秒逾時回 null）
+                    return new Promise(function (resolve) {
+                        var cb = '__tpw' + Math.floor(Math.random() * 1e9);
+                        var sc = document.createElement('script');
+                        var t = setTimeout(function () { done(null); }, 8000);
+                        function done(d) { clearTimeout(t); delete window[cb]; if (sc.parentNode) sc.remove(); resolve(d); }
+                        window[cb] = done;
+                        sc.src = url + '&_callback=' + cb;
+                        sc.onerror = function () { done(null); };
+                        document.head.appendChild(sc);
+                    });
+                }
+                function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+                function todayStr() { var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+                function daysFromToday(s) { return Math.round((new Date(String(s).replace(/-/g, '/')) - new Date(todayStr().replace(/-/g, '/'))) / 86400000); }
+                function strip(p) { return String(p).replace(/-\d{3}$/, ''); }
+                function num(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+                function parseDate(s) {   // 與前台同步：日期吃 - 與 / 兩種寫法
+                    var m = String(s || '').match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+                    if (!m) return '';
+                    function p2(n) { return n.length < 2 ? '0' + n : n; }
+                    return m[1] + '-' + p2(m[2]) + '-' + p2(m[3]);
+                }
+                function dateFromProd(info) {
+                    return parseDate((info || {}).Nick) || parseDate((info || {}).Tagline) || parseDate((info || {}).PreOrdDate);
+                }
+
+                function platOf(name) { return /^\s*NS2/i.test(String(name || '')) ? 'NS2' : 'NS'; }
+                function normTitle(name) {
+                    var ck = canonKey(name);
+                    if (ck) return ck;                                  // 熱門款手動正規化，直接歸同一 key
+                    var base = String(name || '')
+                        .replace(/^\s*NS2?\s*/i, '')
+                        .replace(/【[^】]*】/g, '')                       // 廠商/活動方括號
+                        .replace(/\([^)]*\)|（[^）]*）/g, '')             // 括號補充
+                        .replace(/[+＋].*$/, '')                          // 「+贈品/+周邊」整段去掉
+                        .replace(/送[^》」]{0,20}$/, '')                  // 「送XXX卡匣/束口袋」贈品尾去掉
+                        .replace(/[《》「」\[\]]/g, '');
+                    var core = base
+                        .replace(/Nintendo|任天堂|Switch\s*2|Switch|NS2|NS/gi, '')
+                        .replace(/台灣公司貨|公司貨|台灣代理|平行輸入|平輸|水貨|鑰匙卡|下載版|卡帶|支援中文字幕|支援中文|內含中文|內附中文|中文字幕|中英日文|中英文|純日版|國際版封面|日版封面|美版封面|封面僅供參考|示意圖僅供參考|示意圖|僅供參考|亞中版|亞中|美版|歐版|港版|日版|台灣|台版|遊戲/gi, '')
+                        .replace(/送.{0,10}?(贈品|小禮|禮物|特典|好禮|DLC)/gi, '')
+                        .replace(/digraph collection|complete edition|deluxe edition|ultimate edition|special edition|collector'?s? edition|standard edition|collection|deluxe|ultimate|edition|goty|dx/gi, '')
+                        .replace(/封面|預購|現貨|盒裝|附特典|首批限定|首批|限量|限定版|限定|豪華版|豪華|典藏版|典藏|終極版|終極|完全版|完全|一般版|一般|普通版|標準版|數位版|實體版|中日英文版|中日文版|中英文版|中文版|英文版|日文版|國際版|亞版|版/gi, '')
+                        .replace(/[　\s·、,，.。:：\-＋+*/~！!?？\t'’"]/g, '')
+                        .toLowerCase();
+                    // 以中文核心（含數字，區分 2/3 代）為主 → 同款中英命名一致才併得起來；純英文遊戲才用英文核心
+                    var cjk = core.replace(/[^一-鿿0-9]/g, '');
+                    if (cjk.length >= 2) return cjk;
+                    var latin = core.replace(/[^a-z0-9]/g, '');
+                    if (latin.length >= 3) return latin;
+                    if (core.length >= 2) return core;
+                    return base.replace(/[　\s·、,，.。:：\-＋+*/~！!?？\t'’"]/g, '').toLowerCase();
+                }
+                function mapItem(it) {
+                    var pid = String(it.Id || '').replace(/-\d{3}$/, '');
+                    var pic = it.Pic || {}; var pp = pic.W || pic.B || '';
+                    return {
+                        title: (it.Name || '').replace(/^\s*NS2?\s*/i, ''),
+                        raw: it.Name || '',
+                        pid: pid, plat: platOf(it.Name),
+                        img: pp ? ('https://img.pchome.com.tw/cs' + pp) : '',
+                        price: ((it.Price || {}).P) || 0
+                    };
+                }
+                // 組合賣場不顯示（遊戲+遊戲、遊戲+週邊、同捆/雙重合輯…）
+                function isBundle(name) { return /[+＋]|組合|同捆|同梱|同綑|超值|典藏包|雙重包|雙重合輯|合輯|[三二雙]入/.test(String(name || '')); }
+                // 熱門款正規化對照（手動確認：同款不同命名一律歸同一 key）
+                var CANON = [
+                    [/寶可夢傳說\s*Z-?A|Pok.?mon Legends\s*Z-?A/i, '寶可夢傳說za'],
+                    [/動物森友會|Animal Crossing/i, '集合啦動物森友會'],
+                    [/瑪利歐賽車\s*世界|Mario Kart World/i, '瑪利歐賽車世界'],
+                    [/咚奇剛\s*蕉力全開|大金剛\s*蕉力全開|Donkey Kong Bananza/i, '咚奇剛蕉力全開'],
+                    [/卡比的馭天飛行者|Kirby Air Rider/i, '卡比馭天飛行者'],
+                    [/耀西.{0,4}不可思議的圖鑑|Yoshi.{0,20}Mystery|Yoshi and the Mysterious/i, '耀西不可思議圖鑑'],
+                    [/瑪利歐派對\s*世界|Super Mario Party Jamboree/i, '瑪利歐派對世界'],
+                    [/星際火狐|Star Fox/i, '星際火狐'],
+                    [/異度神劍\s*X|Xenoblade\s*X/i, '異度神劍x'],
+                    [/艾爾登法環|Elden Ring/i, '艾爾登法環'],
+                    [/斯普拉遁\s*塗擊隊|Splatoon Raiders/i, '斯普拉遁塗擊隊'],
+                    [/Fire Emblem.{0,20}Fortunes Weave|聖火降世.{0,10}萬縷千絲|萬縷千絲/i, 'fireemblemfortunesweave'],
+                    [/瑪利歐兄弟.{0,10}驚奇|Mario Bros.{0,6}Wonder/i, '瑪利歐兄弟驚奇'],
+                    [/鬼武者|Onimusha/i, '鬼武者wayofthesword'],
+                    [/樂高蝙蝠俠|LEGO Batman/i, 'legobatman'],
+                    [/絲之歌|Silksong/i, '空洞騎士絲之歌'],
+                    [/潛龍諜影|Metal Gear Solid/i, '潛龍諜影mastercollection'],
+                    [/惡靈古堡\s*9|Resident Evil Requiem|安魂曲/i, '惡靈古堡9安魂曲'],
+                    [/健身拳擊\s*3|Fitness Boxing\s*3/i, '健身拳擊3'],
+                    [/健身拳擊\s*2|Fitness Boxing\s*2/i, '健身拳擊2'],
+                    [/NBA\s*2K26/i, 'nba2k26'],
+                    [/運動\s*度假勝地|Switch Sports/i, '運動度假勝地'],
+                    [/信長之野望.{0,4}飛翔/i, '信長之野望飛翔'],
+                    [/信長之野望.{0,4}新生/i, '信長之野望新生'],
+                    [/信長之野望.{0,4}(14|十四)/i, '信長之野望14'],
+                    [/三國志\s*(14|十四)/i, '三國志14'],
+                    [/三國志\s*8/i, '三國志8'],
+                    [/人中之龍\s*極\s*3|人中之龍\s*極3|如龍\s*極3/i, '人中之龍極3'],
+                    [/人中之龍\s*極2|如龍\s*極2/i, '人中之龍極2'],
+                    [/人中之龍\s*極(?![23])|如龍\s*極(?![23])/i, '人中之龍極'],
+                    [/歧路旅人\s*0|Octopath.{0,10}0/i, '歧路旅人0'],
+                    [/小小夢魘\s*3|Little Nightmares.{0,6}(III|3)/i, '小小夢魘3'],
+                    [/艾爾登法環|Elden Ring/i, '艾爾登法環'],
+                    [/雷射超人.{0,10}傳奇重述|Rayman Legends Retold/i, '雷射超人傳奇重述'],
+                    [/啦[嗒塔]噹|Ratatan/i, '啦嗒噹'],
+                    [/數碼寶貝物語.{0,6}時空異客|Digimon Story.{0,10}Time Stranger/i, '數碼寶貝時空異客']
+                ];
+                function canonKey(name) { for (var i = 0; i < CANON.length; i++) if (CANON[i][0].test(name)) return CANON[i][1]; return ''; }
+
+                function pidsOf(x) { var ps = [x.pid]; (x.variants || []).forEach(function (v) { ps.push(v.pid); }); return ps; }
+                function dateOf(x) {
+                    var ps = pidsOf(x);
+                    for (var i = 0; i < ps.length; i++) if (st.dates[ps[i]]) return st.dates[ps[i]];   // 手動補登優先
+                    return x.nick || '';
+                }
+                function genreOf(x) {
+                    var ps = pidsOf(x);
+                    for (var i = 0; i < ps.length; i++) if (st.genres[ps[i]]) return String(st.genres[ps[i]]);
+                    return '';
+                }
+                function grpOf(x) {
+                    var d = dateOf(x);
+                    if (!d) return x.pid.indexOf('DGBJCW') === 0 ? 'up' : 'all';   // 缺日期：預購館→即將發售尾；其他→全部遊戲尾
+                    var n = daysFromToday(d);
+                    return n > 0 ? 'up' : (n >= -NEW_DAYS ? 'new' : 'all');
+                }
+                function markDirty() {
+                    st.dirty = true;
+                    var el = document.getElementById('nn-tpw-dirty');
+                    if (el) el.style.display = '';
+                }
+
+                function load() {
+                    if (st.loading) return;
+                    st.loading = true;
+                    var wall = document.getElementById('nn-tpw-wall');
+                    if (wall) wall.innerHTML = '<div class="text-xs text-slate-400 py-10 text-center">⏳ 抓取三賣場商品與發售日中…（約 5～10 秒）</div>';
+                    var reqs = [];
+                    TPW_STORES.forEach(function (id) {
+                        for (var pg = 0; pg < PAGES; pg++) {
+                            reqs.push(jp('https://ecapi.pchome.com.tw/ecshop/prodapi/v2/store/' + id + '/prod&offset=' + (pg * PAGE_SIZE + 1) + '&limit=' + PAGE_SIZE + '&fields=Id,Name,Price,Pic'));
+                        }
+                    });
+                    Promise.all(reqs).then(function (pages) {
+                        var seen = {}, items = [];   // 依曝光優先序去重（與前台 merge() 一致）；後台照樣顯示隱藏與售罄的
+                        pages.forEach(function (list) {
+                            (Array.isArray(list) ? list : []).forEach(function (raw) {
+                                var it = mapItem(raw);
+                                if (isBundle(it.raw)) return;
+                                var key = normTitle(it.raw);
+                                if (!key) return;
+                                if (seen[key]) {
+                                    var keep = seen[key];
+                                    if (keep.pid !== it.pid && !keep.variants.some(function (v) { return v.pid === it.pid; })) keep.variants.push({ pid: it.pid });
+                                    return;
+                                }
+                                it.variants = [];
+                                seen[key] = it; items.push(it);
+                            });
+                        });
+                        var pids = [];
+                        items.forEach(function (x) { pidsOf(x).forEach(function (p) { pids.push(p); }); });
+                        var out = {}, nick = {}, tasks = [];
+                        for (var i = 0; i < pids.length; i += 20) {
+                            (function (chunk) {
+                                var ids = chunk.map(function (p) { return p + '-000'; }).join(',');
+                                tasks.push(jp('https://ecapi.pchome.com.tw/ecshop/prodapi/v2/prod/button&id=' + ids + '&fields=Id,Qty,ButtonType').then(function (res) {
+                                    (Array.isArray(res) ? res : []).forEach(function (b) {
+                                        var pid = strip(b.Id || '');
+                                        out[pid] = !(((b.Qty || 0) > 0) && !/sold|refill/i.test(String(b.ButtonType || '')));
+                                    });
+                                }));
+                                tasks.push(jp('https://ecapi.pchome.com.tw/ecshop/prodapi/v2/prod&id=' + ids + '&fields=Id,Nick,Tagline,PreOrdDate').then(function (res) {
+                                    chunk.forEach(function (p) {
+                                        var d = dateFromProd((res || {})[p + '-000']);
+                                        if (d) nick[p] = d;
+                                    });
+                                }));
+                            })(pids.slice(i, i + 20));
+                        }
+                        return Promise.all(tasks).then(function () {
+                            items.forEach(function (x) {
+                                x.out = !!out[x.pid];
+                                x.nick = '';
+                                var ps = pidsOf(x);
+                                for (var k = 0; k < ps.length; k++) if (nick[ps[k]]) { x.nick = nick[ps[k]]; break; }
+                            });
+                            st.items = items;
+                            st.loaded = true; st.loading = false;
+                            render();
+                        });
+                    }).catch(function () {
+                        st.loading = false;
+                        if (wall) wall.innerHTML = '<div class="text-xs text-rose-500 py-10 text-center">抓取失敗，請再按一次 🔄 重新抓取</div>';
+                    });
+                }
+
+                function byDateAsc(a, b) { var x = dateOf(a), y = dateOf(b); return x < y ? -1 : x > y ? 1 : 0; }
+                function byDateDesc(a, b) { var x = dateOf(a), y = dateOf(b); return x > y ? -1 : x < y ? 1 : 0; }
+
+                function renderTabs() {
+                    var box = document.getElementById('nn-tpw-tabs');
+                    if (!box) return;
+                    var nodate = st.items.filter(function (x) { return !dateOf(x); }).length;
+                    var defs = [
+                        ['all', '全部'],
+                        ['feat', '⭐ 置頂（' + st.feature.length + '）'],
+                        ['hide', '🚫 隱藏（' + Object.keys(st.hide).length + '）'],
+                        ['nodate', '❗ 缺日期（' + nodate + '）']
+                    ];
+                    box.innerHTML = '';
+                    defs.forEach(function (d) {
+                        var b = document.createElement('button');
+                        b.className = 'nn-tpw-tab' + (st.tab === d[0] ? ' on' : '');
+                        b.textContent = d[1];
+                        b.addEventListener('click', function () { st.tab = d[0]; render(); });
+                        box.appendChild(b);
+                    });
+                }
+
+                function openGenrePanel(cardEl, x) {
+                    var old = cardEl.querySelector('.nn-tpw-gpanel');
+                    if (old) { old.remove(); return; }
+                    var cur = genreOf(x).split(/[,，]/).map(function (t) { return t.trim(); }).filter(Boolean);
+                    var p = document.createElement('div'); p.className = 'nn-tpw-gpanel';
+                    var cks = [];
+                    GENRE_VOCAB.forEach(function (g) {
+                        var lb = document.createElement('label');
+                        var ck = document.createElement('input'); ck.type = 'checkbox'; ck.value = g; ck.checked = cur.indexOf(g) >= 0;
+                        cks.push(ck);
+                        lb.appendChild(ck); lb.appendChild(document.createTextNode(g));
+                        p.appendChild(lb);
+                    });
+                    var acts = document.createElement('div'); acts.className = 'gp-acts';
+                    function btn(txt, bg, fn) {
+                        var b = document.createElement('button'); b.textContent = txt; b.style.background = bg; b.style.color = '#fff';
+                        b.addEventListener('click', fn); return b;
+                    }
+                    acts.appendChild(btn('儲存', '#0d9488', function () {
+                        var sel = cks.filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
+                        if (sel.length) st.genres[x.pid] = sel.join(',');
+                        else delete st.genres[x.pid];
+                        markDirty(); render();
+                    }));
+                    acts.appendChild(btn('回自動', '#64748b', function () { delete st.genres[x.pid]; markDirty(); render(); }));
+                    acts.appendChild(btn('✕', '#94a3b8', function () { p.remove(); }));
+                    p.appendChild(acts);
+                    cardEl.appendChild(p);
+                }
+
+                function card(x) {
+                    var d = dateOf(x);
+                    var fi = st.feature.indexOf(x.pid);
+                    var el = document.createElement('div');
+                    el.className = 'nn-tpw-card' + (fi >= 0 ? ' is-feat' : '') + (st.hide[x.pid] ? ' is-hide' : '');
+                    if (fi >= 0) { var no = document.createElement('span'); no.className = 'nn-tpw-featno'; no.textContent = fi + 1; el.appendChild(no); }
+                    if (st.hide[x.pid]) { var bh = document.createElement('span'); bh.className = 'nn-tpw-badge hide'; bh.textContent = '🚫 隱藏中'; el.appendChild(bh); }
+                    else if (x.out) { var bo = document.createElement('span'); bo.className = 'nn-tpw-badge oos'; bo.textContent = '售罄'; el.appendChild(bo); }
+                    var im = document.createElement('div'); im.className = 'nn-tpw-img';
+                    var img = document.createElement('img'); img.src = x.img; img.alt = ''; img.loading = 'lazy';
+                    im.appendChild(img); el.appendChild(im);
+                    var tt = document.createElement('div'); tt.className = 'nn-tpw-title'; tt.textContent = x.title; tt.title = x.raw + '（' + x.pid + '）';
+                    el.appendChild(tt);
+                    var dt = document.createElement('div'); dt.className = 'nn-tpw-date' + (d ? '' : ' miss');
+                    dt.textContent = d ? ('📅 ' + d + (daysFromToday(d) > 0 ? '（未發售）' : '')) : '❗ 缺發售日（點我補）';
+                    dt.title = '點擊修改發售日（存進 nintendo_tp_dates，優先於賣場自動抓的）';
+                    dt.addEventListener('click', function () {
+                        if (dt.querySelector('input')) return;
+                        var inp = document.createElement('input'); inp.type = 'date'; inp.value = st.dates[x.pid] || d || '';
+                        dt.innerHTML = ''; dt.appendChild(inp);
+                        inp.addEventListener('change', function () {
+                            if (inp.value) st.dates[x.pid] = inp.value; else delete st.dates[x.pid];
+                            markDirty(); render();
+                        });
+                        inp.addEventListener('blur', function () { setTimeout(function () { if (dt.querySelector('input')) render(); }, 150); });
+                        inp.focus();
+                    });
+                    el.appendChild(dt);
+                    var mt = document.createElement('div'); mt.className = 'nn-tpw-meta';
+                    mt.innerHTML = '<span>' + x.plat + '</span><span>' + (x.price ? 'NT$' + num(x.price) : '') + '</span>';
+                    el.appendChild(mt);
+                    var gr = document.createElement('div'); gr.className = 'nn-tpw-genres';
+                    var ov = genreOf(x);
+                    gr.textContent = ov ? ('🎯 ' + ov) : '🎯（自動）';
+                    gr.title = ov ? '後台覆蓋類型：' + ov : '無覆蓋，前台自動關鍵字歸類';
+                    el.appendChild(gr);
+                    var acts = document.createElement('div'); acts.className = 'nn-tpw-acts';
+                    var bF = document.createElement('button'); bF.textContent = '⭐'; bF.title = '置頂精選（依點選順序排最前）'; if (fi >= 0) bF.className = 'on';
+                    bF.addEventListener('click', function () {
+                        var i = st.feature.indexOf(x.pid);
+                        if (i >= 0) st.feature.splice(i, 1); else st.feature.push(x.pid);
+                        markDirty(); render();
+                    });
+                    var bH = document.createElement('button'); bH.textContent = '🚫'; bH.title = '前台隱藏'; if (st.hide[x.pid]) bH.className = 'on';
+                    bH.addEventListener('click', function () {
+                        if (st.hide[x.pid]) delete st.hide[x.pid]; else st.hide[x.pid] = true;
+                        markDirty(); render();
+                    });
+                    var bG = document.createElement('button'); bG.textContent = '🎯'; bG.title = '覆蓋類型';
+                    bG.addEventListener('click', function () { openGenrePanel(el, x); });
+                    acts.appendChild(bF); acts.appendChild(bH); acts.appendChild(bG);
+                    el.appendChild(acts);
+                    return el;
+                }
+
+                function grid(list) {
+                    var g = document.createElement('div'); g.className = 'nn-tpw-grid';
+                    list.forEach(function (x) { g.appendChild(card(x)); });
+                    return g;
+                }
+                function secHead(txt, n) {
+                    var h = document.createElement('div'); h.className = 'nn-tpw-sechead';
+                    h.innerHTML = '<span>' + txt + '</span><span>' + n + ' 款</span>';
+                    return h;
+                }
+
+                function render() {
+                    renderTabs();
+                    var wall = document.getElementById('nn-tpw-wall');
+                    if (!wall) return;
+                    wall.innerHTML = '';
+                    var q = st.q.toLowerCase();
+                    var pool = st.items.filter(function (x) { return !q || x.raw.toLowerCase().indexOf(q) >= 0; });
+                    var cnt = document.getElementById('nn-tpw-count');
+                    if (cnt) cnt.textContent = '共 ' + st.items.length + ' 款（去重後）';
+                    if (st.tab !== 'all') {   // 過濾檢視：平鋪一格
+                        var list = pool.filter(function (x) {
+                            if (st.tab === 'feat') return st.feature.indexOf(x.pid) >= 0;
+                            if (st.tab === 'hide') return !!st.hide[x.pid];
+                            if (st.tab === 'nodate') return !dateOf(x);
+                            return true;
+                        });
+                        if (st.tab === 'feat') list.sort(function (a, b) { return st.feature.indexOf(a.pid) - st.feature.indexOf(b.pid); });
+                        else list.sort(byDateDesc);
+                        wall.appendChild(secHead(st.tab === 'feat' ? '⭐ 置頂精選（依序）' : st.tab === 'hide' ? '🚫 已隱藏' : '❗ 缺發售日（前台會掉到全部遊戲區尾，請補登）', list.length));
+                        wall.appendChild(grid(list));
+                        if (!list.length) wall.appendChild(secHead('這個檢視沒有東西 ✅', 0));
+                        return;
+                    }
+                    // 前台同款分區預覽：精選 → 即將發售（近→遠）→ 最新發售（新→舊）→ 全部遊戲（新→舊，缺日期收尾）
+                    var fset = {};
+                    var feat = [];
+                    st.feature.forEach(function (pid) {
+                        for (var i = 0; i < pool.length; i++) if (pool[i].pid === pid && !fset[pid]) { feat.push(pool[i]); fset[pid] = 1; }
+                    });
+                    var soon = [], soonTbd = [], fresh = [], rest = [], tbd = [];
+                    pool.forEach(function (x) {
+                        var g = grpOf(x);
+                        if (fset[x.pid]) return;
+                        if (!dateOf(x)) { (g === 'up' ? soonTbd : tbd).push(x); return; }
+                        if (g === 'up') soon.push(x); else if (g === 'new') fresh.push(x); else rest.push(x);
+                    });
+                    soon.sort(byDateAsc); fresh.sort(byDateDesc); rest.sort(byDateDesc);
+                    var secs = [
+                        ['⭐ 店長精選推薦', feat],
+                        ['🔥 即將發售・預購中', soon.concat(soonTbd)],
+                        ['🆕 最新發售（' + NEW_DAYS + ' 天內）', fresh],
+                        ['🎮 全部遊戲', rest.concat(tbd)]
+                    ];
+                    secs.forEach(function (s) {
+                        if (!s[1].length) return;
+                        wall.appendChild(secHead(s[0], s[1].length));
+                        wall.appendChild(grid(s[1]));
+                    });
+                }
+
+                function save() {
+                    var hideArr = Object.keys(st.hide).filter(function (k) { return st.hide[k]; });
+                    Promise.all([
+                        database.ref('nintendo_tp_overrides').set({ feature: st.feature, hide: hideArr }),
+                        database.ref('nintendo_tp_genres').set(st.genres),
+                        database.ref('nintendo_tp_dates').set(st.dates)
+                    ]).then(function () {
+                        st.dirty = false;
+                        var el = document.getElementById('nn-tpw-dirty');
+                        if (el) el.style.display = 'none';
+                        alert('🧱 遊戲牆設定已儲存！非本家頁重新整理生效。');
+                    }).catch(function (err) { alert('儲存失敗：' + err.message); });
+                }
+
+                function onServer(kind, val) {
+                    if (st.dirty) return;   // 有未儲存的本機變更時，不讓伺服器回波蓋掉
+                    if (kind === 'overrides') {
+                        var o = val || {};
+                        st.feature = (o.feature || []).map(strip).filter(Boolean);
+                        st.hide = {};
+                        (o.hide || []).forEach(function (p) { if (p) st.hide[strip(p)] = true; });
+                    } else if (kind === 'genres') {
+                        st.genres = {};
+                        var g = val || {};
+                        Object.keys(g).forEach(function (k) { st.genres[strip(k)] = g[k]; });
+                    } else if (kind === 'dates') {
+                        st.dates = {};
+                        var dd = val || {};
+                        Object.keys(dd).forEach(function (k) {
+                            var m = String(dd[k] || '').match(/\d{4}-\d{2}-\d{2}/);
+                            if (m) st.dates[strip(k)] = m[0];
+                        });
+                    }
+                    if (st.loaded) render();
+                }
+
+                var qEl = document.getElementById('nn-tpw-q');
+                if (qEl) {
+                    var qTimer = null;
+                    qEl.addEventListener('input', function () {
+                        clearTimeout(qTimer);
+                        var v = qEl.value.trim();
+                        qTimer = setTimeout(function () { st.q = v; if (st.loaded) render(); }, 250);
+                    });
+                }
+
+                return { load: load, save: save, onServer: onServer, isLoaded: function () { return st.loaded || st.loading; } };
+            })();
+            ns.tpwSave = TPW.save;
+            ns.tpwReload = TPW.load;
 
             // ══ 版頭工作台 factory（v9）═════════════════════════════════════════
             // v8 的 nb* 版頭工作台抽成 makeBench()：本家版頭（NB）與非本家三廠廣告
@@ -3604,6 +4091,7 @@
                     if (pane) pane.style.display = (x === k) ? '' : 'none';
                     if (btn) btn.classList.toggle('nn-subtab-on', x === k);
                 });
+                if (k === 'tp' && !TPW.isLoaded()) TPW.load();   // v10：首次切到非本家頁自動抓遊戲牆
             };
 
             // ══ 皮克敏專頁維護（nintendo_pikmin／nintendo_pikmin_game）═════════
