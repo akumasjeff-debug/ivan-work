@@ -3354,8 +3354,15 @@
                 function pidsOf(x) { var ps = [x.pid]; (x.variants || []).forEach(function (v) { ps.push(v.pid); }); return ps; }
                 function dateOf(x) {
                     var ps = pidsOf(x);
-                    for (var i = 0; i < ps.length; i++) if (st.dates[ps[i]]) return st.dates[ps[i]];   // 手動補登優先
+                    for (var i = 0; i < ps.length; i++) if (st.dates[ps[i]]) {   // 手動補登優先；「未定」＝鎖定無日期（蓋掉賣場佔位日）
+                        return st.dates[ps[i]] === '未定' ? '' : st.dates[ps[i]];
+                    }
                     return x.nick || '';
+                }
+                function tbdOf(x) {
+                    var ps = pidsOf(x);
+                    for (var i = 0; i < ps.length; i++) if (st.dates[ps[i]] === '未定') return true;
+                    return false;
                 }
                 function genreOf(x) {
                     var ps = pidsOf(x);
@@ -3364,7 +3371,7 @@
                 }
                 function grpOf(x) {
                     var d = dateOf(x);
-                    if (!d) return x.pid.indexOf('DGBJCW') === 0 ? 'up' : 'all';   // 缺日期：預購館→即將發售尾；其他→全部遊戲尾
+                    if (!d) return (tbdOf(x) || x.pid.indexOf('DGBJCW') === 0) ? 'up' : 'all';   // 缺日期：鎖未定/預購館→即將發售尾；其他→全部遊戲尾
                     var n = daysFromToday(d);
                     return n > 0 ? 'up' : (n >= -NEW_DAYS ? 'new' : 'all');
                 }
@@ -3445,7 +3452,7 @@
                 function renderTabs() {
                     var box = document.getElementById('nn-tpw-tabs');
                     if (!box) return;
-                    var nodate = st.items.filter(function (x) { return !dateOf(x); }).length;
+                    var nodate = st.items.filter(function (x) { return !dateOf(x) && !tbdOf(x); }).length;
                     var defs = [
                         ['all', '全部'],
                         ['feat', '⭐ 置頂（' + st.feature.length + '）'],
@@ -3505,18 +3512,29 @@
                     im.appendChild(img); el.appendChild(im);
                     var tt = document.createElement('div'); tt.className = 'nn-tpw-title'; tt.textContent = x.title; tt.title = x.raw + '（' + x.pid + '）';
                     el.appendChild(tt);
-                    var dt = document.createElement('div'); dt.className = 'nn-tpw-date' + (d ? '' : ' miss');
-                    dt.textContent = d ? ('📅 ' + d + (daysFromToday(d) > 0 ? '（未發售）' : '')) : '❗ 缺發售日（點我補）';
-                    dt.title = '點擊修改發售日（存進 nintendo_tp_dates，優先於賣場自動抓的）';
+                    var isTbd = tbdOf(x);
+                    var dt = document.createElement('div'); dt.className = 'nn-tpw-date' + ((d || isTbd) ? '' : ' miss');
+                    dt.textContent = d ? ('📅 ' + d + (daysFromToday(d) > 0 ? '（未發售）' : ''))
+                        : (isTbd ? '📅 發售日未定（已鎖定）' : '❗ 缺發售日（點我補）');
+                    dt.title = '點擊修改發售日（存進 nintendo_tp_dates，優先於賣場自動抓的）；「未定」鈕＝官方未公布，鎖定不顯示賣場佔位日期';
                     dt.addEventListener('click', function () {
                         if (dt.querySelector('input')) return;
-                        var inp = document.createElement('input'); inp.type = 'date'; inp.value = st.dates[x.pid] || d || '';
-                        dt.innerHTML = ''; dt.appendChild(inp);
+                        var inp = document.createElement('input'); inp.type = 'date';
+                        inp.value = (st.dates[x.pid] && st.dates[x.pid] !== '未定') ? st.dates[x.pid] : (d || '');
+                        var tb = document.createElement('button'); tb.textContent = '未定';
+                        tb.style.cssText = 'margin-left:4px;font-size:10px;font-weight:800;border:1px solid #f59e0b;background:#fffbeb;color:#b45309;border-radius:.3rem;padding:1px 6px;cursor:pointer;';
+                        tb.title = '官方未公布發售日：鎖定為「未定」，蓋掉賣場的佔位日期';
+                        tb.addEventListener('click', function (e) {
+                            e.stopPropagation();
+                            st.dates[x.pid] = '未定';
+                            markDirty(); render();
+                        });
+                        dt.innerHTML = ''; dt.appendChild(inp); dt.appendChild(tb);
                         inp.addEventListener('change', function () {
                             if (inp.value) st.dates[x.pid] = inp.value; else delete st.dates[x.pid];
                             markDirty(); render();
                         });
-                        inp.addEventListener('blur', function () { setTimeout(function () { if (dt.querySelector('input')) render(); }, 150); });
+                        inp.addEventListener('blur', function () { setTimeout(function () { if (dt.querySelector('input')) render(); }, 200); });
                         inp.focus();
                     });
                     el.appendChild(dt);
@@ -3571,7 +3589,7 @@
                         var list = pool.filter(function (x) {
                             if (st.tab === 'feat') return st.feature.indexOf(x.pid) >= 0;
                             if (st.tab === 'hide') return !!st.hide[x.pid];
-                            if (st.tab === 'nodate') return !dateOf(x);
+                            if (st.tab === 'nodate') return !dateOf(x) && !tbdOf(x);
                             return true;
                         });
                         if (st.tab === 'feat') list.sort(function (a, b) { return st.feature.indexOf(a.pid) - st.feature.indexOf(b.pid); });
@@ -3637,8 +3655,10 @@
                         st.dates = {};
                         var dd = val || {};
                         Object.keys(dd).forEach(function (k) {
-                            var m = String(dd[k] || '').match(/\d{4}-\d{2}-\d{2}/);
+                            var v = String(dd[k] || '');
+                            var m = v.match(/\d{4}-\d{2}-\d{2}/);
                             if (m) st.dates[strip(k)] = m[0];
+                            else if (/未定|tbd/i.test(v)) st.dates[strip(k)] = '未定';
                         });
                     }
                     if (st.loaded) render();
